@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scarlet", "Scarlet\Scarlet.csproj", "{B1CC2B0E-4226-4AC5-9940-900A8847201A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScarletTestApp", "ScarletTestApp\ScarletTestApp.csproj", "{6486F263-E21A-4F8C-9E02-8FF32817B083}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scarlet.IO.ImageFormats", "Scarlet.IO.ImageFormats\Scarlet.IO.ImageFormats.csproj", "{4E7B19C8-1983-41FE-98E4-0532137638FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scarlet.IO.ContainerFormats", "Scarlet.IO.ContainerFormats\Scarlet.IO.ContainerFormats.csproj", "{E1C46A51-BBCC-48A8-9B3C-D1D0F02128FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scarlet.IO.CompressionFormats", "Scarlet.IO.CompressionFormats\Scarlet.IO.CompressionFormats.csproj", "{9D6AF554-4256-4FF5-B2EF-D224C5326F19}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B1CC2B0E-4226-4AC5-9940-900A8847201A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1CC2B0E-4226-4AC5-9940-900A8847201A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1CC2B0E-4226-4AC5-9940-900A8847201A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1CC2B0E-4226-4AC5-9940-900A8847201A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6486F263-E21A-4F8C-9E02-8FF32817B083}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6486F263-E21A-4F8C-9E02-8FF32817B083}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6486F263-E21A-4F8C-9E02-8FF32817B083}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6486F263-E21A-4F8C-9E02-8FF32817B083}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E7B19C8-1983-41FE-98E4-0532137638FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E7B19C8-1983-41FE-98E4-0532137638FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E7B19C8-1983-41FE-98E4-0532137638FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E7B19C8-1983-41FE-98E4-0532137638FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1C46A51-BBCC-48A8-9B3C-D1D0F02128FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1C46A51-BBCC-48A8-9B3C-D1D0F02128FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1C46A51-BBCC-48A8-9B3C-D1D0F02128FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1C46A51-BBCC-48A8-9B3C-D1D0F02128FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D6AF554-4256-4FF5-B2EF-D224C5326F19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D6AF554-4256-4FF5-B2EF-D224C5326F19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D6AF554-4256-4FF5-B2EF-D224C5326F19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D6AF554-4256-4FF5-B2EF-D224C5326F19}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
