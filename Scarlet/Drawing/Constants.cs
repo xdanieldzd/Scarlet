@@ -366,39 +366,19 @@ namespace Scarlet.Drawing
         MaskReserved = ((((ulong)1 << 12) - 1) << 52), /* FFF0000000000000 */
 
         /// <summary>
-        /// Format is 32-bit RGBA8888
-        /// </summary>
-        FormatRgba8888 = (Bpp32 | ChannelsRgba | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
-
-        /// <summary>
-        /// Format is 32-bit RGBA8888
-        /// </summary>
-        FormatBgra8888 = (Bpp32 | ChannelsBgra | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
-
-        /// <summary>
-        /// Format is 32-bit ARGB8888
-        /// </summary>
-        FormatArgb8888 = (Bpp32 | ChannelsArgb | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
-
-        /// <summary>
-        /// Format is 32-bit ABGR8888
-        /// </summary>
-        FormatAbgr8888 = (Bpp32 | ChannelsAbgr | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
-
-        /// <summary>
-        /// Format is 32-bit RGB888 with dummy trailing alpha channel
-        /// </summary>
-        FormatRgbx8888 = (Bpp32 | ChannelsRgbx | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
-
-        /// <summary>
-        /// Format is 32-bit RGB888 with dummy leading alpha channel
-        /// </summary>
-        FormatXrgb8888 = (Bpp32 | ChannelsXrgb | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
-
-        /// <summary>
         /// Format is 24-bit RGB888
         /// </summary>
         FormatRgb888 = (Bpp24 | ChannelsRgb | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits0),
+
+        /// <summary>
+        /// Format is 16-bit RGB565
+        /// </summary>
+        FormatRgb565 = (Bpp16 | ChannelsRgb | RedBits5 | GreenBits6 | BlueBits5 | AlphaBits0),
+
+        /// <summary>
+        /// Format is 32-bit RGBA8888
+        /// </summary>
+        FormatRgba8888 = (Bpp32 | ChannelsRgba | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
 
         /// <summary>
         /// Format is 16-bit RGBA5551
@@ -406,19 +386,29 @@ namespace Scarlet.Drawing
         FormatRgba5551 = (Bpp16 | ChannelsRgba | RedBits5 | GreenBits5 | BlueBits5 | AlphaBits1),
 
         /// <summary>
-        /// Format is 16-bit BGRA5551
-        /// </summary>
-        FormatBgra5551 = (Bpp16 | ChannelsBgra | RedBits5 | GreenBits5 | BlueBits5 | AlphaBits1),
-
-        /// <summary>
         /// Format is 16-bit RGBA4444
         /// </summary>
         FormatRgba4444 = (Bpp16 | ChannelsRgba | RedBits4 | GreenBits4 | BlueBits4 | AlphaBits4),
 
         /// <summary>
+        /// Format is 32-bit RGBA8888
+        /// </summary>
+        FormatBgra8888 = (Bpp32 | ChannelsBgra | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
+
+        /// <summary>
+        /// Format is 16-bit BGRA5551
+        /// </summary>
+        FormatBgra5551 = (Bpp16 | ChannelsBgra | RedBits5 | GreenBits5 | BlueBits5 | AlphaBits1),
+
+        /// <summary>
         /// Format is 16-bit BGRA4444
         /// </summary>
         FormatBgra4444 = (Bpp16 | ChannelsBgra | RedBits4 | GreenBits4 | BlueBits4 | AlphaBits4),
+
+        /// <summary>
+        /// Format is 32-bit ARGB8888
+        /// </summary>
+        FormatArgb8888 = (Bpp32 | ChannelsArgb | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
 
         /// <summary>
         /// Format is 16-bit ARGB1555
@@ -431,6 +421,11 @@ namespace Scarlet.Drawing
         FormatArgb4444 = (Bpp16 | ChannelsArgb | RedBits4 | GreenBits4 | BlueBits4 | AlphaBits4),
 
         /// <summary>
+        /// Format is 32-bit ABGR8888
+        /// </summary>
+        FormatAbgr8888 = (Bpp32 | ChannelsAbgr | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
+
+        /// <summary>
         /// Format is 16-bit ABGR1555
         /// </summary>
         FormatAbgr1555 = (Bpp16 | ChannelsAbgr | RedBits5 | GreenBits5 | BlueBits5 | AlphaBits1),
@@ -441,9 +436,24 @@ namespace Scarlet.Drawing
         FormatAbgr4444 = (Bpp16 | ChannelsAbgr | RedBits4 | GreenBits4 | BlueBits4 | AlphaBits4),
 
         /// <summary>
-        /// Format is 16-bit RGB565
+        /// Format is 32-bit RGB888 with dummy trailing 8-bit alpha channel
         /// </summary>
-        FormatRgb565 = (Bpp16 | ChannelsRgb | RedBits5 | GreenBits6 | BlueBits5 | AlphaBits0),
+        FormatRgbx8888 = (Bpp32 | ChannelsRgbx | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
+
+        /// <summary>
+        /// Format is 32-bit BGR888 with dummy trailing 8-bit alpha channel
+        /// </summary>
+        FormatBgrx8888 = (Bpp32 | ChannelsBgrx | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
+
+        /// <summary>
+        /// Format is 32-bit RGB888 with dummy leading 8-bit alpha channel
+        /// </summary>
+        FormatXrgb8888 = (Bpp32 | ChannelsXrgb | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
+
+        /// <summary>
+        /// Format is 32-bit BGR888 with dummy leading 8-bit alpha channel
+        /// </summary>
+        FormatXbgr8888 = (Bpp32 | ChannelsXbgr | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
 
         /// <summary>
         /// Format is 16-bit LA88

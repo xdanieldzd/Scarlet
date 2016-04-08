@@ -116,9 +116,45 @@ namespace Scarlet.IO.ImageFormats
 
             if (textureBaseFormat == SceGxmTextureBaseFormat.P4 || textureBaseFormat == SceGxmTextureBaseFormat.P8)
             {
-                // TODO: implement alternate palette formats as in GXTConvert
+                SceGxmTextureFormat textureFormat = info.GetTextureFormat();
 
-                imageBinary.InputPaletteFormat = PixelDataFormat.FormatAbgr8888;
+                switch (textureFormat)
+                {
+                    case SceGxmTextureFormat.P4_ABGR:
+                    case SceGxmTextureFormat.P8_ABGR:
+                        imageBinary.InputPaletteFormat = PixelDataFormat.FormatAbgr8888;
+                        break;
+                    case SceGxmTextureFormat.P4_ARGB:
+                    case SceGxmTextureFormat.P8_ARGB:
+                        imageBinary.InputPaletteFormat = PixelDataFormat.FormatArgb8888;
+                        break;
+                    case SceGxmTextureFormat.P4_RGBA:
+                    case SceGxmTextureFormat.P8_RGBA:
+                        imageBinary.InputPaletteFormat = PixelDataFormat.FormatRgba8888;
+                        break;
+                    case SceGxmTextureFormat.P4_BGRA:
+                    case SceGxmTextureFormat.P8_BGRA:
+                        imageBinary.InputPaletteFormat = PixelDataFormat.FormatBgra8888;
+                        break;
+                    case SceGxmTextureFormat.P4_1BGR:
+                    case SceGxmTextureFormat.P8_1BGR:
+                        imageBinary.InputPaletteFormat = PixelDataFormat.FormatXbgr8888;
+                        break;
+                    case SceGxmTextureFormat.P4_1RGB:
+                    case SceGxmTextureFormat.P8_1RGB:
+                        imageBinary.InputPaletteFormat = PixelDataFormat.FormatXrgb8888;
+                        break;
+                    case SceGxmTextureFormat.P4_RGB1:
+                    case SceGxmTextureFormat.P8_RGB1:
+                        imageBinary.InputPaletteFormat = PixelDataFormat.FormatRgbx8888;
+                        break;
+                    case SceGxmTextureFormat.P4_BGR1:
+                    case SceGxmTextureFormat.P8_BGR1:
+                        imageBinary.InputPaletteFormat = PixelDataFormat.FormatBgrx8888;
+                        break;
+
+                    default: throw new Exception("Unsupported GXT indexed texture format");
+                }
 
                 if (textureBaseFormat == SceGxmTextureBaseFormat.P4)
                     foreach (byte[] paletteData in P4Palettes)

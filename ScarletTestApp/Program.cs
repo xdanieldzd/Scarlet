@@ -32,10 +32,11 @@ namespace ScarletTestApp
 #endif
             {
 #if DEBUG
+                TestGXTPalette();
                 //TestDXTBugs();
                 //TestArchiveNISPACK();
                 //TestArchiveNSAC();
-                TestTID();
+                //TestTID();
                 //TestMultipleTID();
                 //TestCapcomTEX();
                 //TestMultipleCapcomTEX();
@@ -88,6 +89,15 @@ namespace ScarletTestApp
                 Console.ReadKey();
             }
 #endif
+        }
+
+        public static void TestGXTPalette()
+        {
+            Console.WriteLine("Test GXT misc indexed...");
+
+            string dir = @"E:\[SSD User Data]\Downloads\GXTSamples(1)\";
+            List<string> files = Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories).ToList();
+            DoMultipleFiles(files, @"E:\Temp\scarlet\gxt-pal\", dir);
         }
 
         public static void TestDXTBugs()

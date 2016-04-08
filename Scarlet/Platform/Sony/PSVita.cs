@@ -579,7 +579,21 @@ namespace Scarlet.Platform.Sony
             /* RGB888   */ { SceGxmTextureFormat.U8U8U8_RGB, PixelDataFormat.FormatRgb888 },
             /* RGB888X  */ { SceGxmTextureFormat.U8U8U8X8_RGB1, PixelDataFormat.FormatRgbx8888 },
             /* P4       */ { SceGxmTextureFormat.P4_ABGR, PixelDataFormat.FormatIndexed4 },
+            /*          */ { SceGxmTextureFormat.P4_ARGB, PixelDataFormat.FormatIndexed4 },
+            /*          */ { SceGxmTextureFormat.P4_RGBA, PixelDataFormat.FormatIndexed4 },
+            /*          */ { SceGxmTextureFormat.P4_BGRA, PixelDataFormat.FormatIndexed4 },
+            /*          */ { SceGxmTextureFormat.P4_1BGR, PixelDataFormat.FormatIndexed4 },
+            /*          */ { SceGxmTextureFormat.P4_1RGB, PixelDataFormat.FormatIndexed4 },
+            /*          */ { SceGxmTextureFormat.P4_RGB1, PixelDataFormat.FormatIndexed4 },
+            /*          */ { SceGxmTextureFormat.P4_BGR1, PixelDataFormat.FormatIndexed4 },
             /* P8       */ { SceGxmTextureFormat.P8_ABGR, PixelDataFormat.FormatIndexed8 },
+            /*          */ { SceGxmTextureFormat.P8_ARGB, PixelDataFormat.FormatIndexed8 },
+            /*          */ { SceGxmTextureFormat.P8_RGBA, PixelDataFormat.FormatIndexed8 },
+            /*          */ { SceGxmTextureFormat.P8_BGRA, PixelDataFormat.FormatIndexed8 },
+            /*          */ { SceGxmTextureFormat.P8_1BGR, PixelDataFormat.FormatIndexed8 },
+            /*          */ { SceGxmTextureFormat.P8_1RGB, PixelDataFormat.FormatIndexed8 },
+            /*          */ { SceGxmTextureFormat.P8_RGB1, PixelDataFormat.FormatIndexed8 },
+            /*          */ { SceGxmTextureFormat.P8_BGR1, PixelDataFormat.FormatIndexed8 },
         };
 
         public static PixelDataFormat GetPixelDataFormat(SceGxmTextureFormat pixelFormat)

@@ -326,14 +326,15 @@ namespace Scarlet.Drawing
             if ((inputPixelFormat & PixelDataFormat.MaskChannels) != PixelDataFormat.ChannelsIndexed)
             {
                 pixelData = ConvertPixelDataToArgb8888(inputPixelData[imageIndex], inputPixelFormat);
-                pixelData = ApplyPostProcessingToArgb8888(width, height, inputPixelFormat, pixelData);
-                pixelData = ApplyDitheringToArgb8888(width, height, outputFormat, pixelData);
+                pixelData = ApplyPostProcessingToPixelData(width, height, inputPixelFormat, pixelData);
+                pixelData = ApplyFilterToArgb8888(width, height, outputFormat, pixelData);
 
                 pixelData = ConvertArgb8888ToOutputFormat(pixelData, outputFormat, outputEndianness);
             }
             else
             {
                 pixelData = ReadPixelDataIndexed(inputPixelData[imageIndex], inputPixelFormat);
+                pixelData = ApplyPostProcessingToPixelData(width, height, inputPixelFormat, pixelData);
             }
 
             return pixelData;
@@ -425,20 +426,23 @@ namespace Scarlet.Drawing
 
             bool isIndexed = ((inputPixelFormat & PixelDataFormat.MaskChannels) == PixelDataFormat.ChannelsIndexed);
 
+            byte[] inputPixels = GetInputPixels(imageIndex);
+
             byte[] pixelData = null;
             Color[] palette = null;
 
             if (!isIndexed)
             {
                 imagePixelFormat = PixelFormat.Format32bppArgb;
-                pixelData = ConvertPixelDataToArgb8888(GetInputPixels(imageIndex), inputPixelFormat);
-                pixelData = ApplyPostProcessingToArgb8888(width, height, inputPixelFormat, pixelData);
-                pixelData = ApplyDitheringToArgb8888(width, height, outputFormat, pixelData);
+                pixelData = ConvertPixelDataToArgb8888(inputPixels, inputPixelFormat);
+                pixelData = ApplyPostProcessingToPixelData(width, height, inputPixelFormat, pixelData);
+                pixelData = ApplyFilterToArgb8888(width, height, outputFormat, pixelData);
             }
             else
             {
                 imagePixelFormat = ((inputPixelFormat & PixelDataFormat.MaskBpp) == PixelDataFormat.Bpp4 ? PixelFormat.Format4bppIndexed : PixelFormat.Format8bppIndexed);
-                pixelData = ReadPixelDataIndexed(GetInputPixels(imageIndex), inputPixelFormat);
+                pixelData = ReadPixelDataIndexed(inputPixels, inputPixelFormat);
+                pixelData = ApplyPostProcessingToPixelData(width, height, inputPixelFormat, pixelData);
                 palette = ReadPaletteData(GetInputPalette(paletteIndex), inputPixelFormat, inputPaletteFormat);
             }
 
@@ -448,18 +452,24 @@ namespace Scarlet.Drawing
             byte[] pixelsForBmp = new byte[bmpData.Height * bmpData.Stride];
             int bitsPerPixel = Bitmap.GetPixelFormatSize(image.PixelFormat);
 
-            int lineSize = 0;
-            if (!isIndexed || (inputPixelFormat & PixelDataFormat.MaskBpp) != PixelDataFormat.Bpp4)
-                lineSize = (bmpData.Width * (bitsPerPixel / 8));
+            int lineSize, copySize;
+
+            if (isIndexed)
+                lineSize = (inputPixels.Length / bmpData.Height);
             else
-                lineSize = (bmpData.Width / 2);
+                lineSize = (bmpData.Width * (bitsPerPixel / 8));
+
+            if (isIndexed && (inputPixelFormat & PixelDataFormat.MaskBpp) == PixelDataFormat.Bpp4)
+                copySize = bmpData.Width / 2;
+            else
+                copySize = (bmpData.Width * (bitsPerPixel / 8));
 
             for (int y = 0; y < bmpData.Height; y++)
             {
                 int srcOffset = y * lineSize;
                 int dstOffset = y * bmpData.Stride;
                 if (srcOffset >= pixelData.Length || dstOffset >= pixelsForBmp.Length) continue;
-                Buffer.BlockCopy(pixelData, srcOffset, pixelsForBmp, dstOffset, lineSize);
+                Buffer.BlockCopy(pixelData, srcOffset, pixelsForBmp, dstOffset, copySize);
             }
 
             if (isIndexed && palette != null)
@@ -789,7 +799,7 @@ namespace Scarlet.Drawing
             return dataArgb8888;
         }
 
-        private byte[] ApplyPostProcessingToArgb8888(int width, int height, PixelDataFormat inputPixelFormat, byte[] dataArgb8888)
+        private byte[] ApplyPostProcessingToPixelData(int width, int height, PixelDataFormat inputPixelFormat, byte[] dataArgb8888)
         {
             PixelDataFormat postProcess = (inputPixelFormat & PixelDataFormat.MaskPostProcess);
             switch (postProcess)
@@ -799,16 +809,16 @@ namespace Scarlet.Drawing
                     return dataArgb8888;
 
                 case PixelDataFormat.PostProcessUntile_3DS:
-                    return PostProcessUntile3DS(dataArgb8888, width, height);
+                    return PostProcessUntile3DS(dataArgb8888, width, height, inputPixelFormat);
 
                 case PixelDataFormat.PostProcessUnswizzle_Vita:
-                    return PostProcessMortonUnswizzle(dataArgb8888, width, height);
+                    return PostProcessMortonUnswizzle(dataArgb8888, width, height, inputPixelFormat);
 
                 default: throw new Exception("Unimplemented post-processing mode");
             }
         }
 
-        private byte[] ApplyDitheringToArgb8888(int width, int height, PixelDataFormat outputFormat, byte[] dataArgb8888)
+        private byte[] ApplyFilterToArgb8888(int width, int height, PixelDataFormat outputFormat, byte[] dataArgb8888)
         {
             PixelDataFormat filter = (outputFormat & PixelDataFormat.MaskFilter);
             switch (filter)
@@ -1135,12 +1145,16 @@ namespace Scarlet.Drawing
             return (int)((((tileOrder[t] / 8) + y) * width) + ((tileOrder[t] % 8) + x));
         }
 
-        private int GetTilePixelOffset(int t, int x, int y, int width)
+        private int GetTilePixelOffset(int t, int x, int y, int width, PixelDataFormat inputPixelFormat)
         {
-            return (GetTilePixelIndex(t, x, y, width) * (Bitmap.GetPixelFormatSize(PixelFormat.Format32bppArgb) / 8));
+            /* TODO: assumes 4 bytes/pixel for all non-indexed formats; change this? */
+            bool isIndexed = ((inputPixelFormat & PixelDataFormat.MaskChannels) == PixelDataFormat.ChannelsIndexed);
+            PixelDataFormat inBpp = (inputPixelFormat & PixelDataFormat.MaskBpp);
+
+            return (GetTilePixelIndex(t, x, y, width) * (isIndexed ? Constants.InputBitsPerPixel[inBpp] / 8 : 4));
         }
 
-        private byte[] PostProcessUntile3DS(byte[] pixelData, int width, int height)
+        private byte[] PostProcessUntile3DS(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat)
         {
             byte[] untiled = new byte[pixelData.Length];
             int s = 0;
@@ -1150,7 +1164,7 @@ namespace Scarlet.Drawing
                 {
                     for (int t = 0; t < (8 * 8); t++)
                     {
-                        int pixelOffset = GetTilePixelOffset(t, x, y, width);
+                        int pixelOffset = GetTilePixelOffset(t, x, y, width, inputPixelFormat);
                         Buffer.BlockCopy(pixelData, s, untiled, pixelOffset, 4);
                         s += 4;
                     }
@@ -1186,9 +1200,13 @@ namespace Scarlet.Drawing
             return Compact1By1(code >> 1);
         }
 
-        public static byte[] PostProcessMortonUnswizzle(byte[] pixelData, int width, int height)
+        public static byte[] PostProcessMortonUnswizzle(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat)
         {
-            int bytesPerPixel = (Bitmap.GetPixelFormatSize(PixelFormat.Format32bppArgb) / 8);
+            /* TODO: assumes 4 bytes/pixel for all non-indexed formats; change this? */
+            bool isIndexed = ((inputPixelFormat & PixelDataFormat.MaskChannels) == PixelDataFormat.ChannelsIndexed);
+            PixelDataFormat inBpp = (inputPixelFormat & PixelDataFormat.MaskBpp);
+            int bytesPerPixel = (isIndexed ? Constants.InputBitsPerPixel[inBpp] / 8 : 4);
+
             byte[] unswizzled = new byte[pixelData.Length];
 
             for (int i = 0; i < width * height; i++)
