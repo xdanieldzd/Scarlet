@@ -608,16 +608,19 @@ namespace Scarlet.Drawing
 
             switch (inChannels)
             {
+                case PixelDataFormat.ChannelsRgb: CheckBitsPerChannelValidity(inRedBits, inGreenBits, inBlueBits); break;
                 case PixelDataFormat.ChannelsRgba: CheckBitsPerChannelValidity(inRedBits, inGreenBits, inBlueBits, inAlphaBits); break;
+                case PixelDataFormat.ChannelsBgra: CheckBitsPerChannelValidity(inBlueBits, inGreenBits, inRedBits, inAlphaBits); break;
                 case PixelDataFormat.ChannelsArgb: CheckBitsPerChannelValidity(inAlphaBits, inRedBits, inGreenBits, inBlueBits); break;
                 case PixelDataFormat.ChannelsAbgr: CheckBitsPerChannelValidity(inAlphaBits, inBlueBits, inGreenBits, inRedBits); break;
-                case PixelDataFormat.ChannelsBgra: CheckBitsPerChannelValidity(inBlueBits, inGreenBits, inRedBits, inAlphaBits); break;
                 case PixelDataFormat.ChannelsRgbx: CheckBitsPerChannelValidity(inRedBits, inGreenBits, inBlueBits, inAlphaBits); break;
+                case PixelDataFormat.ChannelsBgrx: CheckBitsPerChannelValidity(inBlueBits, inGreenBits, inRedBits, inAlphaBits); break;
                 case PixelDataFormat.ChannelsXrgb: CheckBitsPerChannelValidity(inAlphaBits, inRedBits, inGreenBits, inBlueBits); break;
-                case PixelDataFormat.ChannelsRgb: CheckBitsPerChannelValidity(inRedBits, inGreenBits, inBlueBits); break;
+                case PixelDataFormat.ChannelsXbgr: CheckBitsPerChannelValidity(inAlphaBits, inBlueBits, inGreenBits, inRedBits); break;
                 case PixelDataFormat.ChannelsLuminance: CheckBitsPerChannelValidity(inRedBits); break;
                 case PixelDataFormat.ChannelsAlpha: CheckBitsPerChannelValidity(inAlphaBits); break;
                 case PixelDataFormat.ChannelsLuminanceAlpha: CheckBitsPerChannelValidity(inRedBits, inAlphaBits); break;
+
                 default: throw new Exception("Unhandled channel input layout");
             }
 
@@ -667,10 +670,25 @@ namespace Scarlet.Drawing
 
                     switch (inChannels)
                     {
+                        case PixelDataFormat.ChannelsRgb:
+                            red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
+                            green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
+                            blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
+
+                            alpha = 0xFF;
+                            break;
+
                         case PixelDataFormat.ChannelsRgba:
                             red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
                             green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
                             blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
+                            alpha = ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp);
+                            break;
+
+                        case PixelDataFormat.ChannelsBgra:
+                            blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
+                            green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
+                            red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
                             alpha = ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp);
                             break;
 
@@ -688,39 +706,40 @@ namespace Scarlet.Drawing
                             red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
                             break;
 
-                        case PixelDataFormat.ChannelsBgra:
-                            blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
-                            green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
-                            red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
-                            alpha = ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp);
-                            break;
-
                         case PixelDataFormat.ChannelsRgbx:
                             red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
                             green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
                             blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
 
                             ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp); /* Dummy; throw away */
+                            alpha = 0xFF;
+                            break;
 
+                        case PixelDataFormat.ChannelsBgrx:
+                            blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
+                            green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
+                            red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
+
+                            ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp); /* Dummy; throw away */
                             alpha = 0xFF;
                             break;
 
                         case PixelDataFormat.ChannelsXrgb:
                             ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp); /* Dummy; throw away */
+                            alpha = 0xFF;
 
                             red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
                             green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
                             blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
-
-                            alpha = 0xFF;
                             break;
 
-                        case PixelDataFormat.ChannelsRgb:
-                            red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
-                            green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
-                            blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
-
+                        case PixelDataFormat.ChannelsXbgr:
+                            ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp); /* Dummy; throw away */
                             alpha = 0xFF;
+
+                            blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
+                            green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
+                            red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
                             break;
 
                         case PixelDataFormat.ChannelsLuminance:
@@ -873,16 +892,19 @@ namespace Scarlet.Drawing
 
                 switch (outChannels)
                 {
-                    case PixelDataFormat.ChannelsRgba: CheckBitsPerChannelValidity(outAlphaBits, outRedBits, outGreenBits, outBlueBits); break;
+                    case PixelDataFormat.ChannelsRgb: CheckBitsPerChannelValidity(outRedBits, outGreenBits, outBlueBits); break;
+                    case PixelDataFormat.ChannelsRgba: CheckBitsPerChannelValidity(outRedBits, outGreenBits, outBlueBits, outAlphaBits); break;
+                    case PixelDataFormat.ChannelsBgra: CheckBitsPerChannelValidity(outBlueBits, outGreenBits, outRedBits, outAlphaBits); break;
                     case PixelDataFormat.ChannelsArgb: CheckBitsPerChannelValidity(outAlphaBits, outRedBits, outGreenBits, outBlueBits); break;
                     case PixelDataFormat.ChannelsAbgr: CheckBitsPerChannelValidity(outAlphaBits, outBlueBits, outGreenBits, outRedBits); break;
-                    case PixelDataFormat.ChannelsBgra: CheckBitsPerChannelValidity(outBlueBits, outGreenBits, outRedBits, outAlphaBits); break;
-                    case PixelDataFormat.ChannelsRgbx: CheckBitsPerChannelValidity(outAlphaBits, outRedBits, outGreenBits, outBlueBits); break;
+                    case PixelDataFormat.ChannelsRgbx: CheckBitsPerChannelValidity(outRedBits, outGreenBits, outBlueBits, outAlphaBits); break;
+                    case PixelDataFormat.ChannelsBgrx: CheckBitsPerChannelValidity(outBlueBits, outGreenBits, outRedBits, outAlphaBits); break;
                     case PixelDataFormat.ChannelsXrgb: CheckBitsPerChannelValidity(outAlphaBits, outRedBits, outGreenBits, outBlueBits); break;
-                    case PixelDataFormat.ChannelsRgb: CheckBitsPerChannelValidity(outRedBits, outGreenBits, outBlueBits); break;
+                    case PixelDataFormat.ChannelsXbgr: CheckBitsPerChannelValidity(outAlphaBits, outBlueBits, outGreenBits, outRedBits); break;
                     case PixelDataFormat.ChannelsLuminance: CheckBitsPerChannelValidity(outRedBits); break;
                     case PixelDataFormat.ChannelsAlpha: CheckBitsPerChannelValidity(outAlphaBits); break;
                     case PixelDataFormat.ChannelsLuminanceAlpha: CheckBitsPerChannelValidity(outRedBits, outAlphaBits); break;
+
                     default: throw new Exception("Unhandled channel output layout");
                 }
 
@@ -917,6 +939,16 @@ namespace Scarlet.Drawing
 
                     switch (outChannels)
                     {
+                        case PixelDataFormat.ChannelsRgb:
+                            red = ResampleChannel(red, 8, channelBitsRed);
+                            green = ResampleChannel(green, 8, channelBitsGreen);
+                            blue = ResampleChannel(blue, 8, channelBitsBlue);
+
+                            outputValue = MergeChannel(outputValue, blue, channelBitsBlue, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, green, channelBitsGreen, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
+                            break;
+
                         case PixelDataFormat.ChannelsRgba:
                             red = ResampleChannel(red, 8, channelBitsRed);
                             green = ResampleChannel(green, 8, channelBitsGreen);
@@ -927,6 +959,18 @@ namespace Scarlet.Drawing
                             outputValue = MergeChannel(outputValue, blue, channelBitsBlue, ref bppOutCount);
                             outputValue = MergeChannel(outputValue, green, channelBitsGreen, ref bppOutCount);
                             outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
+                            break;
+
+                        case PixelDataFormat.ChannelsBgra:
+                            blue = ResampleChannel(blue, 8, channelBitsBlue);
+                            green = ResampleChannel(green, 8, channelBitsGreen);
+                            red = ResampleChannel(red, 8, channelBitsRed);
+                            alpha = ResampleChannel(alpha, 8, channelBitsAlpha);
+
+                            outputValue = MergeChannel(outputValue, alpha, channelBitsAlpha, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, green, channelBitsGreen, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, blue, channelBitsBlue, ref bppOutCount);
                             break;
 
                         case PixelDataFormat.ChannelsArgb:
@@ -953,18 +997,6 @@ namespace Scarlet.Drawing
                             outputValue = MergeChannel(outputValue, alpha, channelBitsAlpha, ref bppOutCount);
                             break;
 
-                        case PixelDataFormat.ChannelsBgra:
-                            blue = ResampleChannel(blue, 8, channelBitsBlue);
-                            green = ResampleChannel(green, 8, channelBitsGreen);
-                            red = ResampleChannel(red, 8, channelBitsRed);
-                            alpha = ResampleChannel(alpha, 8, channelBitsAlpha);
-
-                            outputValue = MergeChannel(outputValue, alpha, channelBitsAlpha, ref bppOutCount);
-                            outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
-                            outputValue = MergeChannel(outputValue, green, channelBitsGreen, ref bppOutCount);
-                            outputValue = MergeChannel(outputValue, blue, channelBitsBlue, ref bppOutCount);
-                            break;
-
                         case PixelDataFormat.ChannelsRgbx:
                             red = ResampleChannel(red, 8, channelBitsRed);
                             green = ResampleChannel(green, 8, channelBitsGreen);
@@ -975,6 +1007,18 @@ namespace Scarlet.Drawing
                             outputValue = MergeChannel(outputValue, blue, channelBitsBlue, ref bppOutCount);
                             outputValue = MergeChannel(outputValue, green, channelBitsGreen, ref bppOutCount);
                             outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
+                            break;
+
+                        case PixelDataFormat.ChannelsBgrx:
+                            blue = ResampleChannel(blue, 8, channelBitsBlue);
+                            green = ResampleChannel(green, 8, channelBitsGreen);
+                            red = ResampleChannel(red, 8, channelBitsRed);
+                            alpha = (uint)((1 << channelBitsAlpha) - 1);
+
+                            outputValue = MergeChannel(outputValue, alpha, channelBitsAlpha, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, green, channelBitsGreen, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, blue, channelBitsBlue, ref bppOutCount);
                             break;
 
                         case PixelDataFormat.ChannelsXrgb:
@@ -989,14 +1033,16 @@ namespace Scarlet.Drawing
                             outputValue = MergeChannel(outputValue, alpha, channelBitsAlpha, ref bppOutCount);
                             break;
 
-                        case PixelDataFormat.ChannelsRgb:
-                            red = ResampleChannel(red, 8, channelBitsRed);
-                            green = ResampleChannel(green, 8, channelBitsGreen);
+                        case PixelDataFormat.ChannelsXbgr:
+                            alpha = (uint)((1 << channelBitsAlpha) - 1);
                             blue = ResampleChannel(blue, 8, channelBitsBlue);
+                            green = ResampleChannel(green, 8, channelBitsGreen);
+                            red = ResampleChannel(red, 8, channelBitsRed);
 
-                            outputValue = MergeChannel(outputValue, blue, channelBitsBlue, ref bppOutCount);
-                            outputValue = MergeChannel(outputValue, green, channelBitsGreen, ref bppOutCount);
                             outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, green, channelBitsGreen, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, blue, channelBitsBlue, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, alpha, channelBitsAlpha, ref bppOutCount);
                             break;
 
                         case PixelDataFormat.ChannelsLuminance:
