@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // Allgemeine Informationen über eine Assembly werden über die folgenden 
 // Attribute gesteuert. Ändern Sie diese Attributwerte, um die Informationen zu ändern,
 // die mit einer Assembly verknüpft sind.
-[assembly: AssemblyTitle("ScarletTestApp")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("ScarletConvert")]
+[assembly: AssemblyDescription("Simple Scarlet-based file converter")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("ScarletTestApp")]
-[assembly: AssemblyCopyright("Copyright ©  2016")]
+[assembly: AssemblyCompany("xdaniel")]
+[assembly: AssemblyProduct("ScarletConvert")]
+[assembly: AssemblyCopyright("Written in 2016 by xdaniel - https://github.com/xdanieldzd/")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

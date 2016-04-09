@@ -47,6 +47,7 @@
     <Compile Include="Drawing\ImageBinary.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="AssemblyHelpers.cs" />
+    <Compile Include="IO\CommandLineArgsException.cs" />
     <Compile Include="IO\CommandLineTools.cs" />
     <Compile Include="IO\DisposableCollection.cs" />
     <Compile Include="IO\EndianBinaryReader.cs" />

@@ -20,5 +20,22 @@ namespace Scarlet
             var firstChar = enumValue.ToString()[0];
             return (firstChar < '0' || firstChar > '9') && firstChar != '-';
         }
+
+        /* http://stackoverflow.com/a/18375526 */
+        public static bool InheritsFrom(this Type type, Type baseType)
+        {
+            if (type == null) return false;
+            if (baseType == null) return type.IsInterface;
+            if (baseType.IsInterface) return type.GetInterfaces().Contains(baseType);
+
+            var currentType = type;
+            while (currentType != null)
+            {
+                if (currentType.BaseType == baseType) return true;
+                currentType = currentType.BaseType;
+            }
+
+            return false;
+        }
     }
 }

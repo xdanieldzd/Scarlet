@@ -638,10 +638,7 @@ namespace Scarlet.Drawing
             int channelBitsGreen = (inGreenBits != PixelDataFormat.Undefined ? Constants.BitsPerChannel[inGreenBits] : 0);
             int channelBitsBlue = (inBlueBits != PixelDataFormat.Undefined ? Constants.BitsPerChannel[inBlueBits] : 0);
             int channelBitsAlpha = (inAlphaBits != PixelDataFormat.Undefined ? Constants.BitsPerChannel[inAlphaBits] : 0);
-#if DEBUG
-            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-#endif
+
             bool isNativeLittleEndian = (EndianBinaryReader.NativeEndianness == Endian.LittleEndian);
 
             uint rawData = 0;
@@ -792,10 +789,7 @@ namespace Scarlet.Drawing
                     j += (bitsBpp32 / 8);
                 }
             }
-#if DEBUG
-            sw.Stop();
-            Console.WriteLine(sw.Elapsed);
-#endif
+
             return dataArgb8888;
         }
 

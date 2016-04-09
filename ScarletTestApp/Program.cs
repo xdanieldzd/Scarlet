@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Drawing;
+using System.Reflection;
 
 using Scarlet.IO;
 using Scarlet.Drawing;
@@ -12,535 +13,329 @@ using Scarlet.IO.CompressionFormats;
 
 namespace ScarletTestApp
 {
-    // TODO: replace horribly hacky mess of patchwork, hardcoded paths, etc., etc., with proper GXTConvert-/Tharsis-ish tool
-
     class Program
     {
+        static char[] directorySeparators = new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+        static string defaultOutputDir = "(converted)";
+
+        static int indent = 0, baseIndent = 0;
+        static bool keepFiles = false;
+        static DirectoryInfo globalOutputDir = null;
+
         static void Main(string[] args)
         {
             System.Threading.Thread.CurrentThread.CurrentUICulture = System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-#if DEBUG
-            Console.WriteLine("Running Scarlet demo/test functions, please wait...");
-#else
-            Console.WriteLine("Scarlet Image Conversion Demo App / 2016 by xdaniel");
-            Console.WriteLine("WIP build for Ehm2k - Not for distribution nor 'production use'");
-            Console.WriteLine("(Because it's badly hacked together & pretty crappy)");
-            Console.WriteLine();
-#endif
-#if !DEBUG
-            try
-#endif
-            {
-#if DEBUG
-                TestGXTPalette();
-                //TestDXTBugs();
-                //TestArchiveNISPACK();
-                //TestArchiveNSAC();
-                //TestTID();
-                //TestMultipleTID();
-                //TestCapcomTEX();
-                //TestMultipleCapcomTEX();
-                //TestNMT();
-                //TestFileDetection();
-                //TestMultipleTX2();
-                //TestMultipleTXP();
-                //TestMultipleGXT();
-                //TestSTEX();
-                //TestTMX();
-                //TestMultipleSHTXFS();
-                //TestMultipleSHTX();
-                //TestSingleIndexed();
-                //TestSingleDirect();
-                //TestAllFunctionOld();
-#else
-                args = Scarlet.IO.CommandLineTools.CreateArgs(Environment.CommandLine);
-                if (args.Length == 2)
-                {
-                    Console.WriteLine("Input: {0}", args[1]);
-                    Console.WriteLine();
 
-                    DirectoryInfo dirInfo = new DirectoryInfo(args[1]);
-                    if (dirInfo.Exists)
+            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+            stopwatch.Start();
+
+            try
+            {
+                Assembly assembly = Assembly.GetExecutingAssembly();
+                var name = (assembly.GetCustomAttributes(typeof(AssemblyProductAttribute), false).FirstOrDefault() as AssemblyProductAttribute).Product;
+                var version = new Version((assembly.GetCustomAttributes(typeof(AssemblyFileVersionAttribute), false).FirstOrDefault() as AssemblyFileVersionAttribute).Version);
+                var description = (assembly.GetCustomAttributes(typeof(AssemblyDescriptionAttribute), false).FirstOrDefault() as AssemblyDescriptionAttribute).Description;
+                var copyright = (assembly.GetCustomAttributes(typeof(AssemblyCopyrightAttribute), false).FirstOrDefault() as AssemblyCopyrightAttribute).Copyright;
+
+                IndentWriteLine("{0} v{1}.{2} - {3}", name, version.Major, version.Minor, description);
+                IndentWriteLine("{0}", copyright);
+                IndentWriteLine();
+                IndentWriteLine("Scarlet library information:");
+                indent++;
+                foreach (AssemblyName referencedAssembly in Assembly.GetExecutingAssembly().GetReferencedAssemblies().Where(x => x.Name.StartsWith("Scarlet")).OrderBy(x => x.Name))
+                    IndentWriteLine("{0} v{1}", referencedAssembly.Name, referencedAssembly.Version);
+                indent--;
+                IndentWriteLine();
+
+                args = CommandLineTools.CreateArgs(Environment.CommandLine);
+
+                if (args.Length < 2)
+                    throw new CommandLineArgsException("<input ...> [--keep | --output <directory>]");
+
+                List<DirectoryInfo> inputDirs = new List<DirectoryInfo>();
+                List<FileInfo> inputFiles = new List<FileInfo>();
+
+                for (int i = 1; i < args.Length; i++)
+                {
+                    DirectoryInfo directory = new DirectoryInfo(args[i]);
+                    if (directory.Exists)
                     {
-                        List<string> files = dirInfo.EnumerateFiles().Select(x => x.FullName).ToList();
-                        DirectoryInfo outDirInfo = dirInfo.CreateSubdirectory("(converted)");
-                        DoMultipleFiles(files, outDirInfo.FullName);
+                        IEnumerable<FileInfo> files = directory.EnumerateFiles("*", SearchOption.AllDirectories).Where(x => x.Extension != ".png");
+                        IndentWriteLine("Adding directory '{0}', {1} file(s) found...", directory.Name, files.Count());
+                        inputDirs.Add(directory);
+                        continue;
                     }
 
-                    FileInfo fileInfo = new FileInfo(args[1]);
-                    if (fileInfo.Exists)
+                    FileInfo file = new FileInfo(args[i]);
+                    if (file.Exists)
                     {
-                        List<string> files = new List<string>() { fileInfo.FullName };
-                        DirectoryInfo outDirInfo = fileInfo.Directory.CreateSubdirectory("(converted)");
-                        DoMultipleFiles(files, outDirInfo.FullName);
+                        IndentWriteLine("Adding file '{0}'...", file.Name);
+                        inputFiles.Add(file);
+                        continue;
+                    }
+
+                    if (args[i].StartsWith("-"))
+                    {
+                        switch (args[i].TrimStart('-'))
+                        {
+                            case "k":
+                            case "keep":
+                                keepFiles = true;
+                                break;
+
+                            case "o":
+                            case "output":
+                                globalOutputDir = new DirectoryInfo(args[++i]);
+                                break;
+
+                            default:
+                                IndentWriteLine("Unknown argument '{0}'.", args[i]);
+                                break;
+                        }
+                        continue;
+                    }
+
+                    IndentWriteLine("File or directory '{0}' not found.", args[i]);
+                }
+
+                if (inputDirs.Count > 0)
+                {
+                    foreach (DirectoryInfo inputDir in inputDirs)
+                    {
+                        IndentWriteLine();
+                        IndentWriteLine("Parsing directory '{0}'...", inputDir.Name);
+                        baseIndent = indent++;
+
+                        DirectoryInfo outputDir = (globalOutputDir != null ? globalOutputDir : new DirectoryInfo(inputDir.FullName + " " + defaultOutputDir));
+                        foreach (FileInfo inputFile in inputDir.EnumerateFiles("*", SearchOption.AllDirectories).Where(x => x.Extension != ".png" && !IsSubdirectory(x.Directory, outputDir)))
+                            ProcessInputFile(inputFile, inputDir, outputDir);
+
+                        indent--;
                     }
                 }
-                else
-                    Console.WriteLine("Syntax: {0} <input>", AppDomain.CurrentDomain.FriendlyName);
+
+                if (inputFiles.Count > 0)
+                {
+                    IndentWriteLine();
+                    IndentWriteLine("Parsing files...");
+                    baseIndent = indent++;
+
+                    foreach (FileInfo inputFile in inputFiles)
+                    {
+                        DirectoryInfo outputDir = (globalOutputDir != null ? globalOutputDir : inputFile.Directory);
+                        ProcessInputFile(inputFile, inputFile.Directory, outputDir);
+                    }
+                }
+            }
+#if !DEBUG
+            catch (CommandLineArgsException claEx)
+            {
+                IndentWriteLine("Invalid arguments; expected: {0}.", claEx.ExpectedArgs);
+            }
+            catch (Exception ex)
+            {
+                IndentWriteLine("Exception occured: {0}.", ex.Message);
+            }
 #endif
-                Console.WriteLine();
-                Console.WriteLine("Done. Any key to exit.");
+            finally
+            {
+                stopwatch.Stop();
+
+                indent = baseIndent = 0;
+
+                IndentWriteLine();
+                IndentWriteLine("Operation completed in {0}.", GetReadableTimespan(stopwatch.Elapsed));
+                IndentWriteLine();
+                IndentWriteLine("Press any key to exit.");
                 Console.ReadKey();
+            }
+        }
+
+        private static void ProcessInputFile(FileInfo inputFile, DirectoryInfo inputDir, DirectoryInfo outputDir)
+        {
+            try
+            {
+                if (!outputDir.Exists) Directory.CreateDirectory(outputDir.FullName);
+
+                string displayPath = inputFile.FullName.Replace(inputDir.FullName, string.Empty).TrimStart(directorySeparators);
+                IndentWrite("File '{0}'... ", displayPath);
+                baseIndent = indent++;
+
+                string relativeDirectory = inputFile.DirectoryName.TrimEnd(directorySeparators).Replace(inputDir.FullName.TrimEnd(directorySeparators), string.Empty).TrimStart(directorySeparators);
+
+                if (keepFiles)
+                {
+                    string existenceCheckPath = Path.Combine(outputDir.FullName, relativeDirectory);
+                    string existenceCheckPattern = Path.GetFileNameWithoutExtension(inputFile.Name) + "*";
+                    if (Directory.Exists(existenceCheckPath) && Directory.EnumerateFiles(existenceCheckPath, existenceCheckPattern).Any())
+                    {
+                        Console.WriteLine("already exists.");
+                        return;
+                    }
+                }
+
+                using (FileStream inputStream = new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    var instance = FileFormat.FromFile<FileFormat>(inputStream);
+                    if (instance != null)
+                    {
+                        if (instance is ImageFormat)
+                        {
+                            var imageInstance = (instance as ImageFormat);
+
+                            int imageCount = imageInstance.GetImageCount();
+                            int paletteCount = imageInstance.GetPaletteCount();
+                            int blockCount = ((imageInstance is GXT && (imageInstance as GXT).BUVChunk != null) ? (imageInstance as GXT).BUVChunk.Entries.Length : -1);
+
+                            if (blockCount != -1)
+                                Console.WriteLine("{0} image{1}, {2} palette{3}, {4} block{5} found.", imageCount, (imageCount != 1 ? "s" : string.Empty), paletteCount, (paletteCount != 1 ? "s" : string.Empty), blockCount, (blockCount != 1 ? "s" : string.Empty));
+                            else
+                                Console.WriteLine("{0} image{1}, {2} palette{3} found.", imageCount, (imageCount != 1 ? "s" : string.Empty), paletteCount, (paletteCount != 1 ? "s" : string.Empty));
+
+                            for (int i = 0; i < imageCount; i++)
+                            {
+                                if (paletteCount == 0)
+                                {
+                                    Bitmap image = imageInstance.GetBitmap(i, 0);
+                                    string outputFilename = string.Format("{0} (Image {1}).png", Path.GetFileNameWithoutExtension(inputFile.Name), i);
+                                    FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
+
+                                    Directory.CreateDirectory(outputFile.Directory.FullName);
+                                    image.Save(outputFile.FullName, System.Drawing.Imaging.ImageFormat.Png);
+                                }
+                                else
+                                {
+                                    for (int p = 0; p < paletteCount; p++)
+                                    {
+                                        Bitmap image = imageInstance.GetBitmap(i, p);
+                                        string outputFilename = string.Format("{0} (Image {1}, Palette {2}).png", Path.GetFileNameWithoutExtension(inputFile.Name), i, p);
+                                        FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
+
+                                        Directory.CreateDirectory(outputFile.Directory.FullName);
+                                        image.Save(outputFile.FullName, System.Drawing.Imaging.ImageFormat.Png);
+                                    }
+                                }
+                            }
+
+                            if (imageInstance is GXT && (imageInstance as GXT).BUVChunk != null)
+                            {
+                                var gxtInstance = (imageInstance as GXT);
+
+                                List<Bitmap> buvImages = gxtInstance.GetBUVBitmaps().ToList();
+                                for (int b = 0; b < buvImages.Count; b++)
+                                {
+                                    Bitmap image = buvImages[b];
+                                    string outputFilename = string.Format("{0} (Block {1}).png", Path.GetFileNameWithoutExtension(inputFile.Name), b);
+                                    FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
+
+                                    Directory.CreateDirectory(outputFile.Directory.FullName);
+                                    image.Save(outputFile.FullName, System.Drawing.Imaging.ImageFormat.Png);
+                                }
+                            }
+                        }
+                        else if (instance is ContainerFormat)
+                        {
+                            var containerInstance = (instance as ContainerFormat);
+
+                            int elementCount = containerInstance.GetElementCount();
+                            Console.WriteLine("{0} element{1} found.", elementCount, (elementCount != 1 ? "s" : string.Empty));
+
+                            foreach (var element in containerInstance.GetElements(inputStream))
+                            {
+                                string outputFilename = element.GetName();
+                                FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, Path.GetFileNameWithoutExtension(inputFile.Name), outputFilename));
+
+                                IndentWrite("File '{0}'... ", outputFilename);
+
+                                Directory.CreateDirectory(outputFile.Directory.FullName);
+                                using (FileStream outputStream = new FileStream(outputFile.FullName, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                                {
+                                    using (Stream elementStream = element.GetStream(inputStream))
+                                    {
+                                        elementStream.CopyTo(outputStream);
+                                    }
+
+                                    // TODO: clean way to auto-decompress files, convert images, etc. inside containers, if applicable?
+                                    //       otherwise, rescan and process the output directory/file(s) after all inputs are finished?
+                                }
+
+                                Console.WriteLine("extracted.");
+                            }
+                        }
+                        else if (instance is CompressionFormat)
+                        {
+                            var compressedInstance = (instance as CompressionFormat);
+
+                            Console.WriteLine("decompressed {0}.", compressedInstance.GetType().Name);
+
+                            // TODO: less naive way of determining target filename; see also CompressionFormat class in Scarlet.IO.CompressionFormats
+                            bool isFullName = compressedInstance.GetNameOrExtension().Contains('.');
+                            string outputFilename = (isFullName ? compressedInstance.GetNameOrExtension() : Path.GetFileNameWithoutExtension(inputFile.Name) + "." + compressedInstance.GetNameOrExtension());
+                            FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
+
+                            using (FileStream outputStream = new FileStream(outputFile.FullName, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                            {
+                                using (Stream decompressedStream = compressedInstance.GetDecompressedStream())
+                                {
+                                    decompressedStream.CopyTo(outputStream);
+                                }
+                            }
+                        }
+                        else
+                            Console.WriteLine("unhandled file.");
+                    }
+                    else
+                        Console.WriteLine("unsupported file.");
+                }
             }
 #if !DEBUG
             catch (Exception ex)
             {
-                Console.WriteLine("EXCEPTION! {0}: {1}", ex.GetType().Name, ex.Message);
-                Console.ReadKey();
+                IndentWriteLine("Exception occured: {0}.", ex.Message);
             }
 #endif
-        }
-
-        public static void TestGXTPalette()
-        {
-            Console.WriteLine("Test GXT misc indexed...");
-
-            string dir = @"E:\[SSD User Data]\Downloads\GXTSamples(1)\";
-            List<string> files = Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories).ToList();
-            DoMultipleFiles(files, @"E:\Temp\scarlet\gxt-pal\", dir);
-        }
-
-        public static void TestDXTBugs()
-        {
-            Console.WriteLine("Test DXTx issue debugging stuff...");
-
-            string dir = @"E:\[SSD User Data]\Downloads\_DXT-test_\";
-            List<string> files = Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories).ToList();
-            DoMultipleFiles(files, @"E:\Temp\scarlet\dxt\");
-        }
-
-        public static void TestArchiveNSAC()
-        {
-            Console.WriteLine("Test archive, type NSAC...");
-
-            string arc = @"E:\[SSD User Data]\Downloads\disgaea4-vita\files\Data\DATA_EN\database_EN.dat";
-            string output = @"E:\temp\scarlet\container\nsac\d4v-database";
-
-            using (FileStream archiveStream = new FileStream(arc, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            finally
             {
-                var instance = FileFormat.FromFile<ContainerFormat>(archiveStream);
-                var elements = instance.GetElements(archiveStream);
-
-                foreach (var element in elements)
-                {
-                    using (Stream elementStream = element.GetStream(archiveStream))
-                    {
-                        string elementOutput = Path.Combine(output, element.GetName());
-
-                        using (FileStream fileStream = new FileStream(elementOutput, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-                        {
-                            elementStream.CopyTo(fileStream);
-                        }
-                    }
-                }
+                indent = baseIndent;
             }
         }
 
-        public static void TestArchiveNISPACK()
+        private static void IndentWrite(string format = "", params object[] param)
         {
-            Console.WriteLine("Test archive, type NISPACK...");
+            Console.Write(format.Insert(0, new string(' ', indent)), param);
+        }
 
-            string arc = @"E:\[SSD User Data]\Downloads\disg-BLUS30727\BLUS30727\PS3_GAME\USRDIR\Data\START.dat";
-            string output = @"E:\temp\scarlet\container\nispack\d4-start";
+        private static void IndentWriteLine(string format = "", params object[] param)
+        {
+            Console.WriteLine(format.Insert(0, new string(' ', indent)), param);
+        }
 
-            arc = @"E:\[SSD User Data]\Downloads\disgaea3-vita\Data\START.dat";
-            output = @"E:\temp\scarlet\container\nispack\d3v-start";
+        /* Slightly modified from https://stackoverflow.com/a/4423615 */
+        private static string GetReadableTimespan(TimeSpan span)
+        {
+            string formatted = string.Format("{0}{1}{2}{3}{4}",
+            span.Duration().Days > 0 ? string.Format("{0:0} day{1}, ", span.Days, span.Days == 1 ? string.Empty : "s") : string.Empty,
+            span.Duration().Hours > 0 ? string.Format("{0:0} hour{1}, ", span.Hours, span.Hours == 1 ? string.Empty : "s") : string.Empty,
+            span.Duration().Minutes > 0 ? string.Format("{0:0} minute{1}, ", span.Minutes, span.Minutes == 1 ? string.Empty : "s") : string.Empty,
+            span.Duration().Seconds > 0 ? string.Format("{0:0} second{1}, ", span.Seconds, span.Seconds == 1 ? string.Empty : "s") : string.Empty,
+            span.Duration().Milliseconds > 0 ? string.Format("{0:0} millisecond{1}", span.Milliseconds, span.Milliseconds == 1 ? string.Empty : "s") : string.Empty);
+            if (formatted.EndsWith(", ")) formatted = formatted.Substring(0, formatted.Length - 2);
+            if (string.IsNullOrEmpty(formatted)) formatted = "0 seconds";
+            return formatted;
+        }
 
-            //arc = @"E:\[SSD User Data]\Desktop\Misc Stuff\ZHP\USRDIR\SYSTEM.dat";
-            //output = @"E:\temp\scarlet\container\nispack\zhp-system";
+        private static bool IsSubdirectory(DirectoryInfo childDir, DirectoryInfo parentDir)
+        {
+            if (parentDir.FullName == childDir.FullName) return true;
 
-            using (FileStream archiveStream = new FileStream(arc, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            DirectoryInfo child = childDir.Parent;
+            while (child != null)
             {
-                var instance = FileFormat.FromFile<ContainerFormat>(archiveStream);
-                var elements = instance.GetElements(archiveStream);
-
-                foreach (var element in elements)
-                {
-                    using (Stream elementStream = element.GetStream(archiveStream))
-                    {
-                        string elementOutput = Path.Combine(output, element.GetName());
-
-                        using (FileStream fileStream = new FileStream(elementOutput, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-                        {
-                            elementStream.CopyTo(fileStream);
-                        }
-
-                        var compressionInstance = FileFormat.FromFile<CompressionFormat>(elementOutput);
-                        if (compressionInstance != null)
-                        {
-                            elementOutput = Path.Combine(output, Path.GetFileNameWithoutExtension(element.GetName()) + " (Decompressed)." + compressionInstance.GetNameOrExtension());
-
-                            using (Stream decompressedStream = compressionInstance.GetDecompressedStream())
-                            {
-                                using (FileStream fileStream = new FileStream(elementOutput, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-                                {
-                                    decompressedStream.CopyTo(fileStream);
-                                }
-                            }
-                        }
-
-                        using (FileStream fileStream = new FileStream(elementOutput, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                        {
-                            fileStream.Seek(0, SeekOrigin.Begin);
-                            var elementInstance = FileFormat.FromFile<ImageFormat>(fileStream);
-                            if (elementInstance != null)
-                            {
-                                for (int i = 0; i < elementInstance.GetImageCount(); i++)
-                                {
-                                    string imageOutputDir = Path.GetDirectoryName(elementOutput);
-                                    string imageOutputFile = (Path.GetFileNameWithoutExtension(elementOutput) + " (Texture " + i.ToString());
-
-                                    Directory.CreateDirectory(imageOutputDir);
-
-                                    if (elementInstance.GetPaletteCount() != 0)
-                                    {
-                                        for (int p = 0; p < elementInstance.GetPaletteCount(); p++)
-                                        {
-                                            Bitmap image = elementInstance.GetBitmap(i, p);
-                                            image.Save(Path.Combine(imageOutputDir, (imageOutputFile + ", Palette " + p.ToString() + ").png")));
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Bitmap image = elementInstance.GetBitmap(i, 0);
-                                        image.Save(Path.Combine(imageOutputDir, (imageOutputFile + ").png")));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        public static void TestCapcomTEX()
-        {
-            Console.WriteLine("Test Capcom TEX...");
-
-            var instance = FileFormat.FromFile<ImageFormat>(@"E:\[SSD User Data]\Downloads\DefaultCube_CM.tex");
-            Bitmap image = instance.GetBitmap();
-            if (image != null) image.Save(@"E:\temp\scarlet\specific\tex\ssf4-cube.png");
-        }
-
-        public static void TestMultipleCapcomTEX()
-        {
-            Console.WriteLine("Test multiple Capcom TEX...");
-
-            string dir = @"E:\[SSD User Data]\Downloads\CapcomTEX\__test__\";
-            List<string> files = Directory.EnumerateFiles(dir, "*.tex", SearchOption.AllDirectories).ToList();
-            DoMultipleFiles(files, @"E:\Temp\scarlet\capcom-tex\");
-        }
-
-        public static void TestTID()
-        {
-            Console.WriteLine("Test TID...");
-
-            TID instance = new TID();
-            instance.Open(@"E:\[SSD User Data]\Downloads\neptunia-rb1-vita\__system\global\parts00.tid", Endian.LittleEndian);
-            Bitmap image = instance.GetBitmap();
-            if (image != null) image.Save(@"E:\temp\scarlet\specific\tid\VITA_parts00.png");
-
-            instance.Open(@"E:\[SSD User Data]\Steam Library\steamapps\common\Neptunia Rebirth1\data\SYSTEM00000\global\parts00.tid", Endian.LittleEndian);
-            image = instance.GetBitmap();
-            if (image != null) image.Save(@"E:\temp\scarlet\specific\tid\PC_parts00.png");
-        }
-
-        public static void TestMultipleTID()
-        {
-            Console.WriteLine("Test multiple TID...");
-
-            string dir = @"E:\[SSD User Data]\Downloads\neptunia-rb1-vita\data\GAME.cpk_unpacked\";
-            List<string> files = Directory.EnumerateFiles(dir, "*.tid", SearchOption.AllDirectories).ToList();
-            DoMultipleFiles(files, @"E:\Temp\scarlet\specific\tid\GAME.cpk_unpacked\", dir, true);
-        }
-
-        public static void TestNMT()
-        {
-            Console.WriteLine("Test NMT/NisMultiTexForm...");
-            NMT instance = new NMT();
-            instance.Open(@"E:\[SSD User Data]\Downloads\disgaea4-vita\extract\LOGO\logo.nmt", Endian.LittleEndian);
-            Bitmap image = instance.GetBitmap();
-            if (image != null) image.Save(@"E:\temp\scarlet\specific\logo.png");
-        }
-
-        public static void TestFileDetection()
-        {
-            Console.WriteLine("Test filetype auto-detection...");
-            List<string> files = new List<string>()
-            {
-                @"E:\[SSD User Data]\Downloads\EO2U\dec_okay\stex\event\opening\ig_eve_title_logo.stex",
-                @"E:\[SSD User Data]\Desktop\Misc Stuff\PB-PS2\start-dat\title.tx2",
-                @"E:\[SSD User Data]\Downloads\GXT\GXT\CyberSleuth\DSDB.psp2.mvgl\images\ui_btlcommand2.pvr",
-                @"E:\Translations\3DS Etrian Odyssey 4\Original & Dumps\original-eur\Mori4stex\Event\Opening\ig_eve_title.stex",
-                @"E:\[SSD User Data]\Downloads\GXT\GXT\SAO\basevita\adv\bg\0aa00",
-                @"E:\[SSD User Data]\Downloads\TMX\c_card00.tmx",
-                @"E:\[SSD User Data]\Downloads\disgaea4-vita\extract\LOGO\logo.nmt",
-                @"E:\[SSD User Data]\Downloads\neptunia-rb1-vita\__system\global\parts00.tid",
-            };
-            DoMultipleFiles(files, @"E:\Temp\scarlet\autodetect");
-
-            files = Directory.EnumerateFiles(@"E:\[SSD User Data]\Desktop\Misc Stuff\ZHP\bustup", "*.txp").Concat(Directory.EnumerateFiles(@"E:\[SSD User Data]\Desktop\Misc Stuff\ZHP\system", "*.txp")).ToList();
-            DoMultipleFiles(files, @"E:\Temp\scarlet\autodetect\zhp");
-        }
-
-        private static void DoMultipleFiles(List<string> files, string outPath, string basePath = "", bool ignoreExisting = false)
-        {
-            foreach (string file in files)
-            {
-                System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-                sw.Start();
-
-                string relPath = (basePath != string.Empty ? Path.GetDirectoryName(file.Replace(basePath, string.Empty)) : string.Empty).TrimStart('\\');
-                string partOutput = Path.Combine(outPath, relPath, Path.GetFileNameWithoutExtension(file));
-
-                Console.Write("File '{0}'...", Path.Combine(relPath, Path.GetFileName(file)));
-
-                if (ignoreExisting && Directory.Exists(Path.GetDirectoryName(partOutput)) && Directory.EnumerateFiles(Path.GetDirectoryName(partOutput), Path.GetFileNameWithoutExtension(partOutput) + "*").Count() != 0)
-                {
-                    Console.WriteLine("skipping.");
-                    continue;
-                }
-
-                var instance = FileFormat.FromFile<ImageFormat>(file);
-                if (instance != null)
-                {
-                    for (int i = 0; i < instance.GetImageCount(); i++)
-                    {
-                        if (instance.GetPaletteCount() != 0)
-                        {
-                            for (int p = 0; p < instance.GetPaletteCount(); p++)
-                            {
-                                Bitmap image = instance.GetBitmap(i, p);
-                                string output = (partOutput + " (Texture " + i.ToString() + ", Palette " + p.ToString() + ").png");
-                                Directory.CreateDirectory(Path.GetDirectoryName(output));
-                                image.Save(output);
-                            }
-                        }
-                        else
-                        {
-                            Bitmap image = instance.GetBitmap(i, 0);
-                            string output = (partOutput + " (Texture " + i.ToString() + ").png");
-                            Directory.CreateDirectory(Path.GetDirectoryName(output));
-                            image.Save(output);
-                        }
-                    }
-                }
-                sw.Stop();
-
-                Console.WriteLine("done in {0}.", sw.Elapsed);
-            }
-        }
-
-        public static void TestMultipleTX2()
-        {
-            Console.WriteLine("Test multiple TX2...");
-            foreach (FileInfo fi in new DirectoryInfo(@"E:\[SSD User Data]\Desktop\Misc Stuff\PB-PS2\start-dat").EnumerateFiles("*.tx2"))
-            {
-                TX2 instance = new TX2();
-                instance.Open(fi.FullName);
-
-                for (int i = 0; i < instance.GetPaletteCount(); i++)
-                {
-                    Bitmap image = instance.GetBitmap(0, i);
-                    string output = (@"E:\temp\scarlet\tx2\" + Path.GetFileNameWithoutExtension(fi.FullName) + " (Palette " + i.ToString() + ").png");
-                    image.Save(output);
-                }
-            }
-        }
-
-        public static void TestMultipleTXP()
-        {
-            Console.WriteLine("Test multiple TXP...");
-            foreach (FileInfo fi in new DirectoryInfo(@"E:\[SSD User Data]\Desktop\Misc Stuff\ZHP").EnumerateFiles("*.txp"))
-            {
-                TXP instance = new TXP();
-                instance.Open(fi.FullName);
-
-                for (int i = 0; i < instance.GetPaletteCount(); i++)
-                {
-                    Bitmap image = instance.GetBitmap(0, i);
-                    string output = (@"E:\temp\scarlet\txp\" + Path.GetFileNameWithoutExtension(fi.FullName) + " (Palette " + i.ToString() + ").png");
-                    image.Save(output);
-                }
-            }
-        }
-
-        public static void TestMultipleGXT()
-        {
-            Console.WriteLine("Test multiple GXT...");
-            foreach (FileInfo fi in new DirectoryInfo(@"E:\[SSD User Data]\Downloads\GXT\__test__").EnumerateFiles("*.*"))
-            {
-                GXT instance = new GXT();
-                instance.Open(fi.FullName, Endian.LittleEndian);
-
-                for (int i = 0; i < instance.GetImageCount(); i++)
-                {
-                    Bitmap image = instance.GetBitmap(i, 0);
-                    string output = (@"E:\temp\scarlet\gxt\" + Path.GetFileNameWithoutExtension(fi.FullName) + " (Texture " + i.ToString() + ").png");
-                    image.Save(output);
-                }
-
-                if (instance.BUVChunk != null)
-                {
-                    List<Bitmap> buvImages = instance.GetBUVBitmaps().ToList();
-                    for (int i = 0; i < buvImages.Count; i++)
-                    {
-                        string output = (@"E:\temp\scarlet\gxt\" + Path.GetFileNameWithoutExtension(fi.FullName) + " (Block " + i.ToString() + ").png");
-                        buvImages[i].Save(output);
-                    }
-                }
-            }
-        }
-
-        public static void TestSTEX()
-        {
-            Console.WriteLine("Test STEX...");
-            STEX instance = new STEX();
-            instance.Open(@"E:\[SSD User Data]\Downloads\EOIV\romfs\Mori4stex\Battle\CharaData\ig_bat_cha01_08.stex", Endian.LittleEndian);
-            Bitmap image = instance.GetBitmap();
-            if (image != null) image.Save(@"E:\temp\scarlet\specific\ig_bat_cha01_08.png");
-        }
-
-        public static void TestTMX()
-        {
-            Console.WriteLine("Test TMX...");
-            TMX instance = new TMX();
-            instance.Open(@"E:\[SSD User Data]\Downloads\_tmx-test\c_k01_a.tmx", Endian.LittleEndian);
-            Bitmap image = instance.GetBitmap();
-            if (image != null) image.Save(@"E:\temp\scarlet\specific\c_k01_a.png");
-        }
-
-        public static void TestMultipleSHTXFS()
-        {
-            Console.WriteLine("Test multiple SHTXFS...");
-            foreach (FileInfo fi in new DirectoryInfo(@"E:\[SSD User Data]\Downloads\DRAE\__test2__").EnumerateFiles("*.btx"))
-            {
-                string output = Path.ChangeExtension(fi.FullName, ".png");
-
-                SHTXFS instance = new SHTXFS();
-                instance.Open(fi.FullName, Endian.LittleEndian);
-                Bitmap image = instance.GetBitmap();
-                if (image != null) image.Save(output);
-            }
-        }
-
-        public static void TestMultipleSHTX()
-        {
-            Console.WriteLine("Test multiple SHTX...");
-            foreach (FileInfo fi in new DirectoryInfo(@"E:\[SSD User Data]\Downloads\DRAE\__test3__").EnumerateFiles("*.btx"))
-            {
-                string output = Path.ChangeExtension(fi.FullName, ".png");
-
-                SHTX instance = new SHTX();
-                instance.Open(fi.FullName, Endian.LittleEndian);
-                Bitmap image = instance.GetBitmap();
-                if (image != null) image.Save(output);
-            }
-        }
-
-        public static void TestSingleIndexed()
-        {
-            Console.WriteLine("Test single indexed (manual)...");
-            ImageBinary image = new ImageBinary();
-            image.Width = 1024;
-            image.Height = 1024;
-            image.InputPixelFormat = PixelDataFormat.FormatIndexed8;
-            image.InputPaletteFormat = PixelDataFormat.FormatAbgr8888;
-            image.InputEndianness = Endian.LittleEndian;
-
-            using (FileStream stream = new FileStream(@"E:\[SSD User Data]\Downloads\DRAE\SHTXFS\bustup_00_01.btx", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                BinaryReader reader = new BinaryReader(stream);
-
-                stream.Seek(0xC, SeekOrigin.Begin);
-                image.AddInputPalette(reader.ReadBytes(0x400));
-
-                stream.Seek(0x40C, SeekOrigin.Begin);
-                image.AddInputPixels(reader.ReadBytes(0x100000));
+                if (child.FullName == parentDir.FullName) return true;
+                child = child.Parent;
             }
 
-            image.GetBitmap().Save(@"E:\temp\scarlet\bustup_00_01.png");
-        }
-
-        public static void TestSingleDirect()
-        {
-            Console.WriteLine("Test single direct (manual)...");
-            ImageBinary image = new ImageBinary();
-            image.Width = 384;
-            image.Height = 216;
-            image.InputPixelFormat = PixelDataFormat.FormatArgb1555;
-            image.InputEndianness = Endian.BigEndian;
-            image.OutputFormat = PixelDataFormat.FormatArgb1555 | PixelDataFormat.FilterOrderedDither;
-            image.OutputEndianness = Endian.LittleEndian;
-
-            using (FileStream stream = new FileStream(@"E:\[SSD User Data]\Downloads\disg-BLUS30727\START\item.txf", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                BinaryReader reader = new BinaryReader(stream);
-                stream.Seek(0x10, SeekOrigin.Begin);
-                image.AddInputPixels(reader.ReadBytes(0x28800));
-            }
-
-            image.GetBitmap().Save(@"E:\temp\scarlet\item.png");
-        }
-
-        public static void TestAllFunctionOld()
-        {
-            Console.WriteLine("Test various (manual; OLD)...");
-
-            FileStream stream = null;
-            ImageBinary image = null;
-
-            PixelDataFormat outputFormat = PixelDataFormat.FormatArgb1555;
-            //outputFormat |= PixelDataFormat.FilterOrderedDither;
-
-            using (stream = new FileStream(@"E:\[SSD User Data]\Desktop\l4-test.bin", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                image = new ImageBinary(16, 32, PixelDataFormat.FormatLuminance4, Endian.BigEndian, stream, 0x0, 0x100);
-                image.OutputFormat = outputFormat;
-                image.GetBitmap().Save(@"E:\temp\scarlet\l4.png");
-            }
-
-            using (stream = new FileStream(@"E:\[SSD User Data]\Downloads\disg-BLUS30727\START\item.txf", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                image = new ImageBinary(384, 216, PixelDataFormat.FormatArgb1555, Endian.BigEndian, stream, 0x10, 0x28800);
-                image.OutputFormat = outputFormat;
-                image.GetBitmap().Save(@"E:\temp\scarlet\item.png");
-            }
-
-            using (stream = new FileStream(@"E:\[SSD User Data]\Downloads\EOIV\romfs\Mori4stex\Camp\Chara_Cam\ig_cus_cha01_01.stex", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                image = new ImageBinary(128, 32, PixelDataFormat.FormatRgb565 | PixelDataFormat.PostProcessUntile_3DS, Endian.LittleEndian, stream, 0x80, 0x2000);
-                image.OutputFormat = outputFormat;
-                image.GetBitmap().Save(@"E:\temp\scarlet\ig_cus_cha01_01.png");
-            }
-
-            using (stream = new FileStream(@"E:\[SSD User Data]\Downloads\GXT\__test__\criware960x544sw.gxt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                image = new ImageBinary(1024, 1024, PixelDataFormat.FormatArgb8888 | PixelDataFormat.PostProcessUnswizzle_Vita, Endian.LittleEndian, stream, 0x40, 0x400000);
-                image.OutputFormat = outputFormat;
-                image.GetBitmap().Save(@"E:\temp\scarlet\criware960x544sw.png");
-            }
-
-            using (stream = new FileStream(@"E:\[SSD User Data]\Downloads\GXT\__test__\ui_mapsel_thumb_01.pvr", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                image = new ImageBinary(256, 128, PixelDataFormat.FormatPVRT4_Vita, Endian.LittleEndian, stream, 0x40, 0x5570);
-                image.OutputFormat = outputFormat;
-                image.GetBitmap().Save(@"E:\temp\scarlet\ui_mapsel_thumb_01.png");
-            }
-
-            using (stream = new FileStream(@"E:\[SSD User Data]\Downloads\GXT\__test__\ui_title_logo_bg.pvr", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                image = new ImageBinary(1024, 1024, PixelDataFormat.FormatDXT5 | PixelDataFormat.PostProcessUnswizzle_Vita, Endian.LittleEndian, stream, 0x40, 0x155570);
-                image.OutputFormat = outputFormat;
-                image.GetBitmap().Save(@"E:\temp\scarlet\ui_title_logo_bg.png");
-            }
-
-            using (stream = new FileStream(@"E:\[SSD User Data]\Downloads\EOIV\romfs\Mori4stex\Debug\ig_deb_title.stex", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                image = new ImageBinary(512, 256, PixelDataFormat.FormatETC1A4_3DS, Endian.LittleEndian, stream, 0x80, 0x20000);
-                image.OutputFormat = outputFormat;
-                image.GetBitmap().Save(@"E:\temp\scarlet\ig_deb_title.png");
-            }
+            return false;
         }
     }
 }
