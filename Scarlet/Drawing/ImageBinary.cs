@@ -452,12 +452,14 @@ namespace Scarlet.Drawing
             byte[] pixelsForBmp = new byte[bmpData.Height * bmpData.Stride];
             int bitsPerPixel = Bitmap.GetPixelFormatSize(image.PixelFormat);
 
+            // TODO: verify input stride/line size & copy length logic; *seems* to work okay now...?
+
             int lineSize, copySize;
 
-            if (isIndexed)
-                lineSize = (inputPixels.Length / bmpData.Height);
-            else
+            if ((bmpData.Width % 8) == 0 || (inputPixelFormat & PixelDataFormat.MaskSpecial) != PixelDataFormat.Undefined)
                 lineSize = (bmpData.Width * (bitsPerPixel / 8));
+            else
+                lineSize = (inputPixels.Length / bmpData.Height);
 
             if (isIndexed && (inputPixelFormat & PixelDataFormat.MaskBpp) == PixelDataFormat.Bpp4)
                 copySize = bmpData.Width / 2;
