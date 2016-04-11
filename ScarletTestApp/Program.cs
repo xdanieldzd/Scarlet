@@ -194,11 +194,24 @@ namespace ScarletTestApp
 
                             for (int i = 0; i < imageCount; i++)
                             {
-                                if (paletteCount == 0)
+                                string imageName = imageInstance.GetImageName(i);
+
+                                string outputFilename;
+                                FileInfo outputFile;
+
+                                if (paletteCount < 2)
                                 {
                                     Bitmap image = imageInstance.GetBitmap(i, 0);
-                                    string outputFilename = string.Format("{0} (Image {1}).png", Path.GetFileNameWithoutExtension(inputFile.Name), i);
-                                    FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
+                                    if (imageName == null)
+                                    {
+                                        outputFilename = string.Format("{0} (Image {1}).png", Path.GetFileNameWithoutExtension(inputFile.Name), i);
+                                        outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
+                                    }
+                                    else
+                                    {
+                                        outputFilename = string.Format("{0}.png", Path.GetFileNameWithoutExtension(imageName));
+                                        outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, Path.GetFileNameWithoutExtension(inputFile.Name), outputFilename));
+                                    }
 
                                     Directory.CreateDirectory(outputFile.Directory.FullName);
                                     image.Save(outputFile.FullName, System.Drawing.Imaging.ImageFormat.Png);
@@ -208,8 +221,17 @@ namespace ScarletTestApp
                                     for (int p = 0; p < paletteCount; p++)
                                     {
                                         Bitmap image = imageInstance.GetBitmap(i, p);
-                                        string outputFilename = string.Format("{0} (Image {1}, Palette {2}).png", Path.GetFileNameWithoutExtension(inputFile.Name), i, p);
-                                        FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
+
+                                        if (imageName == null)
+                                        {
+                                            outputFilename = string.Format("{0} (Image {1}, Palette {2}).png", Path.GetFileNameWithoutExtension(inputFile.Name), i, p);
+                                            outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
+                                        }
+                                        else
+                                        {
+                                            outputFilename = string.Format("{0} (Palette {1}).png", Path.GetFileNameWithoutExtension(imageName), p);
+                                            outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, Path.GetFileNameWithoutExtension(inputFile.Name), outputFilename));
+                                        }
 
                                         Directory.CreateDirectory(outputFile.Directory.FullName);
                                         image.Save(outputFile.FullName, System.Drawing.Imaging.ImageFormat.Png);

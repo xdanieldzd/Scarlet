@@ -13,6 +13,11 @@ namespace Scarlet.IO.ImageFormats
         public abstract int GetImageCount();
         public abstract int GetPaletteCount();
 
+        public virtual string GetImageName(int imageIndex)
+        {
+            return null;
+        }
+
         public Bitmap GetBitmap()
         {
             return OnGetBitmap(0, 0);

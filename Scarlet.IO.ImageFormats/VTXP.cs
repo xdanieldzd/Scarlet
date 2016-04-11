@@ -99,6 +99,11 @@ namespace Scarlet.IO.ImageFormats
             return 1;
         }
 
+        public override string GetImageName(int imageIndex)
+        {
+            return ImageHeaders[imageIndex].Filename;
+        }
+
         protected override Bitmap OnGetBitmap(int imageIndex, int paletteIndex)
         {
             // TODO: allow Scarlet to use filenames stored inside image files for extraction, if applicable!
