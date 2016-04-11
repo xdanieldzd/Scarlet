@@ -16,7 +16,7 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of 6947bb6edb508a4520e126be864099096bc473d9 contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/6947bb6edb508a4520e126be864099096bc473d9) contain the following:
 
 * __Images__
  * GXT (various PlayStation Vita games)
