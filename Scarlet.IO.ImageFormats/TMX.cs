@@ -16,7 +16,7 @@ namespace Scarlet.IO.ImageFormats
     /* http://forum.xentax.com/viewtopic.php?f=18&t=2922&start=0 */
 
     [MagicNumber("TMX0", 0x08)]
-    [DefaultExtension(".tmx")]
+    [FilenamePattern("^.*\\.tmx")]
     public class TMX : ImageFormat
     {
         /* TODO: clean up, move any common code to Platform.Sony.PS2, etc. */

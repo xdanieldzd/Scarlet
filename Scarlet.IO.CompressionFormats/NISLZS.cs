@@ -6,7 +6,7 @@ using System.IO;
 
 namespace Scarlet.IO.CompressionFormats
 {
-    [DefaultExtension(".lzs")]
+    [FilenamePattern("^.*\\.lzs$")]
     public class NISLZS : CompressionFormat
     {
         public string FileExtension { get; private set; }

@@ -12,7 +12,7 @@ using Scarlet.Platform.Nintendo;
 namespace Scarlet.IO.ImageFormats
 {
     [MagicNumber("STEX", 0x00)]
-    [DefaultExtension(".stex")]
+    [FilenamePattern("^.*\\.stex$")]
     public class STEX : ImageFormat
     {
         public string MagicNumber { get; private set; }

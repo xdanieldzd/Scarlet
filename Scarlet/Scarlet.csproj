@@ -51,7 +51,7 @@
     <Compile Include="IO\CommandLineTools.cs" />
     <Compile Include="IO\DisposableCollection.cs" />
     <Compile Include="IO\EndianBinaryReader.cs" />
-    <Compile Include="IO\DefaultExtensionAttribute.cs" />
+    <Compile Include="IO\FilenamePatternAttribute.cs" />
     <Compile Include="IO\FileFormat.cs" />
     <Compile Include="IO\MagicNumberAttribute.cs" />
     <Compile Include="Platform\Nintendo\N3DS.cs" />

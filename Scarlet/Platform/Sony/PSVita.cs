@@ -596,10 +596,36 @@ namespace Scarlet.Platform.Sony
             /*          */ { SceGxmTextureFormat.P8_BGR1, PixelDataFormat.FormatIndexed8 },
         };
 
+        static readonly Dictionary<SceGxmTextureFormat, PixelDataFormat> paletteFormatMap = new Dictionary<SceGxmTextureFormat, PixelDataFormat>()
+        {
+            { SceGxmTextureFormat.P4_ABGR, PixelDataFormat.FormatAbgr8888 },
+            { SceGxmTextureFormat.P8_ABGR, PixelDataFormat.FormatAbgr8888 },
+            { SceGxmTextureFormat.P4_ARGB, PixelDataFormat.FormatArgb8888 },
+            { SceGxmTextureFormat.P8_ARGB, PixelDataFormat.FormatArgb8888 },
+            { SceGxmTextureFormat.P4_RGBA, PixelDataFormat.FormatRgba8888 },
+            { SceGxmTextureFormat.P8_RGBA, PixelDataFormat.FormatRgba8888 },
+            { SceGxmTextureFormat.P4_BGRA, PixelDataFormat.FormatBgra8888 },
+            { SceGxmTextureFormat.P8_BGRA, PixelDataFormat.FormatBgra8888 },
+            { SceGxmTextureFormat.P4_1BGR, PixelDataFormat.FormatXbgr8888 },
+            { SceGxmTextureFormat.P8_1BGR, PixelDataFormat.FormatXbgr8888 },
+            { SceGxmTextureFormat.P4_1RGB, PixelDataFormat.FormatXrgb8888 },
+            { SceGxmTextureFormat.P8_1RGB, PixelDataFormat.FormatXrgb8888 },
+            { SceGxmTextureFormat.P4_RGB1, PixelDataFormat.FormatRgbx8888 },
+            { SceGxmTextureFormat.P8_RGB1, PixelDataFormat.FormatRgbx8888 },
+            { SceGxmTextureFormat.P4_BGR1, PixelDataFormat.FormatBgrx8888 },
+            { SceGxmTextureFormat.P8_BGR1, PixelDataFormat.FormatBgrx8888 },
+        };
+
         public static PixelDataFormat GetPixelDataFormat(SceGxmTextureFormat pixelFormat)
         {
             if (!formatMap.ContainsKey(pixelFormat)) throw new Exception("No matching pixel data format known");
             return formatMap[pixelFormat];
+        }
+
+        public static PixelDataFormat GetPaletteFormat(SceGxmTextureFormat paletteFormat)
+        {
+            if (!formatMap.ContainsKey(paletteFormat)) throw new Exception("No matching palette format known");
+            return paletteFormatMap[paletteFormat];
         }
     }
 }

@@ -5,10 +5,23 @@ using System.Text;
 using System.IO;
 using System.Drawing;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Scarlet.IO
 {
     internal enum VerifyResult { NoMagicNumber, VerifyOkay, WrongMagicNumber }
+
+    internal class IdentificationMatch
+    {
+        public Type Type { get; private set; }
+        public int Weight { get; private set; }
+
+        public IdentificationMatch(Type type, int weight)
+        {
+            Type = type;
+            Weight = weight;
+        }
+    }
 
     public abstract class FileFormat
     {
@@ -67,36 +80,43 @@ namespace Scarlet.IO
         /// <returns>Instance of file; null if no instance was created</returns>
         public static T FromFile<T>(FileStream fileStream, Endian endianness) where T : FileFormat
         {
-            string extension = Path.GetExtension(fileStream.Name);
+            List<IdentificationMatch> matchedTypes = new List<IdentificationMatch>();
 
             EndianBinaryReader reader = new EndianBinaryReader(fileStream, endianness);
             {
                 foreach (var assembly in AssemblyHelpers.GetNonSystemAssemblies())
                 {
-                    foreach (var type in assembly.GetExportedTypes().Where(x => x.InheritsFrom(typeof(T))))
+                    foreach (var type in assembly.GetExportedTypes().Where(x => x == typeof(T) || x.InheritsFrom(typeof(T))))
                     {
                         var verifyMethod = type.BaseType.GetMethod("VerifyMagicNumber", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
                         if (verifyMethod == null) throw new NullReferenceException("Reflection error on method fetch for file verification");
                         VerifyResult verifyResult = ((VerifyResult)verifyMethod.Invoke(null, new object[] { reader, type }));
 
-                        if (verifyResult == VerifyResult.NoMagicNumber)
-                        {
-                            foreach (var defaultExtAttrib in type.GetCustomAttributes(typeof(DefaultExtensionAttribute), false))
-                            {
-                                if ((defaultExtAttrib as DefaultExtensionAttribute).Extension == extension)
-                                {
-                                    verifyResult = VerifyResult.VerifyOkay;
-                                    break;
-                                }
-                            }
-                        }
-
                         if (verifyResult == VerifyResult.VerifyOkay)
                         {
-                            T fileInstance = (T)Activator.CreateInstance(type);
-                            fileInstance.Open(reader);
-                            return fileInstance;
+                            matchedTypes.Add(new IdentificationMatch(type, int.MaxValue));
                         }
+                        else if (verifyResult == VerifyResult.WrongMagicNumber)
+                        {
+                            continue;
+                        }
+                        else if (verifyResult == VerifyResult.NoMagicNumber)
+                        {
+                            foreach (var fnPatternAttrib in type.GetCustomAttributes(typeof(FilenamePatternAttribute), false))
+                            {
+                                string pattern = (fnPatternAttrib as FilenamePatternAttribute).Pattern;
+                                Regex regEx = new Regex(pattern, RegexOptions.IgnoreCase);
+                                if (regEx.IsMatch(fileStream.Name))
+                                    matchedTypes.Add(new IdentificationMatch(type, pattern.Length));
+                            }
+                        }
+                    }
+
+                    if (matchedTypes.Count > 0)
+                    {
+                        T fileInstance = (T)Activator.CreateInstance(matchedTypes.OrderByDescending(x => x.Weight).FirstOrDefault().Type);
+                        fileInstance.Open(reader);
+                        return fileInstance;
                     }
                 }
             }
@@ -175,6 +195,14 @@ namespace Scarlet.IO
                 output.Write(buffer, 0, read);
                 bytes -= read;
             }
+        }
+
+        internal static string ReadNullTermString(Stream input)
+        {
+            StringBuilder builder = new StringBuilder();
+            char read;
+            while ((read = (char)input.ReadByte()) != 0) builder.Append(read);
+            return builder.ToString();
         }
     }
 }

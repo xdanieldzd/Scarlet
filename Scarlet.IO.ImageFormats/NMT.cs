@@ -17,8 +17,8 @@ namespace Scarlet.IO.ImageFormats
         Indexed8bpp = 0x0E,
     }
 
-    [MagicNumber("nismultitexform\0", 0x00)]
-    [DefaultExtension(".nmt")]
+    //[MagicNumber("nismultitexform\0", 0x00)]
+    [FilenamePattern("^.*\\.nmt$")]
     public class NMT : ImageFormat
     {
         public string MagicNumber { get; private set; }

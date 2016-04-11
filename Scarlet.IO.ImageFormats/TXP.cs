@@ -10,7 +10,7 @@ using Scarlet.IO;
 
 namespace Scarlet.IO.ImageFormats
 {
-    [DefaultExtension(".txp")]
+    [FilenamePattern("^.*\\.txp$")]
     public class TXP : ImageFormat
     {
         // TODO: verify me! beautify me!

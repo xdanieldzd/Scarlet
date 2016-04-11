@@ -11,7 +11,7 @@ using Scarlet.Platform.Sony;
 
 namespace Scarlet.IO.ImageFormats
 {
-    [DefaultExtension(".tx2")]
+    [FilenamePattern("^.*\\.tx2$")]
     public class TX2 : ImageFormat
     {
         public ushort ImageWidth { get; private set; }

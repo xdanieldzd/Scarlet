@@ -53,6 +53,7 @@
     <Compile Include="TX2.cs" />
     <Compile Include="TXF.cs" />
     <Compile Include="TXP.cs" />
+    <Compile Include="VTXP.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Scarlet\Scarlet.csproj">

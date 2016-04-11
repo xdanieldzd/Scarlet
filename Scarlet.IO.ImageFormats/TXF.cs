@@ -48,7 +48,7 @@ namespace Scarlet.IO.ImageFormats
         }
     }
 
-    [DefaultExtension(".txf")]
+    [FilenamePattern("^.*\\.txf$")]
     public class TXF : ImageFormat
     {
         public TxfHeader Header { get; private set; }
