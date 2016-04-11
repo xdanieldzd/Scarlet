@@ -61,7 +61,7 @@ namespace ScarletTestApp
                     if (directory.Exists)
                     {
                         IEnumerable<FileInfo> files = directory.EnumerateFiles("*", SearchOption.AllDirectories).Where(x => x.Extension != ".png");
-                        IndentWriteLine("Adding directory '{0}', {1} file(s) found...", directory.Name, files.Count());
+                        IndentWriteLine("Adding directory '{0}', {1} file{2} found...", directory.Name, files.Count(), (files.Count() != 1 ? "s" : string.Empty));
                         inputDirs.Add(directory);
                         continue;
                     }

@@ -106,8 +106,6 @@ namespace Scarlet.IO.ImageFormats
 
         protected override Bitmap OnGetBitmap(int imageIndex, int paletteIndex)
         {
-            // TODO: allow Scarlet to use filenames stored inside image files for extraction, if applicable!
-
             VtxpImageHeader imageHeader = ImageHeaders[imageIndex];
 
             bool isIndexed = (imageHeader.PaletteOffset != 0);
