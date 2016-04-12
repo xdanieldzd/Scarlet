@@ -19,7 +19,7 @@ namespace ScarletTestApp
         static char[] directorySeparators = new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
         static string defaultOutputDir = "(converted)";
 
-        static int indent = 0, baseIndent = 0;
+        static int indent = 0;
         static bool keepFiles = false;
         static DirectoryInfo globalOutputDir = null;
 
@@ -105,7 +105,7 @@ namespace ScarletTestApp
                     {
                         IndentWriteLine();
                         IndentWriteLine("Parsing directory '{0}'...", inputDir.Name);
-                        baseIndent = indent++;
+                        indent++;
 
                         DirectoryInfo outputDir = (globalOutputDir != null ? globalOutputDir : new DirectoryInfo(inputDir.FullName + " " + defaultOutputDir));
                         foreach (FileInfo inputFile in inputDir.EnumerateFiles("*", SearchOption.AllDirectories).Where(x => x.Extension != ".png" && !IsSubdirectory(x.Directory, outputDir)))
@@ -119,7 +119,7 @@ namespace ScarletTestApp
                 {
                     IndentWriteLine();
                     IndentWriteLine("Parsing files...");
-                    baseIndent = indent++;
+                    indent++;
 
                     foreach (FileInfo inputFile in inputFiles)
                     {
@@ -142,7 +142,7 @@ namespace ScarletTestApp
             {
                 stopwatch.Stop();
 
-                indent = baseIndent = 0;
+                indent = 0;
 
                 IndentWriteLine();
                 IndentWriteLine("Operation completed in {0}.", GetReadableTimespan(stopwatch.Elapsed));
@@ -156,11 +156,9 @@ namespace ScarletTestApp
         {
             try
             {
-                if (!outputDir.Exists) Directory.CreateDirectory(outputDir.FullName);
-
                 string displayPath = inputFile.FullName.Replace(inputDir.FullName, string.Empty).TrimStart(directorySeparators);
                 IndentWrite("File '{0}'... ", displayPath);
-                baseIndent = indent++;
+                indent++;
 
                 string relativeDirectory = inputFile.DirectoryName.TrimEnd(directorySeparators).Replace(inputDir.FullName.TrimEnd(directorySeparators), string.Empty).TrimStart(directorySeparators);
 
@@ -269,8 +267,6 @@ namespace ScarletTestApp
                                 string outputFilename = element.GetName();
                                 FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, Path.GetFileNameWithoutExtension(inputFile.Name), outputFilename));
 
-                                IndentWrite("File '{0}'... ", outputFilename);
-
                                 Directory.CreateDirectory(outputFile.Directory.FullName);
                                 using (FileStream outputStream = new FileStream(outputFile.FullName, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
                                 {
@@ -278,12 +274,9 @@ namespace ScarletTestApp
                                     {
                                         elementStream.CopyTo(outputStream);
                                     }
-
-                                    // TODO: clean way to auto-decompress files, convert images, etc. inside containers, if applicable?
-                                    //       otherwise, rescan and process the output directory/file(s) after all inputs are finished?
                                 }
 
-                                Console.WriteLine("extracted.");
+                                ProcessInputFile(outputFile, outputFile.Directory, new DirectoryInfo(outputFile.Directory.FullName + " " + defaultOutputDir));
                             }
                         }
                         else if (instance is CompressionFormat)
@@ -321,7 +314,7 @@ namespace ScarletTestApp
 #endif
             finally
             {
-                indent = baseIndent;
+                indent--;
             }
         }
 
