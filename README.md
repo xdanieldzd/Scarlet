@@ -29,7 +29,7 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * TMX (various Atlus games)
  * TX2 (ex. Phantom Brave, various other Nippon Ichi Software games)
  * TXF (ex. Disgaea 4, PS3 version, possibly more Nippon Ichi Software games)
- * TXP (ex. Z.H.P: Unlosing Ranger vs Darkdeath Evilman, possibly more Nippon Ichi Software games)
+ * TXP (ex. Z.H.P: Unlosing Ranger vs Darkdeath Evilman, Disgaea 2 PSP, Disgaea Infinite, possibly more Nippon Ichi Software games on PSP)
  * VTXP (ex. Punchline, PS Vita; _not_ the same as, nor related to TXP above)
 * __Containers__
  * NISPACK (various Nippon Ichi Software games)
