@@ -16,7 +16,7 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/6947bb6edb508a4520e126be864099096bc473d9) contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/2cdffe6a64224d04af460b2affd9197023b4b41d) contain the following:
 
 * __Images__
  * GXT (various PlayStation Vita games)
@@ -30,6 +30,7 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * TX2 (ex. Phantom Brave, various other Nippon Ichi Software games)
  * TXF (ex. Disgaea 4, PS3 version, possibly more Nippon Ichi Software games)
  * TXP (ex. Z.H.P: Unlosing Ranger vs Darkdeath Evilman, possibly more Nippon Ichi Software games)
+ * VTXP (ex. Punchline, PS Vita; _not_ the same as, nor related to TXP above)
 * __Containers__
  * NISPACK (various Nippon Ichi Software games)
  * NSAC (ex. Disgaea 4, PS Vita version, possibly more Nippon Ichi Software games)
@@ -43,4 +44,5 @@ Acknowledgements
 * Many parts taken from [GXTConvert](https://github.com/xdanieldzd/GXTConvert), thus that project's acknowledgements apply here as well:
  * PVRTC texture decompression code ported from [PowerVR Graphics Native SDK](https://github.com/powervr-graphics/Native_SDK), Copyright (c) Imagination Technologies Ltd. (see *\Scarlet\Drawing\Compression\PVRTC.cs* and *LICENSE.md*)
  * Texture swizzle logic reverse-engineering and original C implementation by [FireyFly](https://github.com/FireyFly)
- * Testing and moral support by [Ehm2k](https://twitter.com/Ehm2k)
+ * Initial VTXP format notes by [BlackDragonHunt](https://github.com/BlackDragonHunt)
+ * Sample files, testing and moral support by [Ehm2k](https://twitter.com/Ehm2k)
