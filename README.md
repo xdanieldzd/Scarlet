@@ -16,7 +16,7 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/2cdffe6a64224d04af460b2affd9197023b4b41d) contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/c51fbb124676622f82155a79e6e344f52a734748) contain the following:
 
 * __Images__
  * GXT (various PlayStation Vita games)
@@ -27,13 +27,15 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * TEX (various Capcom games)
  * TID (ex. Hyperdimension Neptunia ReBirth 1, PC _and_ PS Vita versions, possibly more Idea Factory/Compile Heart/Felistella games)
  * TMX (various Atlus games)
- * TX2 (ex. Phantom Brave, various other Nippon Ichi Software games)
+ * TX2 (ex. Phantom Brave, PS2 version, various other Nippon Ichi Software games)
  * TXF (ex. Disgaea 4, PS3 version, possibly more Nippon Ichi Software games)
+ * TXG (ex. Sakurasou no Pet na Kanojo, PSP version)
  * TXP (ex. Z.H.P: Unlosing Ranger vs Darkdeath Evilman, Disgaea 2 PSP, Disgaea Infinite, possibly more Nippon Ichi Software games on PSP)
  * VTXP (ex. Punchline, PS Vita; _not_ the same as, nor related to TXP above)
 * __Containers__
  * NISPACK (various Nippon Ichi Software games)
  * NSAC (ex. Disgaea 4, PS Vita version, possibly more Nippon Ichi Software games)
+ * PSPFS_V1 (ex. Phantom Brave, PSP version, possibly more Nippon Ichi Software games)
 * __Compression__
  * NIS LZS (ex. Disgaea 4, PS3 and PS Vita versions)
 
