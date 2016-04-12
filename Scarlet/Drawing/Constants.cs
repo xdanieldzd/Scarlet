@@ -336,6 +336,11 @@ namespace Scarlet.Drawing
         PostProcessUnswizzle_Vita = ((ulong)1 << 45),
 
         /// <summary>
+        /// Format needs PSP-style unswizzling
+        /// </summary>
+        PostProcessUnswizzle_PSP = ((ulong)1 << 46),
+
+        /// <summary>
         /// Mask for extracting post-processing value
         /// </summary>
         MaskPostProcess = ((((ulong)1 << 4) - 1) << 44), /* 0000F00000000000 */

@@ -52,6 +52,7 @@
     <Compile Include="TMX.cs" />
     <Compile Include="TX2.cs" />
     <Compile Include="TXF.cs" />
+    <Compile Include="TXG.cs" />
     <Compile Include="TXP.cs" />
     <Compile Include="VTXP.cs" />
   </ItemGroup>

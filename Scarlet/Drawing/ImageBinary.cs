@@ -810,6 +810,9 @@ namespace Scarlet.Drawing
                 case PixelDataFormat.PostProcessUnswizzle_Vita:
                     return PostProcessMortonUnswizzle(dataArgb8888, width, height, inputPixelFormat);
 
+                case PixelDataFormat.PostProcessUnswizzle_PSP:
+                    return PostProcessPSPUnswizzle(dataArgb8888, width, height, inputPixelFormat);
+
                 default: throw new Exception("Unimplemented post-processing mode");
             }
         }
@@ -1171,7 +1174,7 @@ namespace Scarlet.Drawing
 
         #endregion
 
-        #region Post-process: Morton Unswizzle
+        #region Post-process: Morton Unswizzle (Vita)
 
         // Unswizzle logic by @FireyFly
         // http://xen.firefly.nu/up/rearrange.c.html
@@ -1232,6 +1235,30 @@ namespace Scarlet.Drawing
 
                 Buffer.BlockCopy(pixelData, i * bytesPerPixel, unswizzled, ((y * width) + x) * bytesPerPixel, bytesPerPixel);
             }
+
+            return unswizzled;
+        }
+
+        #endregion
+
+        #region Post-process: Unswizzle PSP
+
+        public static byte[] PostProcessPSPUnswizzle(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat)
+        {
+            byte[] unswizzled = new byte[pixelData.Length];
+
+            PixelDataFormat inBpp = (inputPixelFormat & PixelDataFormat.MaskBpp);
+            int bitsPerPixel = Constants.RealBitsPerPixel[inBpp];
+
+            int blockSize = (4 * 4);
+            int stride = ((width * bitsPerPixel) / 8);
+
+            int srcOffset = 0;
+            for (int by = 0; by < (height / 8); by++)
+                for (int bx = 0; bx < (stride / blockSize); bx++)
+                    for (int py = 0; py < 8; py++)
+                        for (int px = 0; px < blockSize; px++)
+                            unswizzled[(((by * 8) + py) * stride) + ((bx * blockSize) + px)] = pixelData[srcOffset++];
 
             return unswizzled;
         }
