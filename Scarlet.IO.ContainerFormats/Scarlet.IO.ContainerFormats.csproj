@@ -43,6 +43,7 @@
     <Compile Include="NISPACK.cs" />
     <Compile Include="NSAC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PSPFSv1.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Scarlet\Scarlet.csproj">
