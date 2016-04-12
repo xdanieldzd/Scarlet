@@ -88,7 +88,7 @@ namespace Scarlet.IO
                 {
                     foreach (var type in assembly.GetExportedTypes().Where(x => x == typeof(T) || x.InheritsFrom(typeof(T))))
                     {
-                        var verifyMethod = type.BaseType.GetMethod("VerifyMagicNumber", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+                        var verifyMethod = type.GetMethod("VerifyMagicNumber", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
                         if (verifyMethod == null) throw new NullReferenceException("Reflection error on method fetch for file verification");
                         VerifyResult verifyResult = ((VerifyResult)verifyMethod.Invoke(null, new object[] { reader, type }));
 

@@ -23,10 +23,10 @@ namespace Scarlet.IO.ImageFormats
     {
         public string MagicNumber { get; private set; }
 
-        public uint Unknown0x10 { get; private set; }//0?
-        public uint Unknown0x14 { get; private set; }//almost filesize? 0x40 lower?
-        public uint Unknown0x18 { get; private set; }//same?
-        public uint Unknown0x1C { get; private set; }//0?
+        public uint Unknown0x10 { get; private set; } // 0?
+        public uint Unknown0x14 { get; private set; } // Almost filesize? 0x40 lower?
+        public uint Unknown0x18 { get; private set; } // Same as above?
+        public uint Unknown0x1C { get; private set; } // 0?
 
         public NmtPixelFormat PixelFormat { get; private set; }
         public byte Unknown0x21 { get; private set; }
@@ -37,12 +37,14 @@ namespace Scarlet.IO.ImageFormats
 
         public ushort Width { get; private set; }
         public ushort Height { get; private set; }
-        public ushort Unknown0x2A { get; private set; }//1?
-        public ushort Unknown0x2C { get; private set; }//8bpp=same as width? 4bpp=half of width?
-        public ushort Unknown0x2E { get; private set; }//0?
+        public ushort Unknown0x2A { get; private set; } // 1?
+        public ushort Stride { get; private set; }
+        public ushort Unknown0x2E { get; private set; } // 0?
 
         public byte[][] PaletteData { get; private set; }
         public byte[] PixelData { get; private set; }
+
+        // TODO: what's the 0x20 (or more) bytes beyond pixel data, starting w/ string "nis uti chu eoc "?
 
         protected override void OnOpen(EndianBinaryReader reader)
         {
@@ -63,7 +65,7 @@ namespace Scarlet.IO.ImageFormats
             Width = reader.ReadUInt16();
             Height = reader.ReadUInt16();
             Unknown0x2A = reader.ReadUInt16();
-            Unknown0x2C = reader.ReadUInt16();
+            Stride = reader.ReadUInt16();
             Unknown0x2E = reader.ReadUInt16();
 
             if (!Enum.IsDefined(typeof(NmtPixelFormat), PixelFormat)) throw new Exception("Unknown pixel format");
@@ -72,16 +74,7 @@ namespace Scarlet.IO.ImageFormats
             for (int i = 0; i < PaletteData.Length; i++)
                 PaletteData[i] = reader.ReadBytes(PixelFormat == NmtPixelFormat.Indexed8bpp ? 256 * 4 : 16 * 4);
 
-            int bitsPerPixel = 0;
-
-            switch (PixelFormat)
-            {
-                case NmtPixelFormat.Indexed4bpp: bitsPerPixel = 4; break;
-                case NmtPixelFormat.Indexed8bpp: bitsPerPixel = 8; break;
-                case NmtPixelFormat.Argb8888: bitsPerPixel = 32; break;
-            }
-
-            PixelData = reader.ReadBytes((Width * Height / (bitsPerPixel < 8 ? 2 : 1)) * (bitsPerPixel < 8 ? 1 : bitsPerPixel / 8));
+            PixelData = reader.ReadBytes(Stride * Height);
         }
 
         public override int GetImageCount()

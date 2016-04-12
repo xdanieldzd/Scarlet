@@ -4,6 +4,7 @@ using System.Linq;
 using System.IO;
 using System.Drawing;
 using System.Reflection;
+using System.Text;
 
 using Scarlet.IO;
 using Scarlet.Drawing;
@@ -187,10 +188,11 @@ namespace ScarletTestApp
                             int paletteCount = imageInstance.GetPaletteCount();
                             int blockCount = ((imageInstance is GXT && (imageInstance as GXT).BUVChunk != null) ? (imageInstance as GXT).BUVChunk.Entries.Length : -1);
 
-                            if (blockCount != -1)
-                                Console.WriteLine("{0} image{1}, {2} palette{3}, {4} block{5} found.", imageCount, (imageCount != 1 ? "s" : string.Empty), paletteCount, (paletteCount != 1 ? "s" : string.Empty), blockCount, (blockCount != 1 ? "s" : string.Empty));
-                            else
-                                Console.WriteLine("{0} image{1}, {2} palette{3} found.", imageCount, (imageCount != 1 ? "s" : string.Empty), paletteCount, (paletteCount != 1 ? "s" : string.Empty));
+                            List<string> contentStrings = new List<string>();
+                            contentStrings.Add(string.Format("{0} image{1}", imageCount, (imageCount != 1 ? "s" : string.Empty)));
+                            if (paletteCount > 0) contentStrings.Add(string.Format("{0} palette{1}", paletteCount, (paletteCount != 1 ? "s" : string.Empty)));
+                            if (blockCount > 0) contentStrings.Add(string.Format("{0} block{1}", blockCount, (blockCount != 1 ? "s" : string.Empty)));
+                            Console.WriteLine(string.Format("{0} found.", string.Join(", ", contentStrings)));
 
                             for (int i = 0; i < imageCount; i++)
                             {
@@ -295,6 +297,7 @@ namespace ScarletTestApp
                             string outputFilename = (isFullName ? compressedInstance.GetNameOrExtension() : Path.GetFileNameWithoutExtension(inputFile.Name) + "." + compressedInstance.GetNameOrExtension());
                             FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
 
+                            Directory.CreateDirectory(outputFile.Directory.FullName);
                             using (FileStream outputStream = new FileStream(outputFile.FullName, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
                             {
                                 using (Stream decompressedStream = compressedInstance.GetDecompressedStream())

@@ -457,14 +457,14 @@ namespace Scarlet.Drawing
             int lineSize, copySize;
 
             if ((bmpData.Width % 8) == 0 || (inputPixelFormat & PixelDataFormat.MaskSpecial) != PixelDataFormat.Undefined)
-                lineSize = (bmpData.Width * (bitsPerPixel / 8));
+                lineSize = (bmpData.Width / (bitsPerPixel < 8 ? 2 : 1)) * (bitsPerPixel < 8 ? 1 : bitsPerPixel / 8);
             else
                 lineSize = (inputPixels.Length / bmpData.Height);
 
             if (isIndexed && (inputPixelFormat & PixelDataFormat.MaskBpp) == PixelDataFormat.Bpp4)
                 copySize = bmpData.Width / 2;
             else
-                copySize = (bmpData.Width * (bitsPerPixel / 8));
+                copySize = (bmpData.Width / (bitsPerPixel < 8 ? 2 : 1)) * (bitsPerPixel < 8 ? 1 : bitsPerPixel / 8);
 
             for (int y = 0; y < bmpData.Height; y++)
             {
