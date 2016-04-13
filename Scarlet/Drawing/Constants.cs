@@ -71,44 +71,49 @@ namespace Scarlet.Drawing
         ChannelsRgb = ((ulong)1 << 5),
 
         /// <summary>
+        /// Format has channels in BGR order
+        /// </summary>
+        ChannelsBgr = ((ulong)1 << 6),
+
+        /// <summary>
         /// Format has channels in RGBA order
         /// </summary>
-        ChannelsRgba = ((ulong)1 << 6),
+        ChannelsRgba = ((ulong)1 << 7),
 
         /// <summary>
         /// Format has channels in BGRA order
         /// </summary>
-        ChannelsBgra = ((ulong)1 << 7),
+        ChannelsBgra = ((ulong)1 << 8),
 
         /// <summary>
         /// Format has channels in ARGB order
         /// </summary>
-        ChannelsArgb = ((ulong)1 << 8),
+        ChannelsArgb = ((ulong)1 << 9),
 
         /// <summary>
         /// Format has channels in ABGR order
         /// </summary>
-        ChannelsAbgr = ((ulong)1 << 9),
+        ChannelsAbgr = ((ulong)1 << 10),
 
         /// <summary>
         /// Format has channels in RGB order, with trailing dummy A channel
         /// </summary>
-        ChannelsRgbx = ((ulong)1 << 10),
+        ChannelsRgbx = ((ulong)1 << 11),
 
         /// <summary>
         /// Format has channels in BGR order, with trailing dummy A channel
         /// </summary>
-        ChannelsBgrx = ((ulong)1 << 11),
+        ChannelsBgrx = ((ulong)1 << 12),
 
         /// <summary>
         /// Format has channels in RGB order, with leading dummy A channel
         /// </summary>
-        ChannelsXrgb = ((ulong)1 << 12),
+        ChannelsXrgb = ((ulong)1 << 13),
 
         /// <summary>
         /// Format has channels in BGR order, with leading dummy A channel
         /// </summary>
-        ChannelsXbgr = ((ulong)1 << 13),
+        ChannelsXbgr = ((ulong)1 << 14),
 
         /// <summary>
         /// Format has channels in L order
@@ -331,14 +336,19 @@ namespace Scarlet.Drawing
         PostProcessUntile_3DS = ((ulong)1 << 44),
 
         /// <summary>
+        /// Format needs PSP-style untiling
+        /// </summary>
+        PostProcessUntile_PSP = ((ulong)1 << 45),
+
+        /// <summary>
         /// Format needs Vita-style unswizzling
         /// </summary>
-        PostProcessUnswizzle_Vita = ((ulong)1 << 45),
+        PostProcessUnswizzle_Vita = ((ulong)1 << 46),
 
         /// <summary>
         /// Format needs PSP-style unswizzling
         /// </summary>
-        PostProcessUnswizzle_PSP = ((ulong)1 << 46),
+        PostProcessUnswizzle_PSP = ((ulong)1 << 47),
 
         /// <summary>
         /// Mask for extracting post-processing value
@@ -379,6 +389,16 @@ namespace Scarlet.Drawing
         /// Format is 16-bit RGB565
         /// </summary>
         FormatRgb565 = (Bpp16 | ChannelsRgb | RedBits5 | GreenBits6 | BlueBits5 | AlphaBits0),
+
+        /// <summary>
+        /// Format is 24-bit BGR888
+        /// </summary>
+        FormatBgr888 = (Bpp24 | ChannelsBgr | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits0),
+
+        /// <summary>
+        /// Format is 16-bit BGR565
+        /// </summary>
+        FormatBgr565 = (Bpp16 | ChannelsBgr | RedBits5 | GreenBits6 | BlueBits5 | AlphaBits0),
 
         /// <summary>
         /// Format is 32-bit RGBA8888

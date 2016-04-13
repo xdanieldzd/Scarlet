@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CBG.cs" />
     <Compile Include="ImageFormat.cs" />
     <Compile Include="GXT.cs" />
     <Compile Include="NMT.cs" />
@@ -55,6 +56,7 @@
     <Compile Include="TXG.cs" />
     <Compile Include="TXP.cs" />
     <Compile Include="VTXP.cs" />
+    <Compile Include="XGTL.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Scarlet\Scarlet.csproj">

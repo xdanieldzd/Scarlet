@@ -13,6 +13,7 @@ namespace Scarlet.IO.ImageFormats
     public enum TxgPixelFormat : uint
     {
         Abgr8888 = 0x00,
+        Bgr565 = 0x01,
         Indexed8bpp = 0x04,
     }
 
@@ -39,6 +40,8 @@ namespace Scarlet.IO.ImageFormats
 
         protected override void OnOpen(EndianBinaryReader reader)
         {
+            long startPosition = reader.BaseStream.Position;
+
             MagicNumber = Encoding.ASCII.GetString(reader.ReadBytes(4));
             FileSize = reader.ReadUInt32();
             ImageDataOffset = reader.ReadUInt32();
@@ -56,11 +59,11 @@ namespace Scarlet.IO.ImageFormats
 
             if (PaletteDataSize != 0)
             {
-                reader.BaseStream.Seek(ImageDataOffset + PaletteDataOffset, SeekOrigin.Begin);
+                reader.BaseStream.Seek(startPosition + ImageDataOffset + PaletteDataOffset, SeekOrigin.Begin);
                 PaletteData = reader.ReadBytes((int)PaletteDataSize);
             }
 
-            reader.BaseStream.Seek(ImageDataOffset + PixelDataOffset, SeekOrigin.Begin);
+            reader.BaseStream.Seek(startPosition + ImageDataOffset + PixelDataOffset, SeekOrigin.Begin);
             PixelData = reader.ReadBytes((int)PixelDataSize);
         }
 
@@ -91,17 +94,20 @@ namespace Scarlet.IO.ImageFormats
             switch (PixelFormat)
             {
                 case TxgPixelFormat.Abgr8888:
-                    imageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888;
+                    imageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888 | PixelDataFormat.PostProcessUnswizzle_PSP;
+                    break;
+
+                case TxgPixelFormat.Bgr565:
+                    imageBinary.InputPixelFormat = PixelDataFormat.FormatBgr565 | PixelDataFormat.PostProcessUntile_PSP;
                     break;
 
                 case TxgPixelFormat.Indexed8bpp:
-                    imageBinary.InputPixelFormat = PixelDataFormat.FormatIndexed8;
+                    imageBinary.InputPixelFormat = PixelDataFormat.FormatIndexed8 | PixelDataFormat.PostProcessUnswizzle_PSP;
                     break;
 
                 default: throw new NotImplementedException();
             }
 
-            imageBinary.InputPixelFormat |= PixelDataFormat.PostProcessUnswizzle_PSP;
             imageBinary.AddInputPixels(PixelData);
 
             return imageBinary.GetBitmap();

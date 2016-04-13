@@ -621,6 +621,7 @@ namespace Scarlet.Drawing
             switch (inChannels)
             {
                 case PixelDataFormat.ChannelsRgb: CheckBitsPerChannelValidity(inRedBits, inGreenBits, inBlueBits); break;
+                case PixelDataFormat.ChannelsBgr: CheckBitsPerChannelValidity(inBlueBits, inGreenBits, inRedBits); break;
                 case PixelDataFormat.ChannelsRgba: CheckBitsPerChannelValidity(inRedBits, inGreenBits, inBlueBits, inAlphaBits); break;
                 case PixelDataFormat.ChannelsBgra: CheckBitsPerChannelValidity(inBlueBits, inGreenBits, inRedBits, inAlphaBits); break;
                 case PixelDataFormat.ChannelsArgb: CheckBitsPerChannelValidity(inAlphaBits, inRedBits, inGreenBits, inBlueBits); break;
@@ -683,6 +684,14 @@ namespace Scarlet.Drawing
                             red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
                             green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
                             blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
+
+                            alpha = 0xFF;
+                            break;
+
+                        case PixelDataFormat.ChannelsBgr:
+                            blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
+                            green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
+                            red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
 
                             alpha = 0xFF;
                             break;
@@ -807,6 +816,9 @@ namespace Scarlet.Drawing
                 case PixelDataFormat.PostProcessUntile_3DS:
                     return PostProcessUntile3DS(dataArgb8888, width, height, inputPixelFormat);
 
+                case PixelDataFormat.PostProcessUntile_PSP:
+                    return PostProcessUntilePSP(dataArgb8888, width, height, inputPixelFormat);
+
                 case PixelDataFormat.PostProcessUnswizzle_Vita:
                     return PostProcessMortonUnswizzle(dataArgb8888, width, height, inputPixelFormat);
 
@@ -902,6 +914,7 @@ namespace Scarlet.Drawing
                 switch (outChannels)
                 {
                     case PixelDataFormat.ChannelsRgb: CheckBitsPerChannelValidity(outRedBits, outGreenBits, outBlueBits); break;
+                    case PixelDataFormat.ChannelsBgr: CheckBitsPerChannelValidity(outBlueBits, outGreenBits, outRedBits); break;
                     case PixelDataFormat.ChannelsRgba: CheckBitsPerChannelValidity(outRedBits, outGreenBits, outBlueBits, outAlphaBits); break;
                     case PixelDataFormat.ChannelsBgra: CheckBitsPerChannelValidity(outBlueBits, outGreenBits, outRedBits, outAlphaBits); break;
                     case PixelDataFormat.ChannelsArgb: CheckBitsPerChannelValidity(outAlphaBits, outRedBits, outGreenBits, outBlueBits); break;
@@ -956,6 +969,16 @@ namespace Scarlet.Drawing
                             outputValue = MergeChannel(outputValue, blue, channelBitsBlue, ref bppOutCount);
                             outputValue = MergeChannel(outputValue, green, channelBitsGreen, ref bppOutCount);
                             outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
+                            break;
+
+                        case PixelDataFormat.ChannelsBgr:
+                            blue = ResampleChannel(blue, 8, channelBitsBlue);
+                            green = ResampleChannel(green, 8, channelBitsGreen);
+                            red = ResampleChannel(red, 8, channelBitsRed);
+
+                            outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, green, channelBitsGreen, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, blue, channelBitsBlue, ref bppOutCount);
                             break;
 
                         case PixelDataFormat.ChannelsRgba:
@@ -1117,43 +1140,80 @@ namespace Scarlet.Drawing
             return merged;
         }
 
-        #region Post-process: Untile 3DS
+        #region Post-process: Untile
 
-        static readonly int[] tileOrder =
+        static readonly int[] tileOrder3DS =
         {
             0, 1, 8, 9,
             2, 3, 10, 11,
             16, 17, 24, 25,
             18, 19, 26, 27,
+
             4, 5, 12, 13,
             6, 7, 14, 15,
             20, 21, 28, 29,
             22, 23, 30, 31,
+            
             32, 33, 40, 41,
             34, 35, 42, 43,
             48, 49, 56, 57,
             50, 51, 58, 59,
+            
             36, 37, 44, 45,
             38, 39, 46, 47,
             52, 53, 60, 61,
             54, 55, 62, 63
         };
 
-        private int GetTilePixelIndex(int t, int x, int y, int width)
+        // TODO: ????? ...is all that comes to mind here. uh, do we *need* to "untile" in this case...? check the code! verify this crap!
+        static readonly int[] tileOrderPSP =
+        {
+            0, 1, 2, 3,
+            4, 5, 6, 7,
+            8, 9, 10, 11,
+            12, 13, 14, 15,
+            
+            16, 17, 18, 19,
+            20, 21, 22, 23,
+            24, 25, 26, 27,
+            28, 29, 30, 31,
+            
+            32, 33, 34, 35,
+            36, 37, 38, 39,
+            40, 41, 42, 43,
+            44, 45, 46, 47,
+            
+            48, 49, 50, 51,
+            52, 53, 54, 55,
+            56, 57, 58, 59,
+            60, 61, 62, 63
+        };
+
+        private byte[] PostProcessUntile3DS(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat)
+        {
+            return PostProcessUntile(pixelData, width, height, inputPixelFormat, tileOrder3DS);
+        }
+
+        private byte[] PostProcessUntilePSP(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat)
+        {
+            return PostProcessUntile(pixelData, width, height, inputPixelFormat, tileOrderPSP);
+        }
+
+        private int GetTilePixelIndex(int t, int x, int y, int width, int[] tileOrder)
         {
             return (int)((((tileOrder[t] / 8) + y) * width) + ((tileOrder[t] % 8) + x));
         }
 
-        private int GetTilePixelOffset(int t, int x, int y, int width, PixelDataFormat inputPixelFormat)
+        private int GetTilePixelOffset(int t, int x, int y, int width, PixelDataFormat inputPixelFormat, int[] tileOrder)
         {
             /* TODO: assumes 4 bytes/pixel for all non-indexed formats; change this? */
             bool isIndexed = ((inputPixelFormat & PixelDataFormat.MaskChannels) == PixelDataFormat.ChannelsIndexed);
             PixelDataFormat inBpp = (inputPixelFormat & PixelDataFormat.MaskBpp);
 
-            return (GetTilePixelIndex(t, x, y, width) * (isIndexed ? Constants.InputBitsPerPixel[inBpp] / 8 : 4));
+            return (GetTilePixelIndex(t, x, y, width, tileOrder) * (isIndexed ? Constants.InputBitsPerPixel[inBpp] / 8 : 4));
         }
 
-        private byte[] PostProcessUntile3DS(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat)
+        private byte[] PostProcessUntile(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat, int[] tileOrder)
         {
             byte[] untiled = new byte[pixelData.Length];
             int s = 0;
@@ -1163,7 +1223,7 @@ namespace Scarlet.Drawing
                 {
                     for (int t = 0; t < (8 * 8); t++)
                     {
-                        int pixelOffset = GetTilePixelOffset(t, x, y, width, inputPixelFormat);
+                        int pixelOffset = GetTilePixelOffset(t, x, y, width, inputPixelFormat, tileOrder);
                         Buffer.BlockCopy(pixelData, s, untiled, pixelOffset, 4);
                         s += 4;
                     }

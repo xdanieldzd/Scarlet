@@ -171,7 +171,7 @@ namespace Scarlet.IO
 
             foreach (MagicNumberAttribute magicNumberAttrib in type.GetCustomAttributes(typeof(MagicNumberAttribute), false))
             {
-                reader.BaseStream.Seek(magicNumberAttrib.Position, SeekOrigin.Begin);
+                reader.BaseStream.Seek(lastPosition + magicNumberAttrib.Position, SeekOrigin.Begin);
                 if (reader.ReadBytes(magicNumberAttrib.MagicNumber.Length).SequenceEqual(magicNumberAttrib.MagicNumber))
                 {
                     result = VerifyResult.VerifyOkay;
