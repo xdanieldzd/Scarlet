@@ -17,6 +17,8 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyVersion("0.6.0.0")]
 [assembly: AssemblyFileVersion("0.6.0.0")]
+[assembly: AssemblyInformationalVersion("{branch}-{chash:7}{!:-dirty}")]
 
 [assembly: InternalsVisibleTo("Scarlet.IO.ImageFormats")]
 [assembly: InternalsVisibleTo("Scarlet.IO.ContainerFormats")]
+[assembly: InternalsVisibleTo("Scarlet.IO.CompressionFormats")]

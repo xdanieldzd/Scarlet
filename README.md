@@ -45,6 +45,7 @@ Note that support for these is not 100% complete, especially Capcom TEX is lacki
 
 Acknowledgements
 ================
+* Includes [NetRevisionTool](http://unclassified.software/apps/netrevisiontool) by Yves Goergen for injecting Git revision information
 * Many parts taken from [GXTConvert](https://github.com/xdanieldzd/GXTConvert), thus that project's acknowledgements apply here as well:
  * PVRTC texture decompression code ported from [PowerVR Graphics Native SDK](https://github.com/powervr-graphics/Native_SDK), Copyright (c) Imagination Technologies Ltd.
    * see *\Scarlet\Drawing\Compression\PVRTC.cs* and *LICENSE.md*

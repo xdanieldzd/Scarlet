@@ -37,14 +37,21 @@ namespace ScarletTestApp
                 var version = new Version((assembly.GetCustomAttributes(typeof(AssemblyFileVersionAttribute), false).FirstOrDefault() as AssemblyFileVersionAttribute).Version);
                 var description = (assembly.GetCustomAttributes(typeof(AssemblyDescriptionAttribute), false).FirstOrDefault() as AssemblyDescriptionAttribute).Description;
                 var copyright = (assembly.GetCustomAttributes(typeof(AssemblyCopyrightAttribute), false).FirstOrDefault() as AssemblyCopyrightAttribute).Copyright;
+                var informational = (assembly.GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false).FirstOrDefault() as AssemblyInformationalVersionAttribute).InformationalVersion;
 
-                IndentWriteLine("{0} v{1}.{2} - {3}", name, version.Major, version.Minor, description);
+                IndentWriteLine("{0} v{1}.{2} ({3})", name, version.Major, version.Minor, informational);
+                IndentWriteLine("{0}", description);
                 IndentWriteLine("{0}", copyright);
                 IndentWriteLine();
                 IndentWriteLine("Scarlet library information:");
                 indent++;
+
                 foreach (AssemblyName referencedAssembly in Assembly.GetExecutingAssembly().GetReferencedAssemblies().Where(x => x.Name.StartsWith("Scarlet")).OrderBy(x => x.Name))
-                    IndentWriteLine("{0} v{1}", referencedAssembly.Name, referencedAssembly.Version);
+                {
+                    var loadedAssembly = Assembly.Load(referencedAssembly.Name);
+                    var assemblyInformational = (loadedAssembly.GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false).FirstOrDefault() as AssemblyInformationalVersionAttribute).InformationalVersion;
+                    IndentWriteLine("{0} v{1} ({2})", referencedAssembly.Name, referencedAssembly.Version, assemblyInformational);
+                }
                 indent--;
                 IndentWriteLine();
 
