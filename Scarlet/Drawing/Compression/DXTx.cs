@@ -122,14 +122,30 @@ namespace Scarlet.Drawing.Compression
             byte[] colorOut = new byte[(4 * 4) * 4];
 
             byte color0_hi, color0_lo, color1_hi, color1_lo, bits_3, bits_2, bits_1, bits_0;
-            color0_hi = reader.ReadByte();
-            color0_lo = reader.ReadByte();
-            color1_hi = reader.ReadByte();
-            color1_lo = reader.ReadByte();
-            bits_3 = reader.ReadByte();
-            bits_2 = reader.ReadByte();
-            bits_1 = reader.ReadByte();
-            bits_0 = reader.ReadByte();
+
+            if (true)
+            {
+                color0_hi = reader.ReadByte();
+                color0_lo = reader.ReadByte();
+                color1_hi = reader.ReadByte();
+                color1_lo = reader.ReadByte();
+                bits_3 = reader.ReadByte();
+                bits_2 = reader.ReadByte();
+                bits_1 = reader.ReadByte();
+                bits_0 = reader.ReadByte();
+            }
+            else
+            {
+                // TODO: figure out this nonsense; K-ON Houkago Live UVR files require this exact order...
+                bits_3 = reader.ReadByte();
+                bits_2 = reader.ReadByte();
+                bits_1 = reader.ReadByte();
+                bits_0 = reader.ReadByte();
+                color0_hi = reader.ReadByte();
+                color0_lo = reader.ReadByte();
+                color1_hi = reader.ReadByte();
+                color1_lo = reader.ReadByte();
+            }
 
             ushort color0 = (ushort)(((ushort)color0_lo << 8) | (ushort)color0_hi);
             ushort color1 = (ushort)(((ushort)color1_lo << 8) | (ushort)color1_hi);

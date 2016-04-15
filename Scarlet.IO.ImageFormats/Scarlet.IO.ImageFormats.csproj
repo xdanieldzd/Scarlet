@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="CBG.cs" />
     <Compile Include="CSU.cs" />
+    <Compile Include="GBIX.cs" />
     <Compile Include="ImageFormat.cs" />
     <Compile Include="GXT.cs" />
     <Compile Include="NMT.cs" />
