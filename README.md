@@ -47,10 +47,13 @@ Note that support for these is not 100% complete (especially Capcom TEX is lacki
 
 Acknowledgements
 ================
+* PVRTC texture decompression code ported from [PowerVR Graphics Native SDK](https://github.com/powervr-graphics/Native_SDK), Copyright (c) Imagination Technologies Ltd.
+ * see *\Scarlet\Drawing\Compression\PVRTC.cs* and *LICENSE.md*
 * Includes [NetRevisionTool](http://unclassified.software/apps/netrevisiontool) by Yves Goergen for injecting Git revision information
-* Many parts taken from [GXTConvert](https://github.com/xdanieldzd/GXTConvert), thus that project's acknowledgements apply here as well:
- * PVRTC texture decompression code ported from [PowerVR Graphics Native SDK](https://github.com/powervr-graphics/Native_SDK), Copyright (c) Imagination Technologies Ltd.
-   * see *\Scarlet\Drawing\Compression\PVRTC.cs* and *LICENSE.md*
- * Texture swizzle logic reverse-engineering and original C implementation by [FireyFly](https://github.com/FireyFly)
- * Initial VTXP format notes by [BlackDragonHunt](https://github.com/BlackDragonHunt)
- * Sample files, testing and moral support by [Ehm2k](https://twitter.com/Ehm2k)
+* Initial VTXP format notes by [BlackDragonHunt](https://github.com/BlackDragonHunt)
+* Texture swizzle logic reverse-engineering and original C implementation by [FireyFly](https://github.com/FireyFly)
+* Sample files, testing and moral support by [Ehm2k](https://twitter.com/Ehm2k)
+
+See Also
+========
+* [GXTConvert](https://github.com/xdanieldzd/GXTConvert), a dedicated GXT-to-PNG converter (might not have feature parity with Scarlet)
