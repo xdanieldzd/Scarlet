@@ -8,9 +8,11 @@ using Scarlet.Drawing;
 
 namespace Scarlet.Drawing.Compression
 {
+    // TODO: rewrite, fix, make simpler, etc., etc.!
+
     internal static class DXTx
     {
-        static readonly int[] dxtOrder = new int[]
+        static readonly int[] dxtOrderVita = new int[]
         {
             0, 2, 8, 10,
             1, 3, 9, 11,
@@ -26,23 +28,9 @@ namespace Scarlet.Drawing.Compression
 
             // TODO: verify block ordering differences!
 
-            if (specialFormat == PixelDataFormat.FormatDXT1 || specialFormat == PixelDataFormat.FormatDXT3 || specialFormat == PixelDataFormat.FormatDXT5)
+            if (specialFormat == PixelDataFormat.FormatDXT1 || specialFormat == PixelDataFormat.FormatDXT3 || specialFormat == PixelDataFormat.FormatDXT5 ||
+                specialFormat == PixelDataFormat.FormatDXT1_PSP || specialFormat == PixelDataFormat.FormatDXT3_PSP || specialFormat == PixelDataFormat.FormatDXT5_PSP)
             {
-                /* GXTs, etc. */
-                int pixelOffset = 0;
-                for (int y = 0; y < height; y += 4)
-                {
-                    for (int x = 0; x < width; x += 4)
-                    {
-                        byte[] decodedBlock = DecompressDxtBlock(reader, specialFormat);
-                        for (int b = 0; b < dxtOrder.Length; b++) Buffer.BlockCopy(decodedBlock, b * 4, pixelData, pixelOffset + (dxtOrder[b] * 4), 4);
-                        pixelOffset += decodedBlock.Length;
-                    }
-                }
-            }
-            else if (specialFormat == PixelDataFormat.FormatDXT1Alt || specialFormat == PixelDataFormat.FormatDXT3Alt || specialFormat == PixelDataFormat.FormatDXT5Alt)
-            {
-                /* NIS TXFs */
                 for (int y = 0; y < height; y += 4)
                 {
                     for (int x = 0; x < width; x += 4)
@@ -65,35 +53,23 @@ namespace Scarlet.Drawing.Compression
                     }
                 }
             }
+            else if (specialFormat == PixelDataFormat.FormatDXT1_Vita || specialFormat == PixelDataFormat.FormatDXT3_Vita || specialFormat == PixelDataFormat.FormatDXT5_Vita)
+            {
+                int pixelOffset = 0;
+                for (int y = 0; y < height; y += 4)
+                {
+                    for (int x = 0; x < width; x += 4)
+                    {
+                        byte[] decodedBlock = DecompressDxtBlock(reader, specialFormat);
+                        for (int b = 0; b < dxtOrderVita.Length; b++) Buffer.BlockCopy(decodedBlock, b * 4, pixelData, pixelOffset + (dxtOrderVita[b] * 4), 4);
+                        pixelOffset += decodedBlock.Length;
+                    }
+                }
+            }
             else
                 throw new Exception("Invalid special format for DXT decoder");
 
             return pixelData;
-        }
-
-        private static void DecodeDxtTile(EndianBinaryReader reader, byte[] targetData, int x, int y, int width, int height, PixelDataFormat format)
-        {
-            for (int by = 0; by < 8; by += 4)
-            {
-                for (int bx = 0; bx < 8; bx += 4)
-                {
-                    using (EndianBinaryReader decodedReader = new EndianBinaryReader(new System.IO.MemoryStream(DecompressDxtBlock(reader, format))))
-                    {
-                        for (int px = 0; px < 4; px++)
-                        {
-                            for (int py = 0; py < 4; py++)
-                            {
-                                int ix = (x + bx + px);
-                                int iy = (y + by + py);
-                                if (ix >= width || iy >= height) continue;
-
-                                int pixelOffset = (int)(((iy * width) + ix) * 4);
-                                Buffer.BlockCopy(decodedReader.ReadBytes(4), 0, targetData, pixelOffset, 4);
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         private static byte[] DecompressDxtBlock(EndianBinaryReader reader, PixelDataFormat format)
@@ -101,10 +77,19 @@ namespace Scarlet.Drawing.Compression
             byte[] outputData = new byte[(4 * 4) * 4];
             byte[] colorData = null, alphaData = null;
 
-            if (format != PixelDataFormat.FormatDXT1 && format != PixelDataFormat.FormatDXT1Alt)
-                alphaData = DecompressDxtAlpha(reader, format);
+            bool isDxt1 = (format == PixelDataFormat.FormatDXT1 || format == PixelDataFormat.FormatDXT1_Vita || format == PixelDataFormat.FormatDXT1_PSP);
+            bool isPsp = (format == PixelDataFormat.FormatDXT1_PSP || format == PixelDataFormat.FormatDXT3_PSP || format == PixelDataFormat.FormatDXT5_PSP);
 
-            colorData = DecompressDxtColor(reader, format);
+            if (isPsp)
+            {
+                colorData = DecompressDxtColor(reader, format);
+                if (!isDxt1) alphaData = DecompressDxtAlpha(reader, format);
+            }
+            else
+            {
+                if (!isDxt1) alphaData = DecompressDxtAlpha(reader, format);
+                colorData = DecompressDxtColor(reader, format);
+            }
 
             for (int i = 0; i < colorData.Length; i += 4)
             {
@@ -123,28 +108,27 @@ namespace Scarlet.Drawing.Compression
 
             byte color0_hi, color0_lo, color1_hi, color1_lo, bits_3, bits_2, bits_1, bits_0;
 
-            if (true)
+            if (format == PixelDataFormat.FormatDXT1_PSP || format == PixelDataFormat.FormatDXT3_PSP || format == PixelDataFormat.FormatDXT5_PSP)
             {
-                color0_hi = reader.ReadByte();
-                color0_lo = reader.ReadByte();
-                color1_hi = reader.ReadByte();
-                color1_lo = reader.ReadByte();
                 bits_3 = reader.ReadByte();
                 bits_2 = reader.ReadByte();
                 bits_1 = reader.ReadByte();
                 bits_0 = reader.ReadByte();
+                color0_hi = reader.ReadByte();
+                color0_lo = reader.ReadByte();
+                color1_hi = reader.ReadByte();
+                color1_lo = reader.ReadByte();
             }
             else
             {
-                // TODO: figure out this nonsense; K-ON Houkago Live UVR files require this exact order...
-                bits_3 = reader.ReadByte();
-                bits_2 = reader.ReadByte();
-                bits_1 = reader.ReadByte();
-                bits_0 = reader.ReadByte();
                 color0_hi = reader.ReadByte();
                 color0_lo = reader.ReadByte();
                 color1_hi = reader.ReadByte();
                 color1_lo = reader.ReadByte();
+                bits_3 = reader.ReadByte();
+                bits_2 = reader.ReadByte();
+                bits_1 = reader.ReadByte();
+                bits_0 = reader.ReadByte();
             }
 
             ushort color0 = (ushort)(((ushort)color0_lo << 8) | (ushort)color0_hi);
@@ -166,10 +150,10 @@ namespace Scarlet.Drawing.Compression
                     byte code = bitsExt[(y * 4) + x];
                     int destOffset = ((y * 4) + x) * 4;
 
-                    if (format == PixelDataFormat.FormatDXT1 || format == PixelDataFormat.FormatDXT1Alt)
+                    if (format == PixelDataFormat.FormatDXT1 || format == PixelDataFormat.FormatDXT1_Vita || format == PixelDataFormat.FormatDXT1_PSP)
                         colorOut[destOffset + 3] = (byte)((color0 <= color1 && code == 3) ? 0 : 0xFF);
 
-                    if ((format == PixelDataFormat.FormatDXT1 || format == PixelDataFormat.FormatDXT1Alt) && color0 <= color1)
+                    if ((format == PixelDataFormat.FormatDXT1 || format == PixelDataFormat.FormatDXT1_Vita || format == PixelDataFormat.FormatDXT1_PSP) && color0 <= color1)
                     {
                         switch (code)
                         {
@@ -247,7 +231,7 @@ namespace Scarlet.Drawing.Compression
         {
             byte[] alphaOut = new byte[(4 * 4) * 4];
 
-            if (format == PixelDataFormat.FormatDXT3 || format == PixelDataFormat.FormatDXT3Alt)
+            if (format == PixelDataFormat.FormatDXT3 || format == PixelDataFormat.FormatDXT3_Vita || format == PixelDataFormat.FormatDXT3_PSP)
             {
                 ulong alpha = reader.ReadUInt64();
                 for (int i = 0; i < alphaOut.Length; i += 4)
@@ -256,7 +240,7 @@ namespace Scarlet.Drawing.Compression
                     alpha >>= 4;
                 }
             }
-            else if (format == PixelDataFormat.FormatDXT5 || format == PixelDataFormat.FormatDXT5Alt)
+            else if (format == PixelDataFormat.FormatDXT5 || format == PixelDataFormat.FormatDXT5_Vita || format == PixelDataFormat.FormatDXT5_PSP)
             {
                 byte alpha0, alpha1, bits_5, bits_4, bits_3, bits_2, bits_1, bits_0;
                 alpha0 = reader.ReadByte();

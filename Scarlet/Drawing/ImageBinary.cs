@@ -587,11 +587,14 @@ namespace Scarlet.Drawing
                     break;
 
                 case PixelDataFormat.FormatDXT1:
-                case PixelDataFormat.FormatDXT1Alt:
+                case PixelDataFormat.FormatDXT1_Vita:
+                case PixelDataFormat.FormatDXT1_PSP:
                 case PixelDataFormat.FormatDXT3:
-                case PixelDataFormat.FormatDXT3Alt:
+                case PixelDataFormat.FormatDXT3_Vita:
+                case PixelDataFormat.FormatDXT3_PSP:
                 case PixelDataFormat.FormatDXT5:
-                case PixelDataFormat.FormatDXT5Alt:
+                case PixelDataFormat.FormatDXT5_Vita:
+                case PixelDataFormat.FormatDXT5_PSP:
                     outputData = DXTx.Decompress(reader, width, height, specialFormat, reader.BaseStream.Length);
                     break;
 

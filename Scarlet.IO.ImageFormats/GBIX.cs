@@ -10,7 +10,7 @@ using Scarlet.IO;
 
 namespace Scarlet.IO.ImageFormats
 {
-    // TODO: verify me! Also figure out the messed up DXT1 stuff, see Scarlet DXTx.cs
+    // TODO: verify me!
 
     [MagicNumber("GBIX", 0x00)]
     public class GBIX : ImageFormat
@@ -96,7 +96,7 @@ namespace Scarlet.IO.ImageFormats
             }
             else if (Format == 0x800A)
             {
-                pixelDataFormat = PixelDataFormat.FormatDXT1Alt;
+                pixelDataFormat = PixelDataFormat.FormatDXT1_PSP;
                 paletteDataFormat = PixelDataFormat.Undefined;
             }
             else
