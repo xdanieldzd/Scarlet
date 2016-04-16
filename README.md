@@ -16,9 +16,10 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/a1397142190836f938d287273c0f316c30a0cbff) contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/e6296faf9659c30c758ed35e24b68cfc621436cc) contain the following:
 
 * __Images__
+ * GBIX (ex. K-ON! Houkago Live, PSP version)
  * GXT (various PlayStation Vita games)
  * NMT (ex. Disgaea 4, PS Vita version, possibly more Nippon Ichi Software games)
  * SHTX (ex. Danganronpa Another Episode)
@@ -35,13 +36,14 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * TXP (ex. Z.H.P: Unlosing Ranger vs Darkdeath Evilman, Disgaea 2 PSP, Disgaea Infinite, possibly more Nippon Ichi Software games on PSP)
  * VTXP (ex. Punchline, PS Vita; _not_ the same as, nor related to TXP above)
 * __Containers__
+ * FMDX (ex. K-ON! Houkago Live, PSP version)
  * NISPACK (various Nippon Ichi Software games)
  * NSAC (ex. Disgaea 4, PS Vita version, possibly more Nippon Ichi Software games)
  * PSPFS_V1 (ex. Phantom Brave, PSP version, possibly more Nippon Ichi Software games)
 * __Compression__
  * NIS LZS (ex. Disgaea 4, PS3 and PS Vita versions)
 
-Note that support for these is not 100% complete, especially Capcom TEX is lacking, and the unintentional bias towards NIS games.
+Note that support for these is not 100% complete (especially Capcom TEX is lacking), as well as the unintentional bias towards NIS games.
 
 Acknowledgements
 ================
