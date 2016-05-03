@@ -57,7 +57,7 @@ namespace Scarlet.IO.ImageFormats
             imageBinary.Height = ImageHeight;
             imageBinary.InputPaletteFormat = PixelDataFormat.FormatAbgr8888;
             imageBinary.InputPixelFormat = (ColorCount == 256 ? PixelDataFormat.FormatIndexed8 : PixelDataFormat.FormatIndexed4);
-            if (SwizzleFlag != 0) imageBinary.InputPixelFormat |= PixelDataFormat.PostProcessUnswizzle_PSP;
+            if (SwizzleFlag != 0) imageBinary.InputPixelFormat |= PixelDataFormat.PixelOrderingSwizzledPSP;
             imageBinary.InputEndianness = Endian.LittleEndian;
 
             foreach (byte[] palette in PaletteData) imageBinary.AddInputPalette(palette);

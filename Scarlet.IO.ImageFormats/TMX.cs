@@ -75,7 +75,7 @@ namespace Scarlet.IO.ImageFormats
             imageBinary.Height = (int)Height;
             imageBinary.InputPaletteFormat = PS2.GetPixelDataFormat(PaletteFormat);
             imageBinary.InputPixelFormat = PS2.GetPixelDataFormat(PixelFormat);
-            imageBinary.InputEndianness = Endian.BigEndian;
+            imageBinary.InputEndianness = Endian.LittleEndian;
 
             imageBinary.AddInputPalette(PaletteData);
             imageBinary.AddInputPixels(PixelData);

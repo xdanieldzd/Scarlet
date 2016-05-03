@@ -63,13 +63,13 @@ namespace Scarlet.IO.ImageFormats
 
             switch (Format)
             {
-                case 0x03: pixelDataFormat = PixelDataFormat.FormatRgba8888 | PixelDataFormat.PostProcessUntile_3DS; break;
-                case 0x07: pixelDataFormat = PixelDataFormat.FormatLuminanceAlpha88 | PixelDataFormat.PostProcessUntile_3DS; break;
+                case 0x03: pixelDataFormat = PixelDataFormat.FormatRgba8888 | PixelDataFormat.PixelOrderingTiled3DS; break;
+                case 0x07: pixelDataFormat = PixelDataFormat.FormatLuminanceAlpha88 | PixelDataFormat.PixelOrderingTiled3DS; break;
                 case 0x0B: pixelDataFormat = PixelDataFormat.FormatETC1_3DS; break;
                 case 0x0C: pixelDataFormat = PixelDataFormat.FormatETC1A4_3DS; break;
-                case 0x0E: pixelDataFormat = PixelDataFormat.FormatLuminance4 | PixelDataFormat.PostProcessUntile_3DS; break;
-                case 0x10: pixelDataFormat = PixelDataFormat.FormatLuminanceAlpha44 | PixelDataFormat.PostProcessUntile_3DS; break;
-                case 0x11: pixelDataFormat = PixelDataFormat.FormatRgb888 | PixelDataFormat.PostProcessUntile_3DS; break;
+                case 0x0E: pixelDataFormat = PixelDataFormat.FormatLuminance4 | PixelDataFormat.PixelOrderingTiled3DS; break;
+                case 0x10: pixelDataFormat = PixelDataFormat.FormatLuminanceAlpha44 | PixelDataFormat.PixelOrderingTiled3DS; break;
+                case 0x11: pixelDataFormat = PixelDataFormat.FormatRgb888 | PixelDataFormat.PixelOrderingTiled3DS; break;
                 default: throw new NotImplementedException(string.Format("Capcom TEX format 0x{0:X}", Format));
             }
         }

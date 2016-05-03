@@ -126,7 +126,7 @@ namespace Scarlet.IO.ImageFormats
             imageBinary.AddInputPixels(imageHeader.PixelData);
 
             if (imageHeader.TextureType == VtxpTextureType.Swizzled)
-                imageBinary.InputPixelFormat |= PixelDataFormat.PostProcessUnswizzle_Vita;
+                imageBinary.InputPixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
 
             return imageBinary.GetBitmap();
         }

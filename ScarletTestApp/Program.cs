@@ -16,6 +16,12 @@ namespace ScarletTestApp
 {
     class Program
     {
+        // "E:\[SSD User Data]\Downloads\__misc-test__"
+        // "E:\[SSD User Data]\Desktop\Misc Stuff\PSP-misc\DATA-unpacked"
+        // "E:\[SSD User Data]\Downloads\_stex-test"
+        // "E:\[SSD User Data]\Desktop\Misc Stuff\ZHP\system"
+        // "E:\[SSD User Data]\Downloads\SkullgirlsDDS"
+
         static char[] directorySeparators = new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
         static string defaultOutputDir = "(converted)";
 

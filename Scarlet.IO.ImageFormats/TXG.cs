@@ -94,15 +94,15 @@ namespace Scarlet.IO.ImageFormats
             switch (PixelFormat)
             {
                 case TxgPixelFormat.Abgr8888:
-                    imageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888 | PixelDataFormat.PostProcessUnswizzle_PSP;
+                    imageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888 | PixelDataFormat.PixelOrderingSwizzledPSP;
                     break;
 
                 case TxgPixelFormat.Bgr565:
-                    imageBinary.InputPixelFormat = PixelDataFormat.FormatBgr565 | PixelDataFormat.PostProcessUntile_PSP;
+                    imageBinary.InputPixelFormat = PixelDataFormat.FormatBgr565 | PixelDataFormat.PixelOrderingTiled;
                     break;
 
                 case TxgPixelFormat.Indexed8bpp:
-                    imageBinary.InputPixelFormat = PixelDataFormat.FormatIndexed8 | PixelDataFormat.PostProcessUnswizzle_PSP;
+                    imageBinary.InputPixelFormat = PixelDataFormat.FormatIndexed8 | PixelDataFormat.PixelOrderingSwizzledPSP;
                     break;
 
                 default: throw new NotImplementedException();

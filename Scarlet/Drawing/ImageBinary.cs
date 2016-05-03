@@ -12,6 +12,8 @@ using Scarlet.Drawing.Compression;
 
 namespace Scarlet.Drawing
 {
+    internal delegate void PixelOrderingDelegate(int origX, int origY, int width, int height, PixelDataFormat pixelFormat, out int transformedX, out int transformedY);
+
     /// <summary>
     /// Converts from and to various formats of pixel data
     /// </summary>
@@ -326,7 +328,6 @@ namespace Scarlet.Drawing
             if ((inputPixelFormat & PixelDataFormat.MaskChannels) != PixelDataFormat.ChannelsIndexed)
             {
                 pixelData = ConvertPixelDataToArgb8888(inputPixelData[imageIndex], inputPixelFormat);
-                pixelData = ApplyPostProcessingToPixelData(width, height, inputPixelFormat, pixelData);
                 pixelData = ApplyFilterToArgb8888(width, height, outputFormat, pixelData);
 
                 pixelData = ConvertArgb8888ToOutputFormat(pixelData, outputFormat, outputEndianness);
@@ -334,7 +335,6 @@ namespace Scarlet.Drawing
             else
             {
                 pixelData = ReadPixelDataIndexed(inputPixelData[imageIndex], inputPixelFormat);
-                pixelData = ApplyPostProcessingToPixelData(width, height, inputPixelFormat, pixelData);
             }
 
             return pixelData;
@@ -435,14 +435,12 @@ namespace Scarlet.Drawing
             {
                 imagePixelFormat = PixelFormat.Format32bppArgb;
                 pixelData = ConvertPixelDataToArgb8888(inputPixels, inputPixelFormat);
-                pixelData = ApplyPostProcessingToPixelData(width, height, inputPixelFormat, pixelData);
                 pixelData = ApplyFilterToArgb8888(width, height, outputFormat, pixelData);
             }
             else
             {
                 imagePixelFormat = ((inputPixelFormat & PixelDataFormat.MaskBpp) == PixelDataFormat.Bpp4 ? PixelFormat.Format4bppIndexed : PixelFormat.Format8bppIndexed);
                 pixelData = ReadPixelDataIndexed(inputPixels, inputPixelFormat);
-                pixelData = ApplyPostProcessingToPixelData(width, height, inputPixelFormat, pixelData);
                 palette = ReadPaletteData(GetInputPalette(paletteIndex), inputPixelFormat, inputPaletteFormat);
             }
 
@@ -511,20 +509,44 @@ namespace Scarlet.Drawing
 
         private byte[] ReadPixelDataIndexed(EndianBinaryReader reader, PixelDataFormat inputPixelFormat)
         {
-            PixelDataFormat inBpp = (inputPixelFormat & PixelDataFormat.MaskBpp);
             if ((inputPixelFormat & PixelDataFormat.MaskChannels) != PixelDataFormat.ChannelsIndexed) throw new Exception("Cannot read non-indexed as indexed");
 
-            byte[] dataIndexed = new byte[reader.BaseStream.Length];
-            for (int i = 0; i < dataIndexed.Length; i++)
-            {
-                byte index = reader.ReadByte();
+            PixelDataFormat inBpp = (inputPixelFormat & PixelDataFormat.MaskBpp);
+            if (inBpp != PixelDataFormat.Bpp4 && inBpp != PixelDataFormat.Bpp8) throw new Exception("Cannot read indexed data that is not 4bpp or 8bpp");
 
-                if (inBpp == PixelDataFormat.Bpp8 || (inBpp == PixelDataFormat.Bpp4 && !reader.IsNativeEndianness))
-                    dataIndexed[i] = index;
-                else if (inBpp == PixelDataFormat.Bpp4 && reader.IsNativeEndianness)
-                    dataIndexed[i] = (byte)((index & 0xF) << 4 | (index >> 4));
+            PixelOrderingDelegate pixelOrderingFunc = GetPixelOrderingFunction(inputPixelFormat);
+
+            byte[] dataIndexed = new byte[reader.BaseStream.Length];
+            for (int i = 0, x = 0, y = 0; i < dataIndexed.Length; i++)
+            {
+                int tx, ty;
+                pixelOrderingFunc(x, y, width, height, inputPixelFormat, out tx, out ty);
+
+                if (inBpp == PixelDataFormat.Bpp8)
+                {
+                    byte index = reader.ReadByte();
+                    if (tx < width && ty < height)
+                        dataIndexed[((ty * width) + tx)] = index;
+
+                    x++;
+                    if (x == width) { x = 0; y++; }
+                }
                 else
-                    throw new Exception("Invalid indexed format");
+                {
+                    byte indices = reader.ReadByte();
+                    if ((tx + 1) < width && (ty + 1) < height)
+                    {
+                        int pixelOffset = (((ty * width) + tx) / 2);
+
+                        /* TODO: verify me! */
+                        if (reader.Endianness == Endian.BigEndian)
+                            dataIndexed[pixelOffset] = indices;
+                        else
+                            dataIndexed[pixelOffset] = (byte)((indices & 0xF) << 4 | (indices >> 4));
+                    }
+                    x += 2;
+                    if (x == width) { x = 0; y++; }
+                }
             }
 
             return dataIndexed;
@@ -587,15 +609,12 @@ namespace Scarlet.Drawing
                     break;
 
                 case PixelDataFormat.FormatDXT1:
-                case PixelDataFormat.FormatDXT1_Vita:
                 case PixelDataFormat.FormatDXT1_PSP:
                 case PixelDataFormat.FormatDXT3:
-                case PixelDataFormat.FormatDXT3_Vita:
                 case PixelDataFormat.FormatDXT3_PSP:
                 case PixelDataFormat.FormatDXT5:
-                case PixelDataFormat.FormatDXT5_Vita:
                 case PixelDataFormat.FormatDXT5_PSP:
-                    outputData = DXTx.Decompress(reader, width, height, specialFormat, reader.BaseStream.Length);
+                    outputData = DXTx.Decompress(reader, width, height, inputPixelFormat, reader.BaseStream.Length);
                     break;
 
                 default: throw new Exception("Unimplemented special format");
@@ -645,10 +664,12 @@ namespace Scarlet.Drawing
             int channelBitsBlue = (inBlueBits != PixelDataFormat.Undefined ? Constants.BitsPerChannel[inBlueBits] : 0);
             int channelBitsAlpha = (inAlphaBits != PixelDataFormat.Undefined ? Constants.BitsPerChannel[inAlphaBits] : 0);
 
+            PixelOrderingDelegate pixelOrderingFunc = GetPixelOrderingFunction(inputPixelFormat);
+
             bool isNativeLittleEndian = (EndianBinaryReader.NativeEndianness == Endian.LittleEndian);
 
             uint rawData = 0;
-            for (int i = 0, j = 0; i < reader.BaseStream.Length; i += (inputBppRead / 8))
+            for (int i = 0, x = 0, y = 0; i < reader.BaseStream.Length; i += (inputBppRead / 8))
             {
                 switch (inBpp)
                 {
@@ -785,51 +806,35 @@ namespace Scarlet.Drawing
                         default: throw new Exception("Unhandled channel input layout");
                     }
 
-                    if (isNativeLittleEndian)
+                    int tx, ty;
+                    pixelOrderingFunc(x, y, width, height, inputPixelFormat, out tx, out ty);
+
+                    if (tx < width && ty < height)
                     {
-                        dataArgb8888[j + 3] = (byte)(alpha & 0xFF);
-                        dataArgb8888[j + 2] = (byte)(red & 0xFF);
-                        dataArgb8888[j + 1] = (byte)(green & 0xFF);
-                        dataArgb8888[j + 0] = (byte)(blue & 0xFF);
-                    }
-                    else
-                    {
-                        dataArgb8888[j + 0] = (byte)(alpha & 0xFF);
-                        dataArgb8888[j + 1] = (byte)(red & 0xFF);
-                        dataArgb8888[j + 2] = (byte)(green & 0xFF);
-                        dataArgb8888[j + 3] = (byte)(blue & 0xFF);
+                        int pixelOffset = ((ty * width) + tx) * (bitsBpp32 / 8);
+
+                        if (isNativeLittleEndian)
+                        {
+                            dataArgb8888[pixelOffset + 3] = (byte)(alpha & 0xFF);
+                            dataArgb8888[pixelOffset + 2] = (byte)(red & 0xFF);
+                            dataArgb8888[pixelOffset + 1] = (byte)(green & 0xFF);
+                            dataArgb8888[pixelOffset + 0] = (byte)(blue & 0xFF);
+                        }
+                        else
+                        {
+                            dataArgb8888[pixelOffset + 0] = (byte)(alpha & 0xFF);
+                            dataArgb8888[pixelOffset + 1] = (byte)(red & 0xFF);
+                            dataArgb8888[pixelOffset + 2] = (byte)(green & 0xFF);
+                            dataArgb8888[pixelOffset + 3] = (byte)(blue & 0xFF);
+                        }
                     }
 
-                    j += (bitsBpp32 / 8);
+                    x++;
+                    if (x == width) { x = 0; y++; }
                 }
             }
 
             return dataArgb8888;
-        }
-
-        private byte[] ApplyPostProcessingToPixelData(int width, int height, PixelDataFormat inputPixelFormat, byte[] dataArgb8888)
-        {
-            PixelDataFormat postProcess = (inputPixelFormat & PixelDataFormat.MaskPostProcess);
-            switch (postProcess)
-            {
-                case PixelDataFormat.PostProcessNone:
-                    /* No post-processing required, return as-is */
-                    return dataArgb8888;
-
-                case PixelDataFormat.PostProcessUntile_3DS:
-                    return PostProcessUntile3DS(dataArgb8888, width, height, inputPixelFormat);
-
-                case PixelDataFormat.PostProcessUntile_PSP:
-                    return PostProcessUntilePSP(dataArgb8888, width, height, inputPixelFormat);
-
-                case PixelDataFormat.PostProcessUnswizzle_Vita:
-                    return PostProcessMortonUnswizzle(dataArgb8888, width, height, inputPixelFormat);
-
-                case PixelDataFormat.PostProcessUnswizzle_PSP:
-                    return PostProcessPSPUnswizzle(dataArgb8888, width, height, inputPixelFormat);
-
-                default: throw new Exception("Unimplemented post-processing mode");
-            }
         }
 
         private byte[] ApplyFilterToArgb8888(int width, int height, PixelDataFormat outputFormat, byte[] dataArgb8888)
@@ -1143,101 +1148,95 @@ namespace Scarlet.Drawing
             return merged;
         }
 
-        #region Post-process: Untile
-
-        static readonly int[] tileOrder3DS =
+        internal static PixelOrderingDelegate GetPixelOrderingFunction(PixelDataFormat inputPixelFormat)
         {
-            0, 1, 8, 9,
-            2, 3, 10, 11,
-            16, 17, 24, 25,
-            18, 19, 26, 27,
+            PixelDataFormat pixelOrdering = (inputPixelFormat & PixelDataFormat.MaskPixelOrdering);
 
-            4, 5, 12, 13,
-            6, 7, 14, 15,
-            20, 21, 28, 29,
-            22, 23, 30, 31,
-            
-            32, 33, 40, 41,
-            34, 35, 42, 43,
-            48, 49, 56, 57,
-            50, 51, 58, 59,
-            
-            36, 37, 44, 45,
-            38, 39, 46, 47,
-            52, 53, 60, 61,
-            54, 55, 62, 63
-        };
-
-        // TODO: ????? ...is all that comes to mind here. uh, do we *need* to "untile" in this case...? check the code! verify this crap!
-        static readonly int[] tileOrderPSP =
-        {
-            0, 1, 2, 3,
-            4, 5, 6, 7,
-            8, 9, 10, 11,
-            12, 13, 14, 15,
-            
-            16, 17, 18, 19,
-            20, 21, 22, 23,
-            24, 25, 26, 27,
-            28, 29, 30, 31,
-            
-            32, 33, 34, 35,
-            36, 37, 38, 39,
-            40, 41, 42, 43,
-            44, 45, 46, 47,
-            
-            48, 49, 50, 51,
-            52, 53, 54, 55,
-            56, 57, 58, 59,
-            60, 61, 62, 63
-        };
-
-        private byte[] PostProcessUntile3DS(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat)
-        {
-            return PostProcessUntile(pixelData, width, height, inputPixelFormat, tileOrder3DS);
-        }
-
-        private byte[] PostProcessUntilePSP(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat)
-        {
-            return PostProcessUntile(pixelData, width, height, inputPixelFormat, tileOrderPSP);
-        }
-
-        private int GetTilePixelIndex(int t, int x, int y, int width, int[] tileOrder)
-        {
-            return (int)((((tileOrder[t] / 8) + y) * width) + ((tileOrder[t] % 8) + x));
-        }
-
-        private int GetTilePixelOffset(int t, int x, int y, int width, PixelDataFormat inputPixelFormat, int[] tileOrder)
-        {
-            /* TODO: assumes 4 bytes/pixel for all non-indexed formats; change this? */
-            bool isIndexed = ((inputPixelFormat & PixelDataFormat.MaskChannels) == PixelDataFormat.ChannelsIndexed);
-            PixelDataFormat inBpp = (inputPixelFormat & PixelDataFormat.MaskBpp);
-
-            return (GetTilePixelIndex(t, x, y, width, tileOrder) * (isIndexed ? Constants.InputBitsPerPixel[inBpp] / 8 : 4));
-        }
-
-        private byte[] PostProcessUntile(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat, int[] tileOrder)
-        {
-            byte[] untiled = new byte[pixelData.Length];
-            int s = 0;
-            for (int y = 0; y < height; y += 8)
+            PixelOrderingDelegate pixelOrderingFunc;
+            switch (pixelOrdering)
             {
-                for (int x = 0; x < width; x += 8)
-                {
-                    for (int t = 0; t < (8 * 8); t++)
-                    {
-                        int pixelOffset = GetTilePixelOffset(t, x, y, width, inputPixelFormat, tileOrder);
-                        Buffer.BlockCopy(pixelData, s, untiled, pixelOffset, 4);
-                        s += 4;
-                    }
-                }
+                case PixelDataFormat.PixelOrderingLinear: pixelOrderingFunc = (int x, int y, int w, int h, PixelDataFormat pf, out int tx, out int ty) => { tx = x; ty = y; }; break;
+                case PixelDataFormat.PixelOrderingTiled: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinatesTiled); break;
+                case PixelDataFormat.PixelOrderingTiled3DS: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinates3DS); break;
+                case PixelDataFormat.PixelOrderingSwizzledVita: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinatesSwizzledVita); break;
+                case PixelDataFormat.PixelOrderingSwizzledPSP: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinatesPSP); break;
+
+                default: throw new Exception("Unimplemented pixel ordering mode");
             }
-            return untiled;
+
+            return pixelOrderingFunc;
         }
 
-        #endregion
+        static readonly int[] pixelOrderingTiledDefault =
+        {
+             0,  1,  2,  3,  4,  5,  6,  7,
+             8,  9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18, 19, 20, 21, 22, 23,
+            24, 25, 26, 27, 28, 29, 30, 31,
+            32, 33, 34, 35, 36, 37, 38, 39,
+            40, 41, 42, 43, 44, 45, 46, 47,
+            48, 49, 50, 51, 52, 53, 54, 55,
+            56, 57, 58, 59, 60, 61, 62, 63
+        };
 
-        #region Post-process: Morton Unswizzle (Vita)
+        static readonly int[] pixelOrderingTiled3DS =
+        {
+             0,  1,  8,  9,  2,  3, 10, 11,
+            16, 17, 24, 25, 18, 19, 26, 27,
+             4,  5, 12, 13,  6,  7, 14, 15,
+            20, 21, 28, 29, 22, 23, 30, 31,
+            32, 33, 40, 41, 34, 35, 42, 43,
+            48, 49, 56, 57, 50, 51, 58, 59,
+            36, 37, 44, 45, 38, 39, 46, 47,
+            52, 53, 60, 61, 54, 55, 62, 63
+        };
+
+        private static void GetPixelCoordinatesTiled(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY)
+        {
+            GetPixelCoordinatesTiledEx(origX, origY, width, height, inputPixelFormat, out transformedX, out transformedY, 8, 8, pixelOrderingTiledDefault);
+        }
+
+        private static void GetPixelCoordinates3DS(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY)
+        {
+            GetPixelCoordinatesTiledEx(origX, origY, width, height, inputPixelFormat, out transformedX, out transformedY, 8, 8, pixelOrderingTiled3DS);
+        }
+
+        private static void GetPixelCoordinatesPSP(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY)
+        {
+            // TODO: verify me...?
+
+            PixelDataFormat inBpp = (inputPixelFormat & PixelDataFormat.MaskBpp);
+            int bitsPerPixel = Constants.RealBitsPerPixel[inBpp];
+
+            int tileWidth = (bitsPerPixel < 8 ? 32 : (16 / (bitsPerPixel / 8)));
+            GetPixelCoordinatesTiledEx(origX, origY, width, height, inputPixelFormat, out transformedX, out transformedY, tileWidth, 8, null);
+        }
+
+        private static void GetPixelCoordinatesTiledEx(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY, int tileWidth, int tileHeight, int[] pixelOrdering)
+        {
+            // Calculate coords in image
+            int tileSize = (tileWidth * tileHeight);
+            int globalPixel = ((origY * width) + origX);
+            int globalX = ((globalPixel / tileSize) * tileWidth);
+            int globalY = ((globalX / width) * tileHeight);
+            globalX %= width;
+
+            // Calculate coords in tile
+            int inTileX = (globalPixel % tileWidth);
+            int inTileY = ((globalPixel / tileWidth) % tileHeight);
+            int inTilePixel = ((inTileY * tileHeight) + inTileX);
+
+            // If applicable, transform by ordering table
+            if (pixelOrdering != null && tileSize <= pixelOrdering.Length)
+            {
+                inTileX = (pixelOrdering[inTilePixel] % 8);
+                inTileY = (pixelOrdering[inTilePixel] / 8);
+            }
+
+            // Set final image coords
+            transformedX = (globalX + inTileX);
+            transformedY = (globalY + inTileY);
+        }
 
         // Unswizzle logic by @FireyFly
         // http://xen.firefly.nu/up/rearrange.c.html
@@ -1262,70 +1261,31 @@ namespace Scarlet.Drawing
             return Compact1By1(code >> 1);
         }
 
-        public static byte[] PostProcessMortonUnswizzle(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat)
+        private static void GetPixelCoordinatesSwizzledVita(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY)
         {
-            /* TODO: assumes 4 bytes/pixel for all non-indexed formats; change this? */
-            bool isIndexed = ((inputPixelFormat & PixelDataFormat.MaskChannels) == PixelDataFormat.ChannelsIndexed);
-            PixelDataFormat inBpp = (inputPixelFormat & PixelDataFormat.MaskBpp);
-            int bytesPerPixel = (isIndexed ? Constants.InputBitsPerPixel[inBpp] / 8 : 4);
+            int i = (origY * width) + origX;
 
-            byte[] unswizzled = new byte[pixelData.Length];
+            int min = width < height ? width : height;
+            int k = (int)Math.Log(min, 2);
 
-            for (int i = 0; i < width * height; i++)
+            if (height < width)
             {
-                int min = width < height ? width : height;
-                int k = (int)Math.Log(min, 2);
-
-                int x, y;
-                if (height < width)
-                {
-                    // XXXyxyxyx → XXXxxxyyy
-                    int j = i >> (2 * k) << (2 * k)
+                // XXXyxyxyx → XXXxxxyyy
+                int j = i >> (2 * k) << (2 * k)
                     | (DecodeMorton2Y(i) & (min - 1)) << k
                     | (DecodeMorton2X(i) & (min - 1)) << 0;
-                    x = j / height;
-                    y = j % height;
-                }
-                else
-                {
-                    // YYYyxyxyx → YYYyyyxxx
-                    int j = i >> (2 * k) << (2 * k)
+                transformedX = j / height;
+                transformedY = j % height;
+            }
+            else
+            {
+                // YYYyxyxyx → YYYyyyxxx
+                int j = i >> (2 * k) << (2 * k)
                     | (DecodeMorton2X(i) & (min - 1)) << k
                     | (DecodeMorton2Y(i) & (min - 1)) << 0;
-                    x = j % width;
-                    y = j / width;
-                }
-
-                Buffer.BlockCopy(pixelData, i * bytesPerPixel, unswizzled, ((y * width) + x) * bytesPerPixel, bytesPerPixel);
+                transformedX = j % width;
+                transformedY = j / width;
             }
-
-            return unswizzled;
         }
-
-        #endregion
-
-        #region Post-process: Unswizzle PSP
-
-        public static byte[] PostProcessPSPUnswizzle(byte[] pixelData, int width, int height, PixelDataFormat inputPixelFormat)
-        {
-            byte[] unswizzled = new byte[pixelData.Length];
-
-            PixelDataFormat inBpp = (inputPixelFormat & PixelDataFormat.MaskBpp);
-            int bitsPerPixel = Constants.RealBitsPerPixel[inBpp];
-
-            int blockSize = (4 * 4);
-            int stride = ((width * bitsPerPixel) / 8);
-
-            int srcOffset = 0;
-            for (int by = 0; by < (height / 8); by++)
-                for (int bx = 0; bx < (stride / blockSize); bx++)
-                    for (int py = 0; py < 8; py++)
-                        for (int px = 0; px < blockSize; px++)
-                            unswizzled[(((by * 8) + py) * stride) + ((bx * blockSize) + px)] = pixelData[srcOffset++];
-
-            return unswizzled;
-        }
-
-        #endregion
     }
 }

@@ -37,9 +37,9 @@ namespace Scarlet.Platform.Sony
         {
             { PS2PixelFormat.PSMT8, PixelDataFormat.FormatIndexed8 },
             { PS2PixelFormat.PSMT4, PixelDataFormat.FormatIndexed4 },
-            { PS2PixelFormat.PSMCT16, PixelDataFormat.FormatArgb1555 },
-            { PS2PixelFormat.PSMCT24, PixelDataFormat.FormatRgb888 },
-            { PS2PixelFormat.PSMCT32, PixelDataFormat.FormatArgb8888 },
+            { PS2PixelFormat.PSMCT16, PixelDataFormat.FormatBgra5551 },
+            { PS2PixelFormat.PSMCT24, PixelDataFormat.FormatBgr888 },
+            { PS2PixelFormat.PSMCT32, PixelDataFormat.FormatBgra8888 },
         };
 
         public static PixelDataFormat GetPixelDataFormat(PS2PixelFormat pixelFormat)

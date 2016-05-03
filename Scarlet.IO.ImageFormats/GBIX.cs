@@ -76,22 +76,22 @@ namespace Scarlet.IO.ImageFormats
 
             if (Format == 0x8602)
             {
-                pixelDataFormat = PixelDataFormat.FormatIndexed4 | PixelDataFormat.PostProcessUnswizzle_PSP;
+                pixelDataFormat = PixelDataFormat.FormatIndexed4 | PixelDataFormat.PixelOrderingSwizzledPSP;
                 paletteDataFormat = PixelDataFormat.FormatAbgr4444;
             }
             else if (Format == 0x8803)
             {
-                pixelDataFormat = PixelDataFormat.FormatIndexed4 | PixelDataFormat.PostProcessUnswizzle_PSP;
+                pixelDataFormat = PixelDataFormat.FormatIndexed4 | PixelDataFormat.PixelOrderingSwizzledPSP;
                 paletteDataFormat = PixelDataFormat.FormatAbgr8888;
             }
             else if (Format == 0x8A02)
             {
-                pixelDataFormat = PixelDataFormat.FormatIndexed8 | PixelDataFormat.PostProcessUnswizzle_PSP;
+                pixelDataFormat = PixelDataFormat.FormatIndexed8 | PixelDataFormat.PixelOrderingSwizzledPSP;
                 paletteDataFormat = PixelDataFormat.FormatAbgr4444;
             }
             else if (Format == 0x8C03)
             {
-                pixelDataFormat = PixelDataFormat.FormatIndexed8 | PixelDataFormat.PostProcessUnswizzle_PSP;
+                pixelDataFormat = PixelDataFormat.FormatIndexed8 | PixelDataFormat.PixelOrderingSwizzledPSP;
                 paletteDataFormat = PixelDataFormat.FormatAbgr8888;
             }
             else if (Format == 0x800A)

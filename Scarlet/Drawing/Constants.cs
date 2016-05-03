@@ -20,7 +20,7 @@ namespace Scarlet.Drawing
          * Blu 000000001C000000
          * Alp 00000000E0000000
          * Spc 00003FFF00000000
-         * Pst 0003C00000000000
+         * Ord 0003C00000000000
          * Fil 000C000000000000
          * Rsv FFF0000000000000
          */
@@ -286,54 +286,39 @@ namespace Scarlet.Drawing
         FormatDXT1 = ((ulong)1 << 34),
 
         /// <summary>
-        /// Special format with Vita-style DXT1 data
-        /// </summary>
-        FormatDXT1_Vita = ((ulong)1 << 35),
-
-        /// <summary>
         /// Special format with PSP-style DXT1 data
         /// </summary>
-        FormatDXT1_PSP = ((ulong)1 << 36),
+        FormatDXT1_PSP = ((ulong)1 << 35),
 
         /// <summary>
         /// Special format with generic DXT3 data
         /// </summary>
-        FormatDXT3 = ((ulong)1 << 37),
-
-        /// <summary>
-        /// Special format with Vita-style DXT3
-        /// </summary>
-        FormatDXT3_Vita = ((ulong)1 << 38),
+        FormatDXT3 = ((ulong)1 << 36),
 
         /// <summary>
         /// Special format with PSP-style DXT3 data
         /// </summary>
-        FormatDXT3_PSP = ((ulong)1 << 39),
+        FormatDXT3_PSP = ((ulong)1 << 37),
 
         /// <summary>
         /// Special format with generic DXT5 data
         /// </summary>
-        FormatDXT5 = ((ulong)1 << 40),
-
-        /// <summary>
-        /// Special format with Vita-style DXT5 data
-        /// </summary>
-        FormatDXT5_Vita = ((ulong)1 << 41),
+        FormatDXT5 = ((ulong)1 << 38),
 
         /// <summary>
         /// Special format with PSP-style DXT5 data
         /// </summary>
-        FormatDXT5_PSP = ((ulong)1 << 42),
+        FormatDXT5_PSP = ((ulong)1 << 39),
 
         /// <summary>
         /// Special format with Vita-style PVRT2 data
         /// </summary>
-        FormatPVRT2_Vita = ((ulong)1 << 43),
+        FormatPVRT2_Vita = ((ulong)1 << 40),
 
         /// <summary>
         /// Special format with Vita-style PVRT4 data
         /// </summary>
-        FormatPVRT4_Vita = ((ulong)1 << 44),
+        FormatPVRT4_Vita = ((ulong)1 << 41),
 
         /// <summary>
         /// Mask for extracting special format value
@@ -341,34 +326,34 @@ namespace Scarlet.Drawing
         MaskSpecial = ((((ulong)1 << 14) - 1) << 32), /* 00003FFF00000000 */
 
         /// <summary>
-        /// Format does not need post-processing
+        /// Format has pixels in linear order
         /// </summary>
-        PostProcessNone = Undefined,
+        PixelOrderingLinear = Undefined,
 
         /// <summary>
-        /// Format needs 3DS-style untiling
+        /// Format has pixels in tiled order
         /// </summary>
-        PostProcessUntile_3DS = ((ulong)1 << 46),
+        PixelOrderingTiled = ((ulong)1 << 46),
 
         /// <summary>
-        /// Format needs PSP-style untiling
+        /// Format has pixels in tiled order, 3DS-style
         /// </summary>
-        PostProcessUntile_PSP = ((ulong)1 << 47),
+        PixelOrderingTiled3DS = ((ulong)1 << 47),
 
         /// <summary>
-        /// Format needs Vita-style unswizzling
+        /// Format has pixels in swizzled order, Vita-style
         /// </summary>
-        PostProcessUnswizzle_Vita = ((ulong)1 << 48),
+        PixelOrderingSwizzledVita = ((ulong)1 << 48),
 
         /// <summary>
-        /// Format needs PSP-style unswizzling
+        /// Format has pixels in swizzled order, PSP-style
         /// </summary>
-        PostProcessUnswizzle_PSP = ((ulong)1 << 49),
+        PixelOrderingSwizzledPSP = ((ulong)1 << 49),
 
         /// <summary>
-        /// Mask for extracting post-processing value
+        /// Mask for extracting pixel ordering value
         /// </summary>
-        MaskPostProcess = ((((ulong)1 << 4) - 1) << 46), /* 0003C00000000000 */
+        MaskPixelOrdering = ((((ulong)1 << 4) - 1) << 46), /* 0003C00000000000 */
 
         /// <summary>
         /// Format will not apply filtering

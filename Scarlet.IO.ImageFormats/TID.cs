@@ -149,9 +149,9 @@ namespace Scarlet.IO.ImageFormats
             {
                 switch (CompressionFourCC)
                 {
-                    case "DXT1": pixelFormat = PixelDataFormat.FormatDXT1_Vita; break;
-                    case "DXT3": pixelFormat = PixelDataFormat.FormatDXT3_Vita; break;
-                    case "DXT5": pixelFormat = PixelDataFormat.FormatDXT5_Vita; break;
+                    case "DXT1": pixelFormat = PixelDataFormat.FormatDXT1; break;
+                    case "DXT3": pixelFormat = PixelDataFormat.FormatDXT3; break;
+                    case "DXT5": pixelFormat = PixelDataFormat.FormatDXT5; break;
                     default: throw new Exception(string.Format("Unimplemented TID compression format '{0}'", CompressionFourCC));
                 }
             }
@@ -170,7 +170,7 @@ namespace Scarlet.IO.ImageFormats
             // TODO: verify if [Compressed == Swizzled] is correct, or if swizzling depends on other factors
 
             if (pixelCompression == TidFormatCompressionFlag.Compressed)
-                pixelFormat |= PixelDataFormat.PostProcessUnswizzle_Vita;
+                pixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
 
             imageBinary = new ImageBinary();
             imageBinary.Width = (int)Width;

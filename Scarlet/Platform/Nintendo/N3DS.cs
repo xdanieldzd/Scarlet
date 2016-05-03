@@ -38,19 +38,19 @@ namespace Scarlet.Platform.Nintendo
     {
         static readonly Dictionary<Tuple<PicaDataType, PicaPixelFormat>, PixelDataFormat> formatMap = new Dictionary<Tuple<PicaDataType, PicaPixelFormat>, PixelDataFormat>()
         {
-            /* RGBA4444 */  { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedShort4444, PicaPixelFormat.RGBANativeDMP), PixelDataFormat.FormatRgba4444 | PixelDataFormat.PostProcessUntile_3DS },
-            /* RGBA5551 */  { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedShort5551, PicaPixelFormat.RGBANativeDMP), PixelDataFormat.FormatRgba5551 | PixelDataFormat.PostProcessUntile_3DS },
-            /* RGBA8888 */  { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.RGBANativeDMP), PixelDataFormat.FormatRgba8888 | PixelDataFormat.PostProcessUntile_3DS },
-            /* RGB565 */    { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedShort565, PicaPixelFormat.RGBNativeDMP), PixelDataFormat.FormatRgb565 | PixelDataFormat.PostProcessUntile_3DS },
-            /* RGB888 */    { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.RGBNativeDMP), PixelDataFormat.FormatRgb888 | PixelDataFormat.PostProcessUntile_3DS },
+            /* RGBA4444 */  { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedShort4444, PicaPixelFormat.RGBANativeDMP), PixelDataFormat.FormatRgba4444 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* RGBA5551 */  { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedShort5551, PicaPixelFormat.RGBANativeDMP), PixelDataFormat.FormatRgba5551 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* RGBA8888 */  { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.RGBANativeDMP), PixelDataFormat.FormatRgba8888 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* RGB565 */    { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedShort565, PicaPixelFormat.RGBNativeDMP), PixelDataFormat.FormatRgb565 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* RGB888 */    { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.RGBNativeDMP), PixelDataFormat.FormatRgb888 | PixelDataFormat.PixelOrderingTiled3DS },
             /* ETC1 */      { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.ETC1RGB8NativeDMP), PixelDataFormat.FormatETC1_3DS },
             /* ETC1_A4 */   { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.ETC1AlphaRGB8A4NativeDMP), PixelDataFormat.FormatETC1A4_3DS },
-            /* A8 */        { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.AlphaNativeDMP), PixelDataFormat.FormatAlpha8 | PixelDataFormat.PostProcessUntile_3DS },
-            /* A4 */        { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.Unsigned4BitsDMP, PicaPixelFormat.AlphaNativeDMP), PixelDataFormat.FormatAlpha4 | PixelDataFormat.PostProcessUntile_3DS },
-            /* L8 */        { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.LuminanceNativeDMP), PixelDataFormat.FormatLuminance8 | PixelDataFormat.PostProcessUntile_3DS },
-            /* L4 */        { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.Unsigned4BitsDMP, PicaPixelFormat.LuminanceNativeDMP), PixelDataFormat.FormatLuminance4 | PixelDataFormat.PostProcessUntile_3DS },
-            /* LA88 */      { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.LuminanceAlphaNativeDMP), PixelDataFormat.FormatLuminanceAlpha88 | PixelDataFormat.PostProcessUntile_3DS },
-            /* LA44 */      { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte44DMP, PicaPixelFormat.LuminanceAlphaNativeDMP), PixelDataFormat.FormatLuminanceAlpha44 | PixelDataFormat.PostProcessUntile_3DS }
+            /* A8 */        { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.AlphaNativeDMP), PixelDataFormat.FormatAlpha8 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* A4 */        { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.Unsigned4BitsDMP, PicaPixelFormat.AlphaNativeDMP), PixelDataFormat.FormatAlpha4 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* L8 */        { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.LuminanceNativeDMP), PixelDataFormat.FormatLuminance8 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* L4 */        { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.Unsigned4BitsDMP, PicaPixelFormat.LuminanceNativeDMP), PixelDataFormat.FormatLuminance4 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* LA88 */      { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte, PicaPixelFormat.LuminanceAlphaNativeDMP), PixelDataFormat.FormatLuminanceAlpha88 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* LA44 */      { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte44DMP, PicaPixelFormat.LuminanceAlphaNativeDMP), PixelDataFormat.FormatLuminanceAlpha44 | PixelDataFormat.PixelOrderingTiled3DS }
         };
 
         public static PixelDataFormat GetPixelDataFormat(PicaDataType dataType, PicaPixelFormat pixelFormat)

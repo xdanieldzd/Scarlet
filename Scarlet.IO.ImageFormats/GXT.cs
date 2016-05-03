@@ -103,13 +103,13 @@ namespace Scarlet.IO.ImageFormats
 
                     case SceGxmTextureType.Tiled:
                         // TODO: verify me!
-                        imageBinary.InputPixelFormat |= PixelDataFormat.PostProcessUntile_3DS;
+                        imageBinary.InputPixelFormat |= PixelDataFormat.PixelOrderingTiled3DS;
                         break;
 
                     case SceGxmTextureType.Swizzled:
                     case SceGxmTextureType.Cube:
                         // TODO: is cube really the same as swizzled? seems that way from CS' *env* files...
-                        imageBinary.InputPixelFormat |= PixelDataFormat.PostProcessUnswizzle_Vita;
+                        imageBinary.InputPixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
                         break;
                 }
             }
