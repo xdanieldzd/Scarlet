@@ -42,11 +42,14 @@ namespace Scarlet.IO.ImageFormats
         {
             PixelDataFormat inputPixelFormat = PixelDataFormat.Undefined;
 
-            switch (DDSHeader.PixelFormat.FourCC)
+            if (DDSHeader.PixelFormat.Flags.HasFlag(DDPF.FourCC))
             {
-                case "DXT1": inputPixelFormat = PixelDataFormat.FormatDXT1; break;
-                case "DXT3": inputPixelFormat = PixelDataFormat.FormatDXT3; break;
-                case "DXT5": inputPixelFormat = PixelDataFormat.FormatDXT5; break;
+                switch (DDSHeader.PixelFormat.FourCC)
+                {
+                    case "DXT1": inputPixelFormat = PixelDataFormat.FormatDXT1; break;
+                    case "DXT3": inputPixelFormat = PixelDataFormat.FormatDXT3; break;
+                    case "DXT5": inputPixelFormat = PixelDataFormat.FormatDXT5; break;
+                }
             }
 
             if (inputPixelFormat == PixelDataFormat.Undefined)
