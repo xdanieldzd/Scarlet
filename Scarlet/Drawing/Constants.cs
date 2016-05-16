@@ -25,6 +25,8 @@ namespace Scarlet.Drawing
          * Rsv FFF0000000000000
          */
 
+        // TODO: special formats seem kinda iffy now, maybe rething those?
+
         /// <summary>
         /// Format has 0 bits per pixel (invalid)
         /// </summary>
@@ -273,52 +275,52 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Special format with 3DS-style ETC1 data
         /// </summary>
-        FormatETC1_3DS = ((ulong)1 << 32),
+        SpecialFormatETC1_3DS = ((ulong)1 << 32),
 
         /// <summary>
         /// Special format with 3DS-style ETC1A4 data
         /// </summary>
-        FormatETC1A4_3DS = ((ulong)1 << 33),
+        SpecialFormatETC1A4_3DS = ((ulong)1 << 33),
 
         /// <summary>
         /// Special format with generic DXT1 data
         /// </summary>
-        FormatDXT1 = ((ulong)1 << 34),
+        SpecialFormatDXT1 = ((ulong)1 << 34),
 
         /// <summary>
         /// Special format with PSP-style DXT1 data
         /// </summary>
-        FormatDXT1_PSP = ((ulong)1 << 35),
+        SpecialFormatDXT1_PSP = ((ulong)1 << 35),
 
         /// <summary>
         /// Special format with generic DXT3 data
         /// </summary>
-        FormatDXT3 = ((ulong)1 << 36),
+        SpecialFormatDXT3 = ((ulong)1 << 36),
 
         /// <summary>
         /// Special format with PSP-style DXT3 data
         /// </summary>
-        FormatDXT3_PSP = ((ulong)1 << 37),
+        SpecialFormatDXT3_PSP = ((ulong)1 << 37),
 
         /// <summary>
         /// Special format with generic DXT5 data
         /// </summary>
-        FormatDXT5 = ((ulong)1 << 38),
+        SpecialFormatDXT5 = ((ulong)1 << 38),
 
         /// <summary>
         /// Special format with PSP-style DXT5 data
         /// </summary>
-        FormatDXT5_PSP = ((ulong)1 << 39),
+        SpecialFormatDXT5_PSP = ((ulong)1 << 39),
 
         /// <summary>
         /// Special format with Vita-style PVRT2 data
         /// </summary>
-        FormatPVRT2_Vita = ((ulong)1 << 40),
+        SpecialFormatPVRT2_Vita = ((ulong)1 << 40),
 
         /// <summary>
         /// Special format with Vita-style PVRT4 data
         /// </summary>
-        FormatPVRT4_Vita = ((ulong)1 << 41),
+        SpecialFormatPVRT4_Vita = ((ulong)1 << 41),
 
         /// <summary>
         /// Mask for extracting special format value
@@ -519,6 +521,66 @@ namespace Scarlet.Drawing
         /// Format is 4-bit indexed
         /// </summary>
         FormatIndexed4 = (Bpp4 | ChannelsIndexed | RedBits0 | GreenBits0 | BlueBits0 | AlphaBits0),
+
+        /// <summary>
+        /// Format is 3DS-style ETC1
+        /// </summary>
+        FormatETC1_3DS = (SpecialFormatETC1_3DS),
+
+        /// <summary>
+        /// Format is 3DS-style ETC1A4
+        /// </summary>
+        FormatETC1A4_3DS = (SpecialFormatETC1A4_3DS),
+
+        /// <summary>
+        /// Format is RGB-mode DXT1
+        /// </summary>
+        FormatDXT1Rgb = (SpecialFormatDXT1 | ChannelsRgb),
+
+        /// <summary>
+        /// Format is RGBA-mode DXT1
+        /// </summary>
+        FormatDXT1Rgba = (SpecialFormatDXT1 | ChannelsRgba),
+
+        /// <summary>
+        /// Format is PSP-style, RGB-mode DXT1
+        /// </summary>
+        FormatDXT1Rgb_PSP = (SpecialFormatDXT1_PSP | ChannelsRgb),
+
+        /// <summary>
+        /// Format is PSP-style, RGBA-mode DXT1
+        /// </summary>
+        FormatDXT1Rgba_PSP = (SpecialFormatDXT1_PSP | ChannelsRgba),
+
+        /// <summary>
+        /// Format is RGBA-mode DXT3
+        /// </summary>
+        FormatDXT3 = (SpecialFormatDXT3 | ChannelsRgba),
+
+        /// <summary>
+        /// Format is PSP-style, RGBA-mode DXT3
+        /// </summary>
+        FormatDXT3_PSP = (SpecialFormatDXT3_PSP | ChannelsRgba),
+
+        /// <summary>
+        /// Format is RGBA-mode DXT5
+        /// </summary>
+        FormatDXT5 = (SpecialFormatDXT5 | ChannelsRgba),
+
+        /// <summary>
+        /// Format is PSP-style, RGBA-mode DXT5
+        /// </summary>
+        FormatDXT5_PSP = (SpecialFormatDXT5_PSP | ChannelsRgba),
+
+        /// <summary>
+        /// Format is Vita-style PVRT2
+        /// </summary>
+        FormatPVRT2_Vita = (SpecialFormatPVRT2_Vita),
+
+        /// <summary>
+        /// Format is Vita-style PVRT4
+        /// </summary>
+        FormatPVRT4_Vita = (SpecialFormatPVRT4_Vita),
 
         /// <summary>
         /// Undefined value

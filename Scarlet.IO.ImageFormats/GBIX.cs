@@ -96,7 +96,7 @@ namespace Scarlet.IO.ImageFormats
             }
             else if (Format == 0x800A)
             {
-                pixelDataFormat = PixelDataFormat.FormatDXT1_PSP;
+                pixelDataFormat = PixelDataFormat.FormatDXT1Rgba_PSP;
                 paletteDataFormat = PixelDataFormat.Undefined;
             }
             else

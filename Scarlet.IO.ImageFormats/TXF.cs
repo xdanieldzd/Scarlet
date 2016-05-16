@@ -82,7 +82,7 @@ namespace Scarlet.IO.ImageFormats
             switch (Header.PixelFormat)
             {
                 case TxfPixelFormat.Argb8888: pixelDataFormat = PixelDataFormat.FormatArgb8888; break;
-                case TxfPixelFormat.RgbaDxt1: pixelDataFormat = PixelDataFormat.FormatDXT1; break;
+                case TxfPixelFormat.RgbaDxt1: pixelDataFormat = PixelDataFormat.FormatDXT1Rgba; break;
                 case TxfPixelFormat.RgbaDxt3: pixelDataFormat = PixelDataFormat.FormatDXT3; break;
                 case TxfPixelFormat.RgbaDxt5: pixelDataFormat = PixelDataFormat.FormatDXT5; break;
                 case TxfPixelFormat.Argb1555: pixelDataFormat = PixelDataFormat.FormatArgb1555; break;

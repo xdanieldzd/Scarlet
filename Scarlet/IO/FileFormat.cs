@@ -80,6 +80,8 @@ namespace Scarlet.IO
         /// <returns>Instance of file; null if no instance was created</returns>
         public static T FromFile<T>(FileStream fileStream, Endian endianness) where T : FileFormat
         {
+            // TODO: rework identification system?
+
             List<IdentificationMatch> matchedTypes = new List<IdentificationMatch>();
 
             EndianBinaryReader reader = new EndianBinaryReader(fileStream, endianness);
@@ -88,27 +90,44 @@ namespace Scarlet.IO
                 {
                     foreach (var type in assembly.GetExportedTypes().Where(x => x == typeof(T) || x.InheritsFrom(typeof(T))))
                     {
+                        IdentificationMatch magicMatch = null, patternMatch = null;
+
+                        var customAttribs = type.GetCustomAttributes(false);
+                        bool requireMagicAndPattern = customAttribs.Any(x => x is MagicNumberAttribute) && customAttribs.Any(x => x is FilenamePatternAttribute);
+
                         var verifyMethod = type.GetMethod("VerifyMagicNumber", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
                         if (verifyMethod == null) throw new NullReferenceException("Reflection error on method fetch for file verification");
                         VerifyResult verifyResult = ((VerifyResult)verifyMethod.Invoke(null, new object[] { reader, type }));
 
                         if (verifyResult == VerifyResult.VerifyOkay)
                         {
-                            matchedTypes.Add(new IdentificationMatch(type, int.MaxValue));
+                            magicMatch = new IdentificationMatch(type, int.MaxValue);
                         }
                         else if (verifyResult == VerifyResult.WrongMagicNumber)
                         {
                             continue;
                         }
-                        else if (verifyResult == VerifyResult.NoMagicNumber)
+
+                        foreach (var fnPatternAttrib in type.GetCustomAttributes(typeof(FilenamePatternAttribute), false))
                         {
-                            foreach (var fnPatternAttrib in type.GetCustomAttributes(typeof(FilenamePatternAttribute), false))
+                            string pattern = (fnPatternAttrib as FilenamePatternAttribute).Pattern;
+                            Regex regEx = new Regex(pattern, RegexOptions.IgnoreCase);
+                            if (regEx.IsMatch(fileStream.Name))
+                                patternMatch = new IdentificationMatch(type, pattern.Length);
+                        }
+
+                        if (requireMagicAndPattern)
+                        {
+                            if (magicMatch != null && patternMatch != null)
                             {
-                                string pattern = (fnPatternAttrib as FilenamePatternAttribute).Pattern;
-                                Regex regEx = new Regex(pattern, RegexOptions.IgnoreCase);
-                                if (regEx.IsMatch(fileStream.Name))
-                                    matchedTypes.Add(new IdentificationMatch(type, pattern.Length));
+                                matchedTypes.Add(magicMatch);
+                                matchedTypes.Add(patternMatch);
                             }
+                        }
+                        else
+                        {
+                            if (magicMatch != null) matchedTypes.Add(magicMatch);
+                            if (patternMatch != null) matchedTypes.Add(patternMatch);
                         }
                     }
 

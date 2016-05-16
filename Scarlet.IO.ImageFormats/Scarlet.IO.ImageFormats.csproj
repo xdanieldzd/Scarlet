@@ -46,6 +46,7 @@
     <Compile Include="CBG.cs" />
     <Compile Include="CSU.cs" />
     <Compile Include="DDS.cs" />
+    <Compile Include="DMPBM.cs" />
     <Compile Include="GBIX.cs" />
     <Compile Include="ImageFormat.cs" />
     <Compile Include="GXT.cs" />

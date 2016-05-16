@@ -598,22 +598,22 @@ namespace Scarlet.Drawing
             PixelDataFormat specialFormat = (inputPixelFormat & PixelDataFormat.MaskSpecial);
             switch (specialFormat)
             {
-                case PixelDataFormat.FormatETC1_3DS:
-                case PixelDataFormat.FormatETC1A4_3DS:
+                case PixelDataFormat.SpecialFormatETC1_3DS:
+                case PixelDataFormat.SpecialFormatETC1A4_3DS:
                     outputData = ETC1.Decompress(reader, width, height, specialFormat, reader.BaseStream.Length);
                     break;
 
-                case PixelDataFormat.FormatPVRT2_Vita:
-                case PixelDataFormat.FormatPVRT4_Vita:
+                case PixelDataFormat.SpecialFormatPVRT2_Vita:
+                case PixelDataFormat.SpecialFormatPVRT4_Vita:
                     outputData = PVRTC.Decompress(reader, width, height, specialFormat, reader.BaseStream.Length);
                     break;
 
-                case PixelDataFormat.FormatDXT1:
-                case PixelDataFormat.FormatDXT1_PSP:
-                case PixelDataFormat.FormatDXT3:
-                case PixelDataFormat.FormatDXT3_PSP:
-                case PixelDataFormat.FormatDXT5:
-                case PixelDataFormat.FormatDXT5_PSP:
+                case PixelDataFormat.SpecialFormatDXT1:
+                case PixelDataFormat.SpecialFormatDXT1_PSP:
+                case PixelDataFormat.SpecialFormatDXT3:
+                case PixelDataFormat.SpecialFormatDXT3_PSP:
+                case PixelDataFormat.SpecialFormatDXT5:
+                case PixelDataFormat.SpecialFormatDXT5_PSP:
                     outputData = DXTx.Decompress(reader, width, height, inputPixelFormat, reader.BaseStream.Length);
                     break;
 

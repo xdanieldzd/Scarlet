@@ -149,7 +149,7 @@ namespace Scarlet.IO.ImageFormats
             {
                 switch (CompressionFourCC)
                 {
-                    case "DXT1": pixelFormat = PixelDataFormat.FormatDXT1; break;
+                    case "DXT1": pixelFormat = PixelDataFormat.FormatDXT1Rgba; break;
                     case "DXT3": pixelFormat = PixelDataFormat.FormatDXT3; break;
                     case "DXT5": pixelFormat = PixelDataFormat.FormatDXT5; break;
                     default: throw new Exception(string.Format("Unimplemented TID compression format '{0}'", CompressionFourCC));

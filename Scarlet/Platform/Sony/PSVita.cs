@@ -565,7 +565,7 @@ namespace Scarlet.Platform.Sony
             /* RGB565   */ { SceGxmTextureFormat.U5U6U5_RGB, PixelDataFormat.FormatRgb565 },
             /* ABGR8888 */ { SceGxmTextureFormat.U8U8U8U8_ABGR, PixelDataFormat.FormatAbgr8888 },
             /* ARGB8888 */ { SceGxmTextureFormat.U8U8U8U8_ARGB, PixelDataFormat.FormatArgb8888 },
-            /* DXT1     */ { SceGxmTextureFormat.UBC1_ABGR, PixelDataFormat.FormatDXT1 },
+            /* DXT1     */ { SceGxmTextureFormat.UBC1_ABGR, PixelDataFormat.FormatDXT1Rgb },
             /* DXT3     */ { SceGxmTextureFormat.UBC2_ABGR, PixelDataFormat.FormatDXT3 },
             /* DXT5     */ { SceGxmTextureFormat.UBC3_ABGR, PixelDataFormat.FormatDXT5 },
             /* PVRT2    */ { SceGxmTextureFormat.PVRT2BPP_ABGR, PixelDataFormat.FormatPVRT2_Vita },

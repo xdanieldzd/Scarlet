@@ -54,7 +54,7 @@ namespace Scarlet.Drawing.Compression
         {
             /* Call ported decompression functions */
             byte[] pixelData = new byte[readLength * 8];
-            PVRTDecompressPVRTC(reader.ReadBytes((int)readLength), ((inputFormat & PixelDataFormat.MaskSpecial) == PixelDataFormat.FormatPVRT2_Vita ? 1 : 0), width, height, ref pixelData);
+            PVRTDecompressPVRTC(reader.ReadBytes((int)readLength), ((inputFormat & PixelDataFormat.MaskSpecial) == PixelDataFormat.SpecialFormatPVRT2_Vita ? 1 : 0), width, height, ref pixelData);
             return pixelData;
         }
 

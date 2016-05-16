@@ -8,21 +8,42 @@ using Scarlet.Drawing;
 
 namespace Scarlet.Drawing.Compression
 {
-    // TODO: rewrite, fix, make simpler, etc., etc.!
+    /* https://www.opengl.org/registry/specs/EXT/texture_compression_s3tc.txt */
+
+    internal enum DXTxBlockLayout { Normal, PSP }
+    internal delegate byte[] DXTxBlockDecoderDelegate(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxBlockLayout blockLayout);
 
     internal static class DXTx
     {
         public static byte[] Decompress(EndianBinaryReader reader, int width, int height, PixelDataFormat inputFormat, long readLength)
         {
-            byte[] pixelData = new byte[readLength * 8];
+            byte[] outPixels = new byte[readLength * 8];
 
             PixelOrderingDelegate pixelOrderingFunc = ImageBinary.GetPixelOrderingFunction(inputFormat & PixelDataFormat.MaskPixelOrdering);
+
+            DXTxBlockDecoderDelegate blockDecoder;
+            DXTxBlockLayout blockLayout;
+
+            PixelDataFormat specialFormat = (inputFormat & PixelDataFormat.MaskSpecial);
+            switch (specialFormat)
+            {
+                case PixelDataFormat.SpecialFormatDXT1: blockDecoder = DecodeDXT1Block; blockLayout = DXTxBlockLayout.Normal; break;
+                case PixelDataFormat.SpecialFormatDXT3: blockDecoder = DecodeDXT3Block; blockLayout = DXTxBlockLayout.Normal; break;
+                case PixelDataFormat.SpecialFormatDXT5: blockDecoder = DecodeDXT5Block; blockLayout = DXTxBlockLayout.Normal; break;
+
+                case PixelDataFormat.SpecialFormatDXT1_PSP: blockDecoder = DecodeDXT1Block; blockLayout = DXTxBlockLayout.PSP; break;
+                case PixelDataFormat.SpecialFormatDXT3_PSP: blockDecoder = DecodeDXT3Block; blockLayout = DXTxBlockLayout.PSP; break;
+                case PixelDataFormat.SpecialFormatDXT5_PSP: blockDecoder = DecodeDXT5Block; blockLayout = DXTxBlockLayout.PSP; break;
+
+                default:
+                    throw new Exception("Trying to decode DXT with format set to non-DXT");
+            }
 
             for (int y = 0; y < height; y += 4)
             {
                 for (int x = 0; x < width; x += 4)
                 {
-                    byte[] decompressedBlock = DecompressDxtBlock(reader, (inputFormat & PixelDataFormat.MaskSpecial));
+                    byte[] decompressedBlock = blockDecoder(reader, inputFormat, blockLayout);
 
                     int rx, ry;
                     pixelOrderingFunc(x / 4, y / 4, width / 4, height / 4, inputFormat, out rx, out ry);
@@ -38,158 +59,143 @@ namespace Scarlet.Drawing.Compression
                             if (ix >= width || iy >= height) continue;
 
                             for (int c = 0; c < 4; c++)
-                                pixelData[(((iy * width) + ix) * 4) + c] = decompressedBlock[(((py * 4) + px) * 4) + c];
+                                outPixels[(((iy * width) + ix) * 4) + c] = decompressedBlock[(((py * 4) + px) * 4) + c];
                         }
                     }
                 }
             }
 
-            return pixelData;
+            return outPixels;
         }
 
-        private static byte[] DecompressDxtBlock(EndianBinaryReader reader, PixelDataFormat format)
+        /// <summary>
+        /// Decodes the given block
+        /// </summary>
+        /// <param name="inBlock">Block to decode</param>
+        /// <param name="has1bitAlpha">Set if block contains DXT1 1-bit alpha (COMPRESSED_RGBA_S3TC_DXT1_EXT)</param>
+        /// <param name="isDXT1">Set if block should be decoded as DXT1, else it will be decoded as DXT3/5</param>
+        /// <returns></returns>
+        private static byte[] DecodeColorBlock(DXT1Block inBlock, bool has1bitAlpha, bool isDXT1)
         {
-            byte[] outputData = new byte[(4 * 4) * 4];
-            byte[] colorData = null, alphaData = null;
+            byte[] outData = new byte[(4 * 4) * 4];
+            byte[,] colors = new byte[4, 4];
 
-            bool isDxt1 = (format == PixelDataFormat.FormatDXT1 || format == PixelDataFormat.FormatDXT1_PSP);
-            bool isPsp = (format == PixelDataFormat.FormatDXT1_PSP || format == PixelDataFormat.FormatDXT5_PSP);
+            UnpackRgb565(inBlock.Color0, out colors[0, 2], out colors[0, 1], out colors[0, 0]);
+            UnpackRgb565(inBlock.Color1, out colors[1, 2], out colors[1, 1], out colors[1, 0]);
+            colors[0, 3] = 255;
+            colors[1, 3] = 255;
 
-            if (isPsp)
+            if (isDXT1 && inBlock.Color0 <= inBlock.Color1)
             {
-                colorData = DecompressDxtColor(reader, format);
-                if (!isDxt1) alphaData = DecompressDxtAlpha(reader, format);
+                colors[2, 0] = (byte)((colors[0, 0] + colors[1, 0]) / 2);
+                colors[2, 1] = (byte)((colors[0, 1] + colors[1, 1]) / 2);
+                colors[2, 2] = (byte)((colors[0, 2] + colors[1, 2]) / 2);
+                colors[2, 3] = 255;
+
+                colors[3, 0] = 0;
+                colors[3, 1] = 0;
+                colors[3, 2] = 0;
+                colors[3, 3] = (byte)((has1bitAlpha && inBlock.Color0 <= inBlock.Color1) ? 0 : 0xFF);
             }
             else
             {
-                if (!isDxt1) alphaData = DecompressDxtAlpha(reader, format);
-                colorData = DecompressDxtColor(reader, format);
+                colors[2, 0] = (byte)((2 * colors[0, 0] + colors[1, 0]) / 3);
+                colors[2, 1] = (byte)((2 * colors[0, 1] + colors[1, 1]) / 3);
+                colors[2, 2] = (byte)((2 * colors[0, 2] + colors[1, 2]) / 3);
+                colors[2, 3] = 255;
+
+                colors[3, 0] = (byte)((colors[0, 0] + 2 * colors[1, 0]) / 3);
+                colors[3, 1] = (byte)((colors[0, 1] + 2 * colors[1, 1]) / 3);
+                colors[3, 2] = (byte)((colors[0, 2] + 2 * colors[1, 2]) / 3);
+                colors[3, 3] = 255;
             }
 
-            for (int i = 0; i < colorData.Length; i += 4)
+            for (int by = 0; by < 4; by++)
             {
-                outputData[i] = colorData[i];
-                outputData[i + 1] = colorData[i + 1];
-                outputData[i + 2] = colorData[i + 2];
-                outputData[i + 3] = (alphaData != null ? alphaData[i + 3] : colorData[i + 3]);
+                for (int bx = 0; bx < 4; bx++)
+                {
+                    byte code = inBlock.Bits[(by * 4) + bx];
+                    for (int c = 0; c < 4; c++)
+                        outData[(((by * 4) + bx) * 4) + c] = colors[code, c];
+                }
             }
 
-            return outputData;
+            return outData;
         }
 
-        private static byte[] DecompressDxtColor(EndianBinaryReader reader, PixelDataFormat format)
+        private static byte[] DecodeDXT1Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxBlockLayout blockLayout)
         {
-            byte[] colorOut = new byte[(4 * 4) * 4];
+            DXT1Block inBlock = new DXT1Block(reader, blockLayout);
+            return DecodeColorBlock(inBlock, (inputFormat & PixelDataFormat.MaskChannels) != PixelDataFormat.ChannelsRgb, true);
+        }
 
-            byte color0_hi, color0_lo, color1_hi, color1_lo, bits_3, bits_2, bits_1, bits_0;
+        private static byte[] DecodeDXT3Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxBlockLayout blockLayout)
+        {
+            DXT3Block inBlock = new DXT3Block(reader, blockLayout);
+            byte[] outData = DecodeColorBlock(inBlock.Color, false, false);
 
-            if (format == PixelDataFormat.FormatDXT1_PSP || format == PixelDataFormat.FormatDXT3_PSP || format == PixelDataFormat.FormatDXT5_PSP)
+            ulong alpha = inBlock.Alpha;
+            for (int i = 0; i < outData.Length; i += 4)
             {
-                bits_3 = reader.ReadByte();
-                bits_2 = reader.ReadByte();
-                bits_1 = reader.ReadByte();
-                bits_0 = reader.ReadByte();
-                color0_hi = reader.ReadByte();
-                color0_lo = reader.ReadByte();
-                color1_hi = reader.ReadByte();
-                color1_lo = reader.ReadByte();
-            }
-            else
-            {
-                color0_hi = reader.ReadByte();
-                color0_lo = reader.ReadByte();
-                color1_hi = reader.ReadByte();
-                color1_lo = reader.ReadByte();
-                bits_3 = reader.ReadByte();
-                bits_2 = reader.ReadByte();
-                bits_1 = reader.ReadByte();
-                bits_0 = reader.ReadByte();
+                outData[i + 3] = (byte)(((alpha & 0xF) << 4) | (alpha & 0xF));
+                alpha >>= 4;
             }
 
-            ushort color0 = (ushort)(((ushort)color0_lo << 8) | (ushort)color0_hi);
-            ushort color1 = (ushort)(((ushort)color1_lo << 8) | (ushort)color1_hi);
-            uint bits = (uint)(((uint)bits_0 << 24) | ((uint)bits_1 << 16) | ((uint)bits_2 << 8) | (uint)bits_3);
+            return outData;
+        }
 
-            byte c0r, c0g, c0b, c1r, c1g, c1b;
-            UnpackRgb565(color0, out c0r, out c0g, out c0b);
-            UnpackRgb565(color1, out c1r, out c1g, out c1b);
-
-            byte[] bitsExt = new byte[16];
-            for (int i = 0; i < bitsExt.Length; i++)
-                bitsExt[i] = (byte)((bits >> (i * 2)) & 0x3);
+        private static byte[] DecodeDXT5Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxBlockLayout blockLayout)
+        {
+            DXT5Block inBlock = new DXT5Block(reader, blockLayout);
+            byte[] outData = DecodeColorBlock(inBlock.Color, false, false);
 
             for (int y = 0; y < 4; y++)
             {
                 for (int x = 0; x < 4; x++)
                 {
-                    byte code = bitsExt[(y * 4) + x];
-                    int destOffset = ((y * 4) + x) * 4;
+                    byte code = inBlock.Bits[(y * 4) + x];
+                    int destOffset = (((y * 4) + x) * 4) + 3;
 
-                    if (format == PixelDataFormat.FormatDXT1 || format == PixelDataFormat.FormatDXT1_PSP)
-                        colorOut[destOffset + 3] = (byte)((color0 <= color1 && code == 3) ? 0 : 0xFF);
-
-                    if ((format == PixelDataFormat.FormatDXT1 || format == PixelDataFormat.FormatDXT1_PSP) && color0 <= color1)
+                    if (inBlock.Alpha0 > inBlock.Alpha1)
                     {
                         switch (code)
                         {
-                            case 0x00:
-                                colorOut[destOffset + 0] = c0b;
-                                colorOut[destOffset + 1] = c0g;
-                                colorOut[destOffset + 2] = c0r;
-                                break;
-
-                            case 0x01:
-                                colorOut[destOffset + 0] = c1b;
-                                colorOut[destOffset + 1] = c1g;
-                                colorOut[destOffset + 2] = c1r;
-                                break;
-
-                            case 0x02:
-                                colorOut[destOffset + 0] = (byte)((c0b + c1b) / 2);
-                                colorOut[destOffset + 1] = (byte)((c0g + c1g) / 2);
-                                colorOut[destOffset + 2] = (byte)((c0r + c1r) / 2);
-                                break;
-
-                            case 0x03:
-                                colorOut[destOffset + 0] = 0;
-                                colorOut[destOffset + 1] = 0;
-                                colorOut[destOffset + 2] = 0;
-                                break;
+                            case 0x00: outData[destOffset] = inBlock.Alpha0; break;
+                            case 0x01: outData[destOffset] = inBlock.Alpha1; break;
+                            case 0x02: outData[destOffset] = (byte)((6 * inBlock.Alpha0 + 1 * inBlock.Alpha1) / 7); break;
+                            case 0x03: outData[destOffset] = (byte)((5 * inBlock.Alpha0 + 2 * inBlock.Alpha1) / 7); break;
+                            case 0x04: outData[destOffset] = (byte)((4 * inBlock.Alpha0 + 3 * inBlock.Alpha1) / 7); break;
+                            case 0x05: outData[destOffset] = (byte)((3 * inBlock.Alpha0 + 4 * inBlock.Alpha1) / 7); break;
+                            case 0x06: outData[destOffset] = (byte)((2 * inBlock.Alpha0 + 5 * inBlock.Alpha1) / 7); break;
+                            case 0x07: outData[destOffset] = (byte)((1 * inBlock.Alpha0 + 6 * inBlock.Alpha1) / 7); break;
                         }
                     }
                     else
                     {
                         switch (code)
                         {
-                            case 0x00:
-                                colorOut[destOffset + 0] = c0b;
-                                colorOut[destOffset + 1] = c0g;
-                                colorOut[destOffset + 2] = c0r;
-                                break;
-
-                            case 0x01:
-                                colorOut[destOffset + 0] = c1b;
-                                colorOut[destOffset + 1] = c1g;
-                                colorOut[destOffset + 2] = c1r;
-                                break;
-
-                            case 0x02:
-                                colorOut[destOffset + 0] = (byte)((2 * c0b + c1b) / 3);
-                                colorOut[destOffset + 1] = (byte)((2 * c0g + c1g) / 3);
-                                colorOut[destOffset + 2] = (byte)((2 * c0r + c1r) / 3);
-                                break;
-
-                            case 0x03:
-                                colorOut[destOffset + 0] = (byte)((c0b + 2 * c1b) / 3);
-                                colorOut[destOffset + 1] = (byte)((c0g + 2 * c1g) / 3);
-                                colorOut[destOffset + 2] = (byte)((c0r + 2 * c1r) / 3);
-                                break;
+                            case 0x00: outData[destOffset] = inBlock.Alpha0; break;
+                            case 0x01: outData[destOffset] = inBlock.Alpha1; break;
+                            case 0x02: outData[destOffset] = (byte)((4 * inBlock.Alpha0 + 1 * inBlock.Alpha1) / 5); break;
+                            case 0x03: outData[destOffset] = (byte)((3 * inBlock.Alpha0 + 2 * inBlock.Alpha1) / 5); break;
+                            case 0x04: outData[destOffset] = (byte)((2 * inBlock.Alpha0 + 3 * inBlock.Alpha1) / 5); break;
+                            case 0x05: outData[destOffset] = (byte)((1 * inBlock.Alpha0 + 4 * inBlock.Alpha1) / 5); break;
+                            case 0x06: outData[destOffset] = 0x00; break;
+                            case 0x07: outData[destOffset] = 0xFF; break;
                         }
                     }
                 }
             }
 
-            return colorOut;
+            return outData;
+        }
+
+        public static byte[] ExtractBits(ulong bits, int numBits)
+        {
+            byte[] bitsExt = new byte[16];
+            for (int i = 0; i < bitsExt.Length; i++)
+                bitsExt[i] = (byte)((bits >> (i * numBits)) & (byte)((1 << numBits) - 1));
+            return bitsExt;
         }
 
         private static void UnpackRgb565(ushort rgb565, out byte r, out byte g, out byte b)
@@ -202,77 +208,122 @@ namespace Scarlet.Drawing.Compression
             b = (byte)((b << 3) | (b >> 2));
         }
 
-        private static byte[] DecompressDxtAlpha(EndianBinaryReader reader, PixelDataFormat format)
+    }
+
+    internal class DXT1Block
+    {
+        public ushort Color0 { get; private set; }
+        public ushort Color1 { get; private set; }
+        public byte[] Bits { get; private set; }
+
+        public DXT1Block(EndianBinaryReader reader, DXTxBlockLayout blockLayout)
         {
-            byte[] alphaOut = new byte[(4 * 4) * 4];
+            byte color0_hi, color0_lo, color1_hi, color1_lo, bits_3, bits_2, bits_1, bits_0;
 
-            if (format == PixelDataFormat.FormatDXT3 || format == PixelDataFormat.FormatDXT3_PSP)
+            switch (blockLayout)
             {
-                ulong alpha = reader.ReadUInt64();
-                for (int i = 0; i < alphaOut.Length; i += 4)
-                {
-                    alphaOut[i + 3] = (byte)(((alpha & 0xF) << 4) | (alpha & 0xF));
-                    alpha >>= 4;
-                }
-            }
-            else if (format == PixelDataFormat.FormatDXT5 || format == PixelDataFormat.FormatDXT5_PSP)
-            {
-                byte alpha0, alpha1, bits_5, bits_4, bits_3, bits_2, bits_1, bits_0;
-                alpha0 = reader.ReadByte();
-                alpha1 = reader.ReadByte();
-                bits_5 = reader.ReadByte();
-                bits_4 = reader.ReadByte();
-                bits_3 = reader.ReadByte();
-                bits_2 = reader.ReadByte();
-                bits_1 = reader.ReadByte();
-                bits_0 = reader.ReadByte();
+                case DXTxBlockLayout.Normal:
+                    color0_hi = reader.ReadByte();
+                    color0_lo = reader.ReadByte();
+                    color1_hi = reader.ReadByte();
+                    color1_lo = reader.ReadByte();
+                    bits_3 = reader.ReadByte();
+                    bits_2 = reader.ReadByte();
+                    bits_1 = reader.ReadByte();
+                    bits_0 = reader.ReadByte();
+                    break;
 
-                ulong bits = (ulong)(((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5);
+                case DXTxBlockLayout.PSP:
+                    bits_3 = reader.ReadByte();
+                    bits_2 = reader.ReadByte();
+                    bits_1 = reader.ReadByte();
+                    bits_0 = reader.ReadByte();
+                    color0_hi = reader.ReadByte();
+                    color0_lo = reader.ReadByte();
+                    color1_hi = reader.ReadByte();
+                    color1_lo = reader.ReadByte();
+                    break;
 
-                byte[] bitsExt = new byte[16];
-                for (int i = 0; i < bitsExt.Length; i++)
-                    bitsExt[i] = (byte)((bits >> (i * 3)) & 0x7);
-
-                for (int y = 0; y < 4; y++)
-                {
-                    for (int x = 0; x < 4; x++)
-                    {
-                        byte code = bitsExt[(y * 4) + x];
-                        int destOffset = (((y * 4) + x) * 4) + 3;
-
-                        if (alpha0 > alpha1)
-                        {
-                            switch (code)
-                            {
-                                case 0x00: alphaOut[destOffset] = alpha0; break;
-                                case 0x01: alphaOut[destOffset] = alpha1; break;
-                                case 0x02: alphaOut[destOffset] = (byte)((6 * alpha0 + 1 * alpha1) / 7); break;
-                                case 0x03: alphaOut[destOffset] = (byte)((5 * alpha0 + 2 * alpha1) / 7); break;
-                                case 0x04: alphaOut[destOffset] = (byte)((4 * alpha0 + 3 * alpha1) / 7); break;
-                                case 0x05: alphaOut[destOffset] = (byte)((3 * alpha0 + 4 * alpha1) / 7); break;
-                                case 0x06: alphaOut[destOffset] = (byte)((2 * alpha0 + 5 * alpha1) / 7); break;
-                                case 0x07: alphaOut[destOffset] = (byte)((1 * alpha0 + 6 * alpha1) / 7); break;
-                            }
-                        }
-                        else
-                        {
-                            switch (code)
-                            {
-                                case 0x00: alphaOut[destOffset] = alpha0; break;
-                                case 0x01: alphaOut[destOffset] = alpha1; break;
-                                case 0x02: alphaOut[destOffset] = (byte)((4 * alpha0 + 1 * alpha1) / 5); break;
-                                case 0x03: alphaOut[destOffset] = (byte)((3 * alpha0 + 2 * alpha1) / 5); break;
-                                case 0x04: alphaOut[destOffset] = (byte)((2 * alpha0 + 3 * alpha1) / 5); break;
-                                case 0x05: alphaOut[destOffset] = (byte)((1 * alpha0 + 4 * alpha1) / 5); break;
-                                case 0x06: alphaOut[destOffset] = 0x00; break;
-                                case 0x07: alphaOut[destOffset] = 0xFF; break;
-                            }
-                        }
-                    }
-                }
+                default:
+                    throw new Exception("Unknown block layout");
             }
 
-            return alphaOut;
+            Bits = DXTx.ExtractBits((((uint)bits_0 << 24) | ((uint)bits_1 << 16) | ((uint)bits_2 << 8) | (uint)bits_3), 2);
+            Color0 = (ushort)(((ushort)color0_lo << 8) | (ushort)color0_hi);
+            Color1 = (ushort)(((ushort)color1_lo << 8) | (ushort)color1_hi);
+        }
+    }
+
+    internal class DXT3Block
+    {
+        public ulong Alpha { get; private set; }
+        public DXT1Block Color { get; private set; }
+
+        public DXT3Block(EndianBinaryReader reader, DXTxBlockLayout blockLayout)
+        {
+            switch (blockLayout)
+            {
+                case DXTxBlockLayout.Normal:
+                    Alpha = reader.ReadUInt64();
+                    Color = new DXT1Block(reader, blockLayout);
+                    break;
+
+                case DXTxBlockLayout.PSP:
+                    Color = new DXT1Block(reader, blockLayout);
+                    Alpha = reader.ReadUInt64();
+                    break;
+
+                default:
+                    throw new Exception("Unknown block layout");
+            }
+        }
+    }
+
+    internal class DXT5Block
+    {
+        public byte Alpha0 { get; private set; }
+        public byte Alpha1 { get; private set; }
+        public byte[] Bits { get; private set; }
+        public DXT1Block Color { get; private set; }
+
+        public DXT5Block(EndianBinaryReader reader, DXTxBlockLayout blockLayout)
+        {
+            byte bits_5, bits_4, bits_3, bits_2, bits_1, bits_0;
+
+            switch (blockLayout)
+            {
+                case DXTxBlockLayout.Normal:
+                    Alpha0 = reader.ReadByte();
+                    Alpha1 = reader.ReadByte();
+
+                    bits_5 = reader.ReadByte();
+                    bits_4 = reader.ReadByte();
+                    bits_3 = reader.ReadByte();
+                    bits_2 = reader.ReadByte();
+                    bits_1 = reader.ReadByte();
+                    bits_0 = reader.ReadByte();
+                    Bits = DXTx.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3);
+
+                    Color = new DXT1Block(reader, blockLayout);
+                    break;
+
+                case DXTxBlockLayout.PSP:
+                    Color = new DXT1Block(reader, blockLayout);
+                    Alpha0 = reader.ReadByte();
+                    Alpha1 = reader.ReadByte();
+
+                    bits_5 = reader.ReadByte();
+                    bits_4 = reader.ReadByte();
+                    bits_3 = reader.ReadByte();
+                    bits_2 = reader.ReadByte();
+                    bits_1 = reader.ReadByte();
+                    bits_0 = reader.ReadByte();
+                    Bits = DXTx.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3);
+                    break;
+
+                default:
+                    throw new Exception("Unknown block layout");
+            }
         }
     }
 }

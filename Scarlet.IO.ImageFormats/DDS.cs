@@ -46,7 +46,7 @@ namespace Scarlet.IO.ImageFormats
             {
                 switch (DDSHeader.PixelFormat.FourCC)
                 {
-                    case "DXT1": inputPixelFormat = PixelDataFormat.FormatDXT1; break;
+                    case "DXT1": inputPixelFormat = PixelDataFormat.FormatDXT1Rgba; break;
                     case "DXT3": inputPixelFormat = PixelDataFormat.FormatDXT3; break;
                     case "DXT5": inputPixelFormat = PixelDataFormat.FormatDXT5; break;
                 }

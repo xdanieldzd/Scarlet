@@ -311,6 +311,9 @@ namespace ScarletTestApp
                                     decompressedStream.CopyTo(outputStream);
                                 }
                             }
+
+                            // TODO: make nicer?
+                            ProcessInputFile(outputFile, outputFile.Directory, outputFile.Directory);
                         }
                         else
                             Console.WriteLine("unhandled file.");
