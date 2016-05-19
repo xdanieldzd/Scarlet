@@ -50,6 +50,7 @@
     <Compile Include="GBIX.cs" />
     <Compile Include="ImageFormat.cs" />
     <Compile Include="GXT.cs" />
+    <Compile Include="KSLT.cs" />
     <Compile Include="NMT.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SHTX.cs" />
