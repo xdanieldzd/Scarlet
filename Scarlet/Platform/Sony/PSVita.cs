@@ -618,13 +618,13 @@ namespace Scarlet.Platform.Sony
 
         public static PixelDataFormat GetPixelDataFormat(SceGxmTextureFormat pixelFormat)
         {
-            if (!formatMap.ContainsKey(pixelFormat)) throw new Exception("No matching pixel data format known");
+            if (!formatMap.ContainsKey(pixelFormat)) throw new Exception(string.Format("No matching pixel data format known for {0}", pixelFormat));
             return formatMap[pixelFormat];
         }
 
         public static PixelDataFormat GetPaletteFormat(SceGxmTextureFormat paletteFormat)
         {
-            if (!formatMap.ContainsKey(paletteFormat)) throw new Exception("No matching palette format known");
+            if (!formatMap.ContainsKey(paletteFormat)) throw new Exception(string.Format("No matching palette format known for {0}", paletteFormat));
             return paletteFormatMap[paletteFormat];
         }
     }

@@ -111,6 +111,11 @@ namespace Scarlet.IO.ImageFormats
                         // TODO: is cube really the same as swizzled? seems that way from CS' *env* files...
                         imageBinary.InputPixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
                         break;
+
+                        // TODO: this is odd and needs investigation, found ex. in Odin Sphere
+                    case (SceGxmTextureType)0xA0000000:
+                        imageBinary.InputPixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
+                        break;
                 }
             }
 
