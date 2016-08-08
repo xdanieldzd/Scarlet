@@ -14,9 +14,9 @@ namespace Scarlet.IO
     internal class IdentificationMatch
     {
         public Type Type { get; private set; }
-        public int Weight { get; private set; }
+        public uint Weight { get; private set; }
 
-        public IdentificationMatch(Type type, int weight)
+        public IdentificationMatch(Type type, uint weight)
         {
             Type = type;
             Weight = weight;
@@ -94,6 +94,7 @@ namespace Scarlet.IO
 
                         var customAttribs = type.GetCustomAttributes(false);
                         bool requireMagicAndPattern = customAttribs.Any(x => x is MagicNumberAttribute) && customAttribs.Any(x => x is FilenamePatternAttribute);
+                        var magicNumberAttrib = customAttribs.FirstOrDefault(x => x is MagicNumberAttribute);
 
                         var verifyMethod = type.GetMethod("VerifyMagicNumber", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
                         if (verifyMethod == null) throw new NullReferenceException("Reflection error on method fetch for file verification");
@@ -101,7 +102,9 @@ namespace Scarlet.IO
 
                         if (verifyResult == VerifyResult.VerifyOkay)
                         {
-                            magicMatch = new IdentificationMatch(type, int.MaxValue);
+                            uint weight = int.MaxValue;
+                            if (magicNumberAttrib != null) weight += (uint)(magicNumberAttrib as MagicNumberAttribute).MagicNumber.Length;
+                            magicMatch = new IdentificationMatch(type, weight);
                         }
                         else if (verifyResult == VerifyResult.WrongMagicNumber)
                         {
@@ -113,7 +116,7 @@ namespace Scarlet.IO
                             string pattern = (fnPatternAttrib as FilenamePatternAttribute).Pattern;
                             Regex regEx = new Regex(pattern, RegexOptions.IgnoreCase);
                             if (regEx.IsMatch(fileStream.Name))
-                                patternMatch = new IdentificationMatch(type, pattern.Length);
+                                patternMatch = new IdentificationMatch(type, (uint)pattern.Length);
                         }
 
                         if (requireMagicAndPattern)

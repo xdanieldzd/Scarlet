@@ -42,6 +42,8 @@ namespace Scarlet.IO.ImageFormats
         {
             PixelDataFormat inputPixelFormat = PixelDataFormat.Undefined;
 
+            int physicalWidth, physicalHeight;
+
             if (DDSHeader.PixelFormat.Flags.HasFlag(DDPF.FourCC))
             {
                 switch (DDSHeader.PixelFormat.FourCC)
@@ -50,6 +52,15 @@ namespace Scarlet.IO.ImageFormats
                     case "DXT3": inputPixelFormat = PixelDataFormat.FormatDXT3; break;
                     case "DXT5": inputPixelFormat = PixelDataFormat.FormatDXT5; break;
                 }
+
+                physicalWidth = physicalHeight = 1;
+                while (physicalWidth < DDSHeader.Width) physicalWidth *= 2;
+                while (physicalHeight < DDSHeader.Height) physicalHeight *= 2;
+            }
+            else
+            {
+                physicalWidth = (int)DDSHeader.Width;
+                physicalHeight = (int)DDSHeader.Height;
             }
 
             if (inputPixelFormat == PixelDataFormat.Undefined)
@@ -63,6 +74,8 @@ namespace Scarlet.IO.ImageFormats
 
             imageBinary.Width = (int)DDSHeader.Width;
             imageBinary.Height = (int)DDSHeader.Height;
+            imageBinary.PhysicalWidth = physicalWidth;
+            imageBinary.PhysicalHeight = physicalHeight;
             imageBinary.InputPixelFormat = inputPixelFormat;
             imageBinary.InputEndianness = Endian.LittleEndian;
             imageBinary.AddInputPixels(PixelData);

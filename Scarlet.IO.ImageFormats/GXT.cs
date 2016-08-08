@@ -13,7 +13,6 @@ using Scarlet.Platform.Sony;
 namespace Scarlet.IO.ImageFormats
 {
     [MagicNumber("GXT", 0x00)]
-    [FilenamePattern("^.*\\.gxt$")]
     public class GXT : ImageFormat
     {
         public SceGxtHeader Header { get; private set; }
@@ -86,6 +85,8 @@ namespace Scarlet.IO.ImageFormats
 
             imageBinary.Width = info.GetWidth();
             imageBinary.Height = info.GetHeight();
+            imageBinary.PhysicalWidth = info.GetWidthRounded();
+            imageBinary.PhysicalHeight = info.GetHeightRounded();
             imageBinary.InputPixelFormat = PSVita.GetPixelDataFormat(info.GetTextureFormat());
             imageBinary.InputEndianness = Endian.LittleEndian;
             imageBinary.AddInputPixels(PixelData[infoIdx]);
@@ -112,8 +113,8 @@ namespace Scarlet.IO.ImageFormats
                         imageBinary.InputPixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
                         break;
 
-                        // TODO: this is odd and needs investigation, found ex. in Odin Sphere
                     case (SceGxmTextureType)0xA0000000:
+                        // TODO: this is odd and needs investigation, found ex. in Odin Sphere, Puyo Puyo Tetris, ...
                         imageBinary.InputPixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
                         break;
                 }

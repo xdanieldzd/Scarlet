@@ -19,7 +19,7 @@ namespace Scarlet.Drawing
     /// </summary>
     public class ImageBinary
     {
-        int width, height;
+        int virtualWidth, virtualHeight, physicalWidth, physicalHeight;
 
         PixelDataFormat inputPixelFormat, inputPaletteFormat;
         Endian inputEndianness;
@@ -34,8 +34,8 @@ namespace Scarlet.Drawing
         /// </summary>
         public int Width
         {
-            get { return width; }
-            set { width = value; }
+            get { return virtualWidth; }
+            set { virtualWidth = value; }
         }
 
         /// <summary>
@@ -43,8 +43,26 @@ namespace Scarlet.Drawing
         /// </summary>
         public int Height
         {
-            get { return height; }
-            set { height = value; }
+            get { return virtualHeight; }
+            set { virtualHeight = value; }
+        }
+
+        /// <summary>
+        /// Get or set physical width of the input image
+        /// </summary>
+        public int PhysicalWidth
+        {
+            get { return physicalWidth; }
+            set { physicalWidth = value; }
+        }
+
+        /// <summary>
+        /// Get or set physical height of the input image
+        /// </summary>
+        public int PhysicalHeight
+        {
+            get { return physicalHeight; }
+            set { physicalHeight = value; }
         }
 
         /// <summary>
@@ -302,6 +320,9 @@ namespace Scarlet.Drawing
             Width = width;
             Height = height;
 
+            PhysicalWidth = width;
+            PhysicalHeight = height;
+
             InputPixelFormat = inputPixelFormat;
             InputEndianness = inputEndianness;
 
@@ -328,7 +349,7 @@ namespace Scarlet.Drawing
             if ((inputPixelFormat & PixelDataFormat.MaskChannels) != PixelDataFormat.ChannelsIndexed)
             {
                 pixelData = ConvertPixelDataToArgb8888(inputPixelData[imageIndex], inputPixelFormat);
-                pixelData = ApplyFilterToArgb8888(width, height, outputFormat, pixelData);
+                pixelData = ApplyFilterToArgb8888(physicalWidth, physicalHeight, outputFormat, pixelData);
 
                 pixelData = ConvertArgb8888ToOutputFormat(pixelData, outputFormat, outputEndianness);
             }
@@ -435,7 +456,7 @@ namespace Scarlet.Drawing
             {
                 imagePixelFormat = PixelFormat.Format32bppArgb;
                 pixelData = ConvertPixelDataToArgb8888(inputPixels, inputPixelFormat);
-                pixelData = ApplyFilterToArgb8888(width, height, outputFormat, pixelData);
+                pixelData = ApplyFilterToArgb8888(physicalWidth, physicalHeight, outputFormat, pixelData);
             }
             else
             {
@@ -444,7 +465,7 @@ namespace Scarlet.Drawing
                 palette = ReadPaletteData(GetInputPalette(paletteIndex), inputPixelFormat, inputPaletteFormat);
             }
 
-            Bitmap image = new Bitmap(width, height, imagePixelFormat);
+            Bitmap image = new Bitmap(physicalWidth, physicalHeight, imagePixelFormat);
             BitmapData bmpData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadWrite, image.PixelFormat);
 
             byte[] pixelsForBmp = new byte[bmpData.Height * bmpData.Stride];
@@ -482,13 +503,22 @@ namespace Scarlet.Drawing
             Marshal.Copy(pixelsForBmp, 0, bmpData.Scan0, pixelsForBmp.Length);
             image.UnlockBits(bmpData);
 
-            return image;
+            Bitmap realImage = new Bitmap(virtualWidth, virtualHeight, imagePixelFormat);
+            using (Graphics g = Graphics.FromImage(realImage))
+            {
+                g.DrawImageUnscaled(image, 0, 0);
+            }
+
+            return realImage;
         }
 
         private void ValidateImageProperties()
         {
-            if (width < 0 || width >= 16384) throw new Exception("Invalid width");
-            if (height < 0 || height >= 16384) throw new Exception("Invalid height");
+            if (virtualWidth <= 0 || virtualWidth >= 16384) throw new Exception("Invalid virtual width");
+            if (virtualHeight <= 0 || virtualHeight >= 16384) throw new Exception("Invalid virtual height");
+
+            if (physicalWidth <= 0 || physicalWidth >= 16384) physicalWidth = virtualWidth;
+            if (physicalHeight <= 0 || physicalHeight >= 16384) physicalHeight = virtualHeight;
 
             if (!inputPixelFormat.IsValid()) throw new Exception("Invalid input format");
             if ((inputPixelFormat & PixelDataFormat.MaskSpecial) == PixelDataFormat.Undefined && !Constants.RealBitsPerPixel.ContainsKey(inputPixelFormat & PixelDataFormat.MaskBpp)) throw new Exception("Invalid input bits per pixel");
@@ -520,23 +550,23 @@ namespace Scarlet.Drawing
             for (int i = 0, x = 0, y = 0; i < dataIndexed.Length; i++)
             {
                 int tx, ty;
-                pixelOrderingFunc(x, y, width, height, inputPixelFormat, out tx, out ty);
+                pixelOrderingFunc(x, y, physicalWidth, physicalHeight, inputPixelFormat, out tx, out ty);
 
                 if (inBpp == PixelDataFormat.Bpp8)
                 {
                     byte index = reader.ReadByte();
-                    if (tx < width && ty < height)
-                        dataIndexed[((ty * width) + tx)] = index;
+                    if (tx < physicalWidth && ty < physicalHeight)
+                        dataIndexed[((ty * physicalWidth) + tx)] = index;
 
                     x++;
-                    if (x == width) { x = 0; y++; }
+                    if (x == physicalWidth) { x = 0; y++; }
                 }
                 else
                 {
                     byte indices = reader.ReadByte();
-                    if ((tx + 1) < width && (ty + 1) < height)
+                    if ((tx + 1) < physicalWidth && (ty + 1) < physicalHeight)
                     {
-                        int pixelOffset = (((ty * width) + tx) / 2);
+                        int pixelOffset = (((ty * physicalWidth) + tx) / 2);
 
                         /* TODO: verify me! */
                         if (reader.Endianness == Endian.BigEndian)
@@ -545,7 +575,7 @@ namespace Scarlet.Drawing
                             dataIndexed[pixelOffset] = (byte)((indices & 0xF) << 4 | (indices >> 4));
                     }
                     x += 2;
-                    if (x == width) { x = 0; y++; }
+                    if (x == physicalWidth) { x = 0; y++; }
                 }
             }
 
@@ -600,12 +630,12 @@ namespace Scarlet.Drawing
             {
                 case PixelDataFormat.SpecialFormatETC1_3DS:
                 case PixelDataFormat.SpecialFormatETC1A4_3DS:
-                    outputData = ETC1.Decompress(reader, width, height, specialFormat, reader.BaseStream.Length);
+                    outputData = ETC1.Decompress(reader, physicalWidth, physicalHeight, specialFormat, reader.BaseStream.Length);
                     break;
 
                 case PixelDataFormat.SpecialFormatPVRT2_Vita:
                 case PixelDataFormat.SpecialFormatPVRT4_Vita:
-                    outputData = PVRTC.Decompress(reader, width, height, specialFormat, reader.BaseStream.Length);
+                    outputData = PVRTC.Decompress(reader, physicalWidth, physicalHeight, specialFormat, reader.BaseStream.Length);
                     break;
 
                 case PixelDataFormat.SpecialFormatDXT1:
@@ -614,7 +644,7 @@ namespace Scarlet.Drawing
                 case PixelDataFormat.SpecialFormatDXT3_PSP:
                 case PixelDataFormat.SpecialFormatDXT5:
                 case PixelDataFormat.SpecialFormatDXT5_PSP:
-                    outputData = DXTx.Decompress(reader, width, height, inputPixelFormat, reader.BaseStream.Length);
+                    outputData = DXTx.Decompress(reader, physicalWidth, physicalHeight, inputPixelFormat, reader.BaseStream.Length);
                     break;
 
                 default: throw new Exception("Unimplemented special format");
@@ -655,6 +685,7 @@ namespace Scarlet.Drawing
                 case PixelDataFormat.ChannelsLuminance: CheckBitsPerChannelValidity(inRedBits); break;
                 case PixelDataFormat.ChannelsAlpha: CheckBitsPerChannelValidity(inAlphaBits); break;
                 case PixelDataFormat.ChannelsLuminanceAlpha: CheckBitsPerChannelValidity(inRedBits, inAlphaBits); break;
+                case PixelDataFormat.ChannelsAlphaLuminance: CheckBitsPerChannelValidity(inAlphaBits, inRedBits); break;
 
                 default: throw new Exception("Unhandled channel input layout");
             }
@@ -803,15 +834,22 @@ namespace Scarlet.Drawing
                             green = blue = red;
                             break;
 
+                        case PixelDataFormat.ChannelsAlphaLuminance:
+                            alpha = ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp);
+                            red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
+
+                            green = blue = red;
+                            break;
+
                         default: throw new Exception("Unhandled channel input layout");
                     }
 
                     int tx, ty;
-                    pixelOrderingFunc(x, y, width, height, inputPixelFormat, out tx, out ty);
+                    pixelOrderingFunc(x, y, physicalWidth, physicalHeight, inputPixelFormat, out tx, out ty);
 
-                    if (tx < width && ty < height)
+                    if (tx < physicalWidth && ty < physicalHeight)
                     {
-                        int pixelOffset = ((ty * width) + tx) * (bitsBpp32 / 8);
+                        int pixelOffset = ((ty * physicalWidth) + tx) * (bitsBpp32 / 8);
 
                         if (isNativeLittleEndian)
                         {
@@ -830,7 +868,7 @@ namespace Scarlet.Drawing
                     }
 
                     x++;
-                    if (x == width) { x = 0; y++; }
+                    if (x == physicalWidth) { x = 0; y++; }
                 }
             }
 
@@ -934,6 +972,7 @@ namespace Scarlet.Drawing
                     case PixelDataFormat.ChannelsLuminance: CheckBitsPerChannelValidity(outRedBits); break;
                     case PixelDataFormat.ChannelsAlpha: CheckBitsPerChannelValidity(outAlphaBits); break;
                     case PixelDataFormat.ChannelsLuminanceAlpha: CheckBitsPerChannelValidity(outRedBits, outAlphaBits); break;
+                    case PixelDataFormat.ChannelsAlphaLuminance: CheckBitsPerChannelValidity(outAlphaBits, outRedBits); break;
 
                     default: throw new Exception("Unhandled channel output layout");
                 }
@@ -1103,6 +1142,14 @@ namespace Scarlet.Drawing
 
                             outputValue = MergeChannel(outputValue, alpha, channelBitsAlpha, ref bppOutCount);
                             outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
+                            break;
+
+                        case PixelDataFormat.ChannelsAlphaLuminance:
+                            alpha = ResampleChannel(alpha, 8, channelBitsAlpha);
+                            red = ResampleChannel(red, 8, channelBitsRed);
+
+                            outputValue = MergeChannel(outputValue, red, channelBitsRed, ref bppOutCount);
+                            outputValue = MergeChannel(outputValue, alpha, channelBitsAlpha, ref bppOutCount);
                             break;
 
                         default: throw new Exception("Unhandled channel output layout");

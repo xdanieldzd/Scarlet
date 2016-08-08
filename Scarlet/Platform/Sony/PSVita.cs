@@ -477,6 +477,20 @@ namespace Scarlet.Platform.Sony
             ControlWords = new uint[4];
             for (int i = 0; i < ControlWords.Length; i++) ControlWords[i] = reader.ReadUInt32();
         }
+
+        public ushort GetWidthRounded()
+        {
+            int roundedWidth = 1;
+            while (roundedWidth < GetWidth()) roundedWidth *= 2;
+            return (ushort)roundedWidth;
+        }
+
+        public ushort GetHeightRounded()
+        {
+            int roundedHeight = 1;
+            while (roundedHeight < GetHeight()) roundedHeight *= 2;
+            return (ushort)roundedHeight;
+        }
     }
 
     public class SceGxtTextureInfoV301 : SceGxtTextureInfo
@@ -559,12 +573,14 @@ namespace Scarlet.Platform.Sony
             /* L8       */ { SceGxmTextureFormat.U8_1RRR, PixelDataFormat.FormatLuminance8 },
             /* A8       */ { SceGxmTextureFormat.U8_R000, PixelDataFormat.FormatAlpha8 },
             /* LA88     */ { SceGxmTextureFormat.U8U8_RGGG, PixelDataFormat.FormatLuminanceAlpha88 },
+            /* AL88     */ { SceGxmTextureFormat.U8U8_GRRR, PixelDataFormat.FormatAlphaLuminance88 },
             // RG88     */ { SceGxmTextureFormat.U8U8_00GR, PixelDataFormat.Undefined },
             /* ARGB1555 */ { SceGxmTextureFormat.U1U5U5U5_ARGB, PixelDataFormat.FormatArgb1555 },
             /* ARGB4444 */ { SceGxmTextureFormat.U4U4U4U4_ARGB, PixelDataFormat.FormatArgb4444 },
             /* RGB565   */ { SceGxmTextureFormat.U5U6U5_RGB, PixelDataFormat.FormatRgb565 },
             /* ABGR8888 */ { SceGxmTextureFormat.U8U8U8U8_ABGR, PixelDataFormat.FormatAbgr8888 },
             /* ARGB8888 */ { SceGxmTextureFormat.U8U8U8U8_ARGB, PixelDataFormat.FormatArgb8888 },
+            /* XRGB8888 */ { SceGxmTextureFormat.X8U8U8U8_1RGB, PixelDataFormat.FormatXrgb8888 },
             /* DXT1     */ { SceGxmTextureFormat.UBC1_ABGR, PixelDataFormat.FormatDXT1Rgb },
             /* DXT3     */ { SceGxmTextureFormat.UBC2_ABGR, PixelDataFormat.FormatDXT3 },
             /* DXT5     */ { SceGxmTextureFormat.UBC3_ABGR, PixelDataFormat.FormatDXT5 },
@@ -618,6 +634,21 @@ namespace Scarlet.Platform.Sony
 
         public static PixelDataFormat GetPixelDataFormat(SceGxmTextureFormat pixelFormat)
         {
+            /*ulong[] t = new ulong[10];
+            t[0] = (ulong)PixelDataFormat.MaskBpp;
+            t[1] = (ulong)PixelDataFormat.MaskChannels;
+            t[2] = (ulong)PixelDataFormat.MaskRedBits;
+            t[3] = (ulong)PixelDataFormat.MaskGreenBits;
+            t[4] = (ulong)PixelDataFormat.MaskBlueBits;
+            t[5] = (ulong)PixelDataFormat.MaskAlphaBits;
+            t[6] = (ulong)PixelDataFormat.MaskSpecial;
+            t[7] = (ulong)PixelDataFormat.MaskPixelOrdering;
+            t[8] = (ulong)PixelDataFormat.MaskFilter;
+            t[9] = (ulong)PixelDataFormat.MaskReserved;
+
+            for (int i = 0; i < t.Length; i++)
+                Console.WriteLine("{0}: {1:X16}", i, t[i]);
+            */
             if (!formatMap.ContainsKey(pixelFormat)) throw new Exception(string.Format("No matching pixel data format known for {0}", pixelFormat));
             return formatMap[pixelFormat];
         }
