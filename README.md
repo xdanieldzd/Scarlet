@@ -16,11 +16,14 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/e6296faf9659c30c758ed35e24b68cfc621436cc) contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/959c5ebf6ec2814752c1c587fd72b88e3bac4757) contain the following:
 
 * __Images__
+ * DDS (ex. Skullgirls 2nd Encore, PS Vita)
+ * DMPBM (ex. Shin Megami Tensei: Devil Survivor Overclocked)
  * GBIX (ex. K-ON! Houkago Live, PSP version)
  * GXT (various PlayStation Vita games)
+ * KSLT (ex. Dead or Alive Xtreme 3: Venus, possibly more Koei Tecmo games)
  * NMT (ex. Disgaea 4, PS Vita version, possibly more Nippon Ichi Software games)
  * SHTX (ex. Danganronpa Another Episode)
  * SHTXFS (ex. Danganronpa Another Episode)
@@ -42,6 +45,7 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * PSPFS_V1 (ex. Phantom Brave, PSP version, possibly more Nippon Ichi Software games)
 * __Compression__
  * NIS LZS (ex. Disgaea 4, PS3 and PS Vita versions)
+ * Nintendo DS LZSS-0x10 (ex. Shin Megami Tensei: Devil Survivor Overclocked)
 
 Note that support for these is not 100% complete (especially Capcom TEX is lacking), as well as the unintentional bias towards NIS games.
 
