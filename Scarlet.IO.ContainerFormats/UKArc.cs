@@ -66,4 +66,3 @@ namespace Scarlet.IO.ContainerFormats
         }
     }
 }
-    
