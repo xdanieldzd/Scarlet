@@ -300,7 +300,7 @@ namespace ScarletTestApp
 
                             // TODO: less naive way of determining target filename; see also CompressionFormat class in Scarlet.IO.CompressionFormats
                             bool isFullName = compressedInstance.GetNameOrExtension().Contains('.');
-                            string outputFilename = (isFullName ? compressedInstance.GetNameOrExtension() : Path.GetFileNameWithoutExtension(inputFile.Name) + "." + compressedInstance.GetNameOrExtension());
+                            string outputFilename = (isFullName ? compressedInstance.GetNameOrExtension() : Path.GetFileNameWithoutExtension(inputFile.Name) + "." + compressedInstance.GetNameOrExtension()).TrimEnd('.');
                             FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
 
                             Directory.CreateDirectory(outputFile.Directory.FullName);
