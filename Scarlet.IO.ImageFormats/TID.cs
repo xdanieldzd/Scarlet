@@ -36,10 +36,10 @@ namespace Scarlet.IO.ImageFormats
         Set = 0x08
     }
 
-    public enum TidFormatUnknownBit4 : byte
+    public enum TidFormatVerticalFlip : byte
     {
-        Unset = 0x00,
-        Set = 0x10
+        NotFlipped = 0x00,
+        Flipped = 0x10
     }
 
     public enum TidFormatUnknownBit5 : byte
@@ -134,11 +134,11 @@ namespace Scarlet.IO.ImageFormats
             reader.BaseStream.Seek(DataOffset, SeekOrigin.Begin);
             PixelData = reader.ReadBytes((int)ImageDataSize);
 
-            bool pixelUnknownBit0 = (((TidFormatUnknownBit0)PixelFormat & TidFormatUnknownBit0.Set) == TidFormatUnknownBit0.Set);
             TidFormatChannelOrder pixelChannelOrder = ((TidFormatChannelOrder)PixelFormat & TidFormatChannelOrder.Argb);
             TidFormatCompressionFlag pixelCompression = ((TidFormatCompressionFlag)PixelFormat & TidFormatCompressionFlag.Compressed);
+
+            bool pixelUnknownBit0 = (((TidFormatUnknownBit0)PixelFormat & TidFormatUnknownBit0.Set) == TidFormatUnknownBit0.Set);
             bool pixelUnknownBit3 = (((TidFormatUnknownBit3)PixelFormat & TidFormatUnknownBit3.Set) == TidFormatUnknownBit3.Set);
-            bool pixelUnknownBit4 = (((TidFormatUnknownBit4)PixelFormat & TidFormatUnknownBit4.Set) == TidFormatUnknownBit4.Set);
             bool pixelUnknownBit5 = (((TidFormatUnknownBit5)PixelFormat & TidFormatUnknownBit5.Set) == TidFormatUnknownBit5.Set);
             bool pixelUnknownBit6 = (((TidFormatUnknownBit6)PixelFormat & TidFormatUnknownBit6.Set) == TidFormatUnknownBit6.Set);
             bool pixelUnknownBit7 = (((TidFormatUnknownBit7)PixelFormat & TidFormatUnknownBit7.Set) == TidFormatUnknownBit7.Set);
@@ -193,7 +193,14 @@ namespace Scarlet.IO.ImageFormats
 
         protected override Bitmap OnGetBitmap(int imageIndex, int paletteIndex)
         {
-            return imageBinary.GetBitmap(imageIndex, paletteIndex);
+            Bitmap image = imageBinary.GetBitmap(imageIndex, paletteIndex);
+
+            if (((TidFormatVerticalFlip)PixelFormat & TidFormatVerticalFlip.Flipped) == TidFormatVerticalFlip.Flipped)
+            {
+                image.RotateFlip(RotateFlipType.RotateNoneFlipY);
+            }
+
+            return image;
         }
     }
 }
