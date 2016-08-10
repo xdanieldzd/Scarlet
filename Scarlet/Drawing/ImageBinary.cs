@@ -503,13 +503,7 @@ namespace Scarlet.Drawing
             Marshal.Copy(pixelsForBmp, 0, bmpData.Scan0, pixelsForBmp.Length);
             image.UnlockBits(bmpData);
 
-            Bitmap realImage = new Bitmap(virtualWidth, virtualHeight, imagePixelFormat);
-            using (Graphics g = Graphics.FromImage(realImage))
-            {
-                g.DrawImageUnscaled(image, 0, 0);
-            }
-
-            return realImage;
+            return image.Clone(new Rectangle(0, 0, virtualWidth, virtualHeight), image.PixelFormat);
         }
 
         private void ValidateImageProperties()
