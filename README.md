@@ -16,7 +16,7 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/959c5ebf6ec2814752c1c587fd72b88e3bac4757) contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/5c7df5f94de07a9c5d4679e8767e85ec31474abc) contain the following:
 
 * __Images__
  * DDS (ex. Skullgirls 2nd Encore, PS Vita)
@@ -43,7 +43,9 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * NISPACK (various Nippon Ichi Software games)
  * NSAC (ex. Disgaea 4, PS Vita version, possibly more Nippon Ichi Software games)
  * PSPFS_V1 (ex. Phantom Brave, PSP version, possibly more Nippon Ichi Software games)
+ * UKArc/PAC (ex. Dengeki Bunko: Fighting Climax, PS Vita version)
 * __Compression__
+ * GZip (generic; also ex. Dengeki Bunko: Fighting Climax, PS Vita version)
  * NIS LZS (ex. Disgaea 4, PS3 and PS Vita versions)
  * Nintendo DS LZSS-0x10 (ex. Shin Megami Tensei: Devil Survivor Overclocked)
 
