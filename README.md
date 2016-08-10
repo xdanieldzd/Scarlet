@@ -16,10 +16,10 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/5c7df5f94de07a9c5d4679e8767e85ec31474abc) contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/a9f0be8b29c77166f138fa4308f83cd932ce270e) contain the following:
 
 * __Images__
- * DDS (ex. Skullgirls 2nd Encore, PS Vita)
+ * DDS (DXTx and PVRx; ex. Skullgirls 2nd Encore, PS Vita)
  * DMPBM (ex. Shin Megami Tensei: Devil Survivor Overclocked)
  * GBIX (ex. K-ON! Houkago Live, PSP version)
  * GXT (various PlayStation Vita games)
