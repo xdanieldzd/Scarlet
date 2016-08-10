@@ -51,6 +51,8 @@ namespace Scarlet.IO.ImageFormats
                     case "DXT1": inputPixelFormat = PixelDataFormat.FormatDXT1Rgba; break;
                     case "DXT3": inputPixelFormat = PixelDataFormat.FormatDXT3; break;
                     case "DXT5": inputPixelFormat = PixelDataFormat.FormatDXT5; break;
+                    case "PVR3": inputPixelFormat = PixelDataFormat.FormatPVRT4_Vita; break;    // TODO: verify, probably not quite like PVRT4?
+                    case "PVR4": inputPixelFormat = PixelDataFormat.FormatPVRT4_Vita; break;
                 }
 
                 physicalWidth = physicalHeight = 1;
