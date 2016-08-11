@@ -6,6 +6,13 @@ Disclaimer
 ==========
 This project is still incomplete and work-in-progress. Functionality will change, be added or removed, and all interfaces, calling conventions, etc. should be considered subject to change.
 
+Requirements
+============
+* General
+ * [.NET Framework 4](http://www.microsoft.com/en-US/download/details.aspx?id=17718)
+* Compilation
+ * Visual Studio Community 2013 (or higher)
+
 Parts
 =====
 * __Scarlet__: Common main library (required)
@@ -50,6 +57,18 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * Nintendo DS LZSS-0x10 (ex. Shin Megami Tensei: Devil Survivor Overclocked)
 
 Note that support for these is not 100% complete (especially Capcom TEX is lacking), as well as the unintentional bias towards NIS games.
+
+Usage
+=====
+Sample Converter
+----------------
+Syntax: `ScarletTestApp.exe <inputs ...> [options]`
+* `<inputs ...>`: Any number of files or directories to be converted, separated by spaces
+* `[options]`:
+ * `--output | -o`: Specify output directory
+ * `--keep | -k`: Do not overwrite existing output files
+
+Example: `ScarletTestApp.exe "C:\Temp\files\" "C:\Temp\testfile.gxt" "C:\Temp\testfile2.nmt" --output "C:\Temp\output\"`
 
 Acknowledgements
 ================
