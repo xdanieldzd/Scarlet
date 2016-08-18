@@ -81,6 +81,11 @@ namespace Scarlet.IO.ImageFormats
             imageBinary.AddInputPixels(PixelData);
         }
 
+        public override string GetFormatDescription()
+        {
+            return "Atlus STEX Format";
+        }
+
         public override int GetImageCount()
         {
             return 1;

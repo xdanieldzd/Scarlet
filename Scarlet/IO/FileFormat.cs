@@ -186,6 +186,11 @@ namespace Scarlet.IO
 
         protected abstract void OnOpen(EndianBinaryReader reader);
 
+        public virtual string GetFormatDescription()
+        {
+            return null;
+        }
+
         internal static VerifyResult VerifyMagicNumber(EndianBinaryReader reader, Type type)
         {
             VerifyResult result = VerifyResult.NoMagicNumber;
