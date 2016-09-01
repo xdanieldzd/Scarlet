@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ContainerFormat.cs" />
+    <Compile Include="DATAkiba.cs" />
     <Compile Include="FMDX.cs" />
     <Compile Include="NISPACK.cs" />
     <Compile Include="NSAC.cs" />
