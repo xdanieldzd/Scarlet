@@ -35,6 +35,8 @@ namespace ScarletWinTest
 
             SetFormTitle();
             SetOpenDialogFilters();
+
+            tsslStatus.Text = "Ready";
         }
 
         private void SetFormTitle()
@@ -94,9 +96,21 @@ namespace ScarletWinTest
                 if (currentFile != null && currentFile is ImageFormat)
                 {
                     pbImage.Image = (currentFile as ImageFormat).GetBitmap();
+
+                    tsslStatus.Text = string.Format("Loaded file '{0}'", currentFilename);
                 }
 
                 SetFormTitle();
+            }
+        }
+
+        private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (sfdSaveFile.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                pbImage.Image.Save(sfdSaveFile.FileName);
+
+                tsslStatus.Text = string.Format("File saved as '{0}'", sfdSaveFile.FileName);
             }
         }
 
@@ -107,7 +121,20 @@ namespace ScarletWinTest
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(Application.ProductName);
+            Assembly assembly = Assembly.GetExecutingAssembly();
+
+            var name = (assembly.GetCustomAttributes(typeof(AssemblyProductAttribute), false).FirstOrDefault() as AssemblyProductAttribute).Product;
+            var version = new Version((assembly.GetCustomAttributes(typeof(AssemblyFileVersionAttribute), false).FirstOrDefault() as AssemblyFileVersionAttribute).Version);
+            var description = (assembly.GetCustomAttributes(typeof(AssemblyDescriptionAttribute), false).FirstOrDefault() as AssemblyDescriptionAttribute).Description;
+            var copyright = (assembly.GetCustomAttributes(typeof(AssemblyCopyrightAttribute), false).FirstOrDefault() as AssemblyCopyrightAttribute).Copyright;
+
+            StringBuilder aboutBuilder = new StringBuilder();
+            aboutBuilder.AppendFormat("{0} v{1}.{2} - {3}", name, version.Major, version.Minor, description);
+            aboutBuilder.AppendLine();
+            aboutBuilder.AppendLine();
+            aboutBuilder.AppendLine(copyright);
+
+            MessageBox.Show(aboutBuilder.ToString(), "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
