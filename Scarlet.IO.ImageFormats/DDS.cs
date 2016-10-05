@@ -61,6 +61,18 @@ namespace Scarlet.IO.ImageFormats
             }
             else
             {
+                // TODO: actually implement uncompressed DDS formats...?
+
+                /*if (DDSHeader.PixelFormat.Flags == DDPF.Alpha)
+                {
+                    inputPixelFormat |= PixelDataFormat.ChannelsAlpha | PixelDataFormat.Bpp8;
+                    switch (DDSHeader.PixelFormat.ABitMask)
+                    {
+                        case 0xFF: inputPixelFormat |= PixelDataFormat.AlphaBits8; break;
+                        default: throw new NotImplementedException("DDS alpha bit mask not implemented");
+                    }
+                }*/
+
                 physicalWidth = (int)DDSHeader.Width;
                 physicalHeight = (int)DDSHeader.Height;
             }

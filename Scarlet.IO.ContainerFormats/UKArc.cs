@@ -40,14 +40,19 @@ namespace Scarlet.IO.ContainerFormats
     public class UKArc : ContainerFormat
     {
         public string MagicNumber { get; private set; }
-        public uint Unknown0x08 { get; private set; }
+        public ushort Unknown0x08 { get; private set; }
+        public ushort EndianMarker { get; private set; }
         public uint NumFiles { get; private set; }
         public UKArcFile[] Files { get; private set; }
 
         protected override void OnOpen(EndianBinaryReader reader)
         {
             MagicNumber = Encoding.ASCII.GetString(reader.ReadBytes(8));
-            Unknown0x08 = reader.ReadUInt32();
+            Unknown0x08 = reader.ReadUInt16();
+            EndianMarker = reader.ReadUInt16();
+
+            reader.Endianness = (EndianMarker == 0x1234 ? Endian.LittleEndian : Endian.BigEndian);
+
             NumFiles = reader.ReadUInt32();
 
             Files = new UKArcFile[NumFiles];

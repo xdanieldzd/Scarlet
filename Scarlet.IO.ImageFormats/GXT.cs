@@ -85,13 +85,20 @@ namespace Scarlet.IO.ImageFormats
 
             imageBinary.Width = info.GetWidth();
             imageBinary.Height = info.GetHeight();
-            imageBinary.PhysicalWidth = info.GetWidthRounded();
-            imageBinary.PhysicalHeight = info.GetHeightRounded();
             imageBinary.InputPixelFormat = PSVita.GetPixelDataFormat(info.GetTextureFormat());
             imageBinary.InputEndianness = Endian.LittleEndian;
             imageBinary.AddInputPixels(PixelData[infoIdx]);
 
             SceGxmTextureBaseFormat textureBaseFormat = info.GetTextureBaseFormat();
+
+            // TODO: verify me! Compressed formats need rounded dimensions (PuyoTet misc leftovers), uncompressed do not (DB:FC special illust)?
+            if (textureBaseFormat == SceGxmTextureBaseFormat.UBC1 || textureBaseFormat == SceGxmTextureBaseFormat.UBC2 || textureBaseFormat == SceGxmTextureBaseFormat.UBC3 ||
+                textureBaseFormat == SceGxmTextureBaseFormat.PVRT2BPP || textureBaseFormat == SceGxmTextureBaseFormat.PVRT4BPP ||
+                textureBaseFormat == SceGxmTextureBaseFormat.PVRTII2BPP || textureBaseFormat == SceGxmTextureBaseFormat.PVRTII4BPP)
+            {
+                imageBinary.PhysicalWidth = info.GetWidthRounded();
+                imageBinary.PhysicalHeight = info.GetHeightRounded();
+            }
 
             if (textureBaseFormat != SceGxmTextureBaseFormat.PVRT2BPP && textureBaseFormat != SceGxmTextureBaseFormat.PVRT4BPP)
             {
