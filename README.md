@@ -23,7 +23,7 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/a9f0be8b29c77166f138fa4308f83cd932ce270e) contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/294ae4908a7010b89cb8aa39bd92bf7fb4bce620) contain the following:
 
 * __Images__
  * DDS (DXTx and PVRx; ex. Skullgirls 2nd Encore, PS Vita)
@@ -46,6 +46,7 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * TXP (ex. Z.H.P: Unlosing Ranger vs Darkdeath Evilman, Disgaea 2 PSP, Disgaea Infinite, possibly more Nippon Ichi Software games on PSP)
  * VTXP (ex. Punchline, PS Vita; _not_ the same as, nor related to TXP above)
 * __Containers__
+ * FADEBABE (ex. Akiba's Trip, original PSP version, namely DATA1.DAT)
  * FMDX (ex. K-ON! Houkago Live, PSP version)
  * NISPACK (various Nippon Ichi Software games)
  * NSAC (ex. Disgaea 4, PS Vita version, possibly more Nippon Ichi Software games)
@@ -54,7 +55,7 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
 * __Compression__
  * GZip (generic; also ex. Dengeki Bunko: Fighting Climax, PS Vita version)
  * NIS LZS (ex. Disgaea 4, PS3 and PS Vita versions)
- * Nintendo DS LZSS-0x10 (ex. Shin Megami Tensei: Devil Survivor Overclocked)
+ * Nintendo DS LZSS-0x10 (generic; also ex. Shin Megami Tensei: Devil Survivor Overclocked)
 
 Note that support for these is not 100% complete (especially Capcom TEX is lacking), as well as the unintentional bias towards NIS games.
 
