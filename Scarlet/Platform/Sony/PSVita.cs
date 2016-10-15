@@ -634,21 +634,6 @@ namespace Scarlet.Platform.Sony
 
         public static PixelDataFormat GetPixelDataFormat(SceGxmTextureFormat pixelFormat)
         {
-            /*ulong[] t = new ulong[10];
-            t[0] = (ulong)PixelDataFormat.MaskBpp;
-            t[1] = (ulong)PixelDataFormat.MaskChannels;
-            t[2] = (ulong)PixelDataFormat.MaskRedBits;
-            t[3] = (ulong)PixelDataFormat.MaskGreenBits;
-            t[4] = (ulong)PixelDataFormat.MaskBlueBits;
-            t[5] = (ulong)PixelDataFormat.MaskAlphaBits;
-            t[6] = (ulong)PixelDataFormat.MaskSpecial;
-            t[7] = (ulong)PixelDataFormat.MaskPixelOrdering;
-            t[8] = (ulong)PixelDataFormat.MaskFilter;
-            t[9] = (ulong)PixelDataFormat.MaskReserved;
-
-            for (int i = 0; i < t.Length; i++)
-                Console.WriteLine("{0}: {1:X16}", i, t[i]);
-            */
             if (!formatMap.ContainsKey(pixelFormat)) throw new Exception(string.Format("No matching pixel data format known for {0}", pixelFormat));
             return formatMap[pixelFormat];
         }
