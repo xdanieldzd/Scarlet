@@ -15,6 +15,7 @@ namespace Scarlet.IO.ImageFormats
 
     // "E:\temp\stellvia\data0\ANIME\EV_AKR_01.TIPS" "E:\temp\stellvia\data0\CARD\CARD_001L.TIPS" "E:\temp\stellvia\data0\BUSTUP\MAIN\ARS_01_01.TIPS" "E:\temp\stellvia\data0\TITLE\TITLE.TIPS" -o "E:\temp\stellvia\output"
 
+    [MagicNumber(new byte[] { 0x0F, 0xC5, 0xBD, 0x43 }, 4)]
     [FilenamePattern("^.*\\.tips$")]
     public class TIPS : ImageFormat
     {
@@ -101,16 +102,20 @@ namespace Scarlet.IO.ImageFormats
 
             /* Create raw image bitmap */
             ImageBinary rawImageBinary = new ImageBinary();
-            rawImageBinary.Width = RawImageWidth;
-            rawImageBinary.Height = RawImageHeight;
-            rawImageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888;
-            rawImageBinary.AddInputPixels(PixelData);
-            rawImage = rawImageBinary.GetBitmap();
+            if (RawImageWidth != 0 && RawImageHeight != 0)
+            {
+                rawImageBinary.Width = RawImageWidth;
+                rawImageBinary.Height = RawImageHeight;
+                rawImageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888;
+                rawImageBinary.AddInputPixels(PixelData);
+                rawImage = rawImageBinary.GetBitmap();
+            }
         }
 
         public override int GetImageCount()
         {
-            return NumImageInformation;
+            if (RawImageWidth == 0 || RawImageHeight == 0) return 0;
+            else return NumImageInformation;
         }
 
         public override int GetPaletteCount()
