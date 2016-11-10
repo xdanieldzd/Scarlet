@@ -13,6 +13,8 @@ namespace Scarlet.IO.ImageFormats
 {
     // TODO: figure out the rest of this stuff? like if eye/mouth/etc positioning is in here or elsewhere...
 
+    // "E:\temp\stellvia\data0\ANIME\EV_AKR_01.TIPS" "E:\temp\stellvia\data0\CARD\CARD_001L.TIPS" "E:\temp\stellvia\data0\BUSTUP\MAIN\ARS_01_01.TIPS" "E:\temp\stellvia\data0\TITLE\TITLE.TIPS" -o "E:\temp\stellvia\output"
+
     [FilenamePattern("^.*\\.tips$")]
     public class TIPS : ImageFormat
     {
@@ -23,7 +25,8 @@ namespace Scarlet.IO.ImageFormats
         public ushort RawImageWidth { get; private set; }
         public ushort RawImageHeight { get; private set; }
         public ushort NumImageInformation { get; private set; }
-        public ushort Unknown0x16 { get; private set; }
+        public byte BlockWidth { get; private set; }
+        public byte BlockHeight { get; private set; }
         public ushort Unknown0x18 { get; private set; }
         public ushort Unknown0x1A { get; private set; }
         public uint Unknown0x1C { get; private set; }
@@ -53,7 +56,8 @@ namespace Scarlet.IO.ImageFormats
             RawImageWidth = reader.ReadUInt16();
             RawImageHeight = reader.ReadUInt16();
             NumImageInformation = reader.ReadUInt16();
-            Unknown0x16 = reader.ReadUInt16();
+            BlockWidth = reader.ReadByte();
+            BlockHeight = reader.ReadByte();
             Unknown0x18 = reader.ReadUInt16();
             Unknown0x1A = reader.ReadUInt16();
             Unknown0x1C = reader.ReadUInt32();
@@ -125,8 +129,8 @@ namespace Scarlet.IO.ImageFormats
                 for (int i = 0; i < rectInfos.Length; i++)
                 {
                     TIPSRectangleInfo rectInfo = rectInfos[i];
-                    Rectangle sourceRect = new Rectangle(rectInfo.SourceX * 32, rectInfo.SourceY * 32, (int)rectInfo.SourceWidth * 32, 32);
-                    g.DrawImage(rawImage, rectInfo.TargetX * 32, rectInfo.TargetY * 32, sourceRect, GraphicsUnit.Pixel);
+                    Rectangle sourceRect = new Rectangle(rectInfo.SourceX * BlockWidth, rectInfo.SourceY * BlockHeight, (int)rectInfo.SourceWidth * BlockWidth, BlockHeight);
+                    g.DrawImage(rawImage, rectInfo.TargetX * BlockWidth, rectInfo.TargetY * BlockHeight, sourceRect, GraphicsUnit.Pixel);
                 }
             }
             return image;
@@ -182,7 +186,7 @@ namespace Scarlet.IO.ImageFormats
 
     public class TIPSRectangleInfo
     {
-        /* 32px blocks! */
+        /* In blocks, as per main header! */
         public byte TargetX { get; private set; }
         public byte TargetY { get; private set; }
         public byte SourceX { get; private set; }
