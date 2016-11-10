@@ -23,7 +23,7 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/294ae4908a7010b89cb8aa39bd92bf7fb4bce620) contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/0c41d10ccb40f0784861971a8826a3a7da950c2e) contain the following:
 
 * __Images__
  * DDS (DXTx and PVRx; ex. Skullgirls 2nd Encore, PS Vita)
@@ -37,6 +37,7 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * STEX (ex. Etrian Odyssey IV, Shin Megami Tensei IV, possibly more Atlus games)
  * TEX (various Capcom games)
  * TID (ex. Hyperdimension Neptunia ReBirth 1, PC _and_ PS Vita versions, possibly more Idea Factory/Compile Heart/Felistella games)
+ * TIPS (ex. Uchuu no Stellvia, PS2 version; image-type TIPS files only)
  * TMX (various Atlus games)
  * TX2 (ex. Phantom Brave, PS2 version, various other Nippon Ichi Software games)
  * TXF (ex. Disgaea 4, PS3 version, possibly more Nippon Ichi Software games)
@@ -51,6 +52,7 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * NISPACK (various Nippon Ichi Software games)
  * NSAC (ex. Disgaea 4, PS Vita version, possibly more Nippon Ichi Software games)
  * PSPFS_V1 (ex. Phantom Brave, PSP version, possibly more Nippon Ichi Software games)
+ * Stellvia DATs (Uchuu no Stellvia, PS2 version)
  * UKArc/PAC (ex. Dengeki Bunko: Fighting Climax, PS Vita version)
 * __Compression__
  * GZip (generic; also ex. Dengeki Bunko: Fighting Climax, PS Vita version)
