@@ -58,6 +58,7 @@
     <Compile Include="STEX.cs" />
     <Compile Include="TEX.cs" />
     <Compile Include="TID.cs" />
+    <Compile Include="TIPS.cs" />
     <Compile Include="TMX.cs" />
     <Compile Include="TX2.cs" />
     <Compile Include="TXF.cs" />
