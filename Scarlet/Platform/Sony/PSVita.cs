@@ -480,16 +480,35 @@ namespace Scarlet.Platform.Sony
 
         public ushort GetWidthRounded()
         {
-            int roundedWidth = 1;
-            while (roundedWidth < GetWidth()) roundedWidth *= 2;
-            return (ushort)roundedWidth;
+            return (ushort)RoundDimension(GetWidth());
         }
 
         public ushort GetHeightRounded()
         {
-            int roundedHeight = 1;
-            while (roundedHeight < GetHeight()) roundedHeight *= 2;
-            return (ushort)roundedHeight;
+            return (ushort)RoundDimension(GetHeight());
+        }
+
+        private int RoundDimension(int value)
+        {
+            // TODO: verify me! Compressed formats need dimensions rounded to multiple of itself (PuyoTet misc leftovers), others rounded to multiple of 8 (DB:FC special illust, Danganronpa various)?
+
+            SceGxmTextureBaseFormat textureBaseFormat = GetTextureBaseFormat();
+            int rounded = 0;
+
+            if (textureBaseFormat == SceGxmTextureBaseFormat.UBC1 || textureBaseFormat == SceGxmTextureBaseFormat.UBC2 || textureBaseFormat == SceGxmTextureBaseFormat.UBC3 ||
+                textureBaseFormat == SceGxmTextureBaseFormat.PVRT2BPP || textureBaseFormat == SceGxmTextureBaseFormat.PVRT4BPP ||
+                textureBaseFormat == SceGxmTextureBaseFormat.PVRTII2BPP || textureBaseFormat == SceGxmTextureBaseFormat.PVRTII4BPP)
+            {
+                rounded = 1;
+                while (rounded < value) rounded *= 2;
+            }
+            else
+            {
+                rounded = 0;
+                while (rounded < value) rounded += 8;
+            }
+
+            return rounded;
         }
     }
 
