@@ -632,6 +632,46 @@ namespace Scarlet.Platform.Sony
             { SceGxmTextureFormat.P8_BGR1, PixelDataFormat.FormatBgrx8888 },
         };
 
+        static readonly Dictionary<SceGxmTextureBaseFormat, int> bitsPerPixelMap = new Dictionary<SceGxmTextureBaseFormat, int>()
+        {
+            { SceGxmTextureBaseFormat.U8, 8 },
+            { SceGxmTextureBaseFormat.S8, 8 },
+            { SceGxmTextureBaseFormat.U4U4U4U4, 16 },
+            { SceGxmTextureBaseFormat.U8U3U3U2, 16 },
+            { SceGxmTextureBaseFormat.U1U5U5U5, 16 },
+            { SceGxmTextureBaseFormat.U5U6U5, 16 },
+            { SceGxmTextureBaseFormat.S5S5U6, 16 },
+            { SceGxmTextureBaseFormat.U8U8, 16 },
+            { SceGxmTextureBaseFormat.S8S8, 16 },
+            { SceGxmTextureBaseFormat.U16, 16 },
+            { SceGxmTextureBaseFormat.S16, 16 },
+            { SceGxmTextureBaseFormat.F16, 16 },
+            { SceGxmTextureBaseFormat.U8U8U8U8, 32 },
+            { SceGxmTextureBaseFormat.S8S8S8S8, 32 },
+            { SceGxmTextureBaseFormat.U2U10U10U10, 32 },
+            { SceGxmTextureBaseFormat.U16U16, 32 },
+            { SceGxmTextureBaseFormat.S16S16, 32 },
+            { SceGxmTextureBaseFormat.F16F16, 32 },
+            { SceGxmTextureBaseFormat.F32, 32 },
+            { SceGxmTextureBaseFormat.F32M, 32 },
+            { SceGxmTextureBaseFormat.X8S8S8U8, 32 },
+            { SceGxmTextureBaseFormat.X8U24, 32 },
+            { SceGxmTextureBaseFormat.U32, 32 },
+            { SceGxmTextureBaseFormat.S32, 32 },
+            { SceGxmTextureBaseFormat.SE5M9M9M9, 32 },
+            { SceGxmTextureBaseFormat.F11F11F10, 32 },
+            { SceGxmTextureBaseFormat.F16F16F16F16, 64 },
+            { SceGxmTextureBaseFormat.U16U16U16U16, 64 },
+            { SceGxmTextureBaseFormat.S16S16S16S16, 64 },
+            { SceGxmTextureBaseFormat.F32F32, 64 },
+            { SceGxmTextureBaseFormat.U32U32, 64 },
+            { SceGxmTextureBaseFormat.P4, 4 },
+            { SceGxmTextureBaseFormat.P8, 8 },
+            { SceGxmTextureBaseFormat.U8U8U8, 24 },
+            { SceGxmTextureBaseFormat.S8S8S8, 24 },
+            { SceGxmTextureBaseFormat.U2F10F10F10, 32 }
+        };
+
         public static PixelDataFormat GetPixelDataFormat(SceGxmTextureFormat pixelFormat)
         {
             if (!formatMap.ContainsKey(pixelFormat)) throw new Exception(string.Format("No matching pixel data format known for {0}", pixelFormat));
@@ -642,6 +682,12 @@ namespace Scarlet.Platform.Sony
         {
             if (!formatMap.ContainsKey(paletteFormat)) throw new Exception(string.Format("No matching palette format known for {0}", paletteFormat));
             return paletteFormatMap[paletteFormat];
+        }
+
+        public static int GetBitsPerPixel(SceGxmTextureBaseFormat baseFormat)
+        {
+            if (!bitsPerPixelMap.ContainsKey(baseFormat)) throw new Exception(string.Format("No matching bits per pixel known for {0}", baseFormat));
+            return bitsPerPixelMap[baseFormat];
         }
     }
 }

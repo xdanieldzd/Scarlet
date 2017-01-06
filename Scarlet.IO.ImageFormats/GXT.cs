@@ -89,12 +89,20 @@ namespace Scarlet.IO.ImageFormats
             imageBinary.InputEndianness = Endian.LittleEndian;
             imageBinary.AddInputPixels(PixelData[infoIdx]);
 
-            SceGxmTextureBaseFormat textureBaseFormat = info.GetTextureBaseFormat();
+            // TODO: verify all this crap, GXT conversion wrt image [dimension/format/type] is fragile as all hell
 
-            // TODO: verify me! Compressed formats need rounded dimensions (PuyoTet misc leftovers), uncompressed do not (DB:FC special illust)?
-            if (textureBaseFormat == SceGxmTextureBaseFormat.UBC1 || textureBaseFormat == SceGxmTextureBaseFormat.UBC2 || textureBaseFormat == SceGxmTextureBaseFormat.UBC3 ||
-                textureBaseFormat == SceGxmTextureBaseFormat.PVRT2BPP || textureBaseFormat == SceGxmTextureBaseFormat.PVRT4BPP ||
-                textureBaseFormat == SceGxmTextureBaseFormat.PVRTII2BPP || textureBaseFormat == SceGxmTextureBaseFormat.PVRTII4BPP)
+            SceGxmTextureBaseFormat textureBaseFormat = info.GetTextureBaseFormat();
+            SceGxmTextureType textureType = info.GetTextureType();
+
+            if (textureType == SceGxmTextureType.Linear &&
+                textureBaseFormat != SceGxmTextureBaseFormat.UBC1 && textureBaseFormat != SceGxmTextureBaseFormat.UBC2 && textureBaseFormat != SceGxmTextureBaseFormat.UBC3 &&
+                textureBaseFormat != SceGxmTextureBaseFormat.PVRT2BPP && textureBaseFormat != SceGxmTextureBaseFormat.PVRT4BPP &&
+                textureBaseFormat != SceGxmTextureBaseFormat.PVRTII2BPP && textureBaseFormat != SceGxmTextureBaseFormat.PVRTII4BPP)
+            {
+                imageBinary.PhysicalWidth = (int)(((info.DataSize / imageBinary.Height) * 8) / PSVita.GetBitsPerPixel(textureBaseFormat));
+                imageBinary.PhysicalHeight = info.GetHeight();
+            }
+            else
             {
                 imageBinary.PhysicalWidth = info.GetWidthRounded();
                 imageBinary.PhysicalHeight = info.GetHeightRounded();
@@ -102,7 +110,6 @@ namespace Scarlet.IO.ImageFormats
 
             if (textureBaseFormat != SceGxmTextureBaseFormat.PVRT2BPP && textureBaseFormat != SceGxmTextureBaseFormat.PVRT4BPP)
             {
-                SceGxmTextureType textureType = info.GetTextureType();
                 switch (textureType)
                 {
                     case SceGxmTextureType.Linear:
