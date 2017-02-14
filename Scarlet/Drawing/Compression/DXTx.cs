@@ -190,11 +190,16 @@ namespace Scarlet.Drawing.Compression
             return outData;
         }
 
-        public static byte[] ExtractBits(ulong bits, int numBits)
+        public static byte[] ExtractBits(ulong bits, int numBits, Endian endianness)
         {
             byte[] bitsExt = new byte[16];
             for (int i = 0; i < bitsExt.Length; i++)
-                bitsExt[i] = (byte)((bits >> (i * numBits)) & (byte)((1 << numBits) - 1));
+            {
+                if (endianness == Endian.LittleEndian)
+                    bitsExt[i] = (byte)((bits >> (i * numBits)) & (byte)((1 << numBits) - 1));
+                else
+                    bitsExt[(bitsExt.Length - 1) - i] = (byte)((bits >> (i * numBits)) & (byte)((1 << numBits) - 1));
+            }
             return bitsExt;
         }
 
@@ -218,39 +223,23 @@ namespace Scarlet.Drawing.Compression
 
         public DXT1Block(EndianBinaryReader reader, DXTxBlockLayout blockLayout)
         {
-            byte color0_hi, color0_lo, color1_hi, color1_lo, bits_3, bits_2, bits_1, bits_0;
-
             switch (blockLayout)
             {
                 case DXTxBlockLayout.Normal:
-                    color0_hi = reader.ReadByte();
-                    color0_lo = reader.ReadByte();
-                    color1_hi = reader.ReadByte();
-                    color1_lo = reader.ReadByte();
-                    bits_3 = reader.ReadByte();
-                    bits_2 = reader.ReadByte();
-                    bits_1 = reader.ReadByte();
-                    bits_0 = reader.ReadByte();
+                    Color0 = reader.ReadUInt16();
+                    Color1 = reader.ReadUInt16();
+                    Bits = DXTx.ExtractBits(reader.ReadUInt32(), 2, reader.Endianness);
                     break;
 
                 case DXTxBlockLayout.PSP:
-                    bits_3 = reader.ReadByte();
-                    bits_2 = reader.ReadByte();
-                    bits_1 = reader.ReadByte();
-                    bits_0 = reader.ReadByte();
-                    color0_hi = reader.ReadByte();
-                    color0_lo = reader.ReadByte();
-                    color1_hi = reader.ReadByte();
-                    color1_lo = reader.ReadByte();
+                    Bits = DXTx.ExtractBits(reader.ReadUInt32(), 2, reader.Endianness);
+                    Color0 = reader.ReadUInt16();
+                    Color1 = reader.ReadUInt16();
                     break;
 
                 default:
                     throw new Exception("Unknown block layout");
             }
-
-            Bits = DXTx.ExtractBits((((uint)bits_0 << 24) | ((uint)bits_1 << 16) | ((uint)bits_2 << 8) | (uint)bits_3), 2);
-            Color0 = (ushort)(((ushort)color0_lo << 8) | (ushort)color0_hi);
-            Color1 = (ushort)(((ushort)color1_lo << 8) | (ushort)color1_hi);
         }
     }
 
@@ -288,6 +277,8 @@ namespace Scarlet.Drawing.Compression
 
         public DXT5Block(EndianBinaryReader reader, DXTxBlockLayout blockLayout)
         {
+            // TODO: bit reading & conversion changes, see DXT1
+
             byte bits_5, bits_4, bits_3, bits_2, bits_1, bits_0;
 
             switch (blockLayout)
@@ -302,7 +293,7 @@ namespace Scarlet.Drawing.Compression
                     bits_2 = reader.ReadByte();
                     bits_1 = reader.ReadByte();
                     bits_0 = reader.ReadByte();
-                    Bits = DXTx.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3);
+                    Bits = DXTx.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3, reader.Endianness);
 
                     Color = new DXT1Block(reader, blockLayout);
                     break;
@@ -318,7 +309,7 @@ namespace Scarlet.Drawing.Compression
                     bits_2 = reader.ReadByte();
                     bits_1 = reader.ReadByte();
                     bits_0 = reader.ReadByte();
-                    Bits = DXTx.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3);
+                    Bits = DXTx.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3, reader.Endianness);
                     break;
 
                 default:

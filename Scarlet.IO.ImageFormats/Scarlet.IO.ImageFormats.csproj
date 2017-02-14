@@ -48,6 +48,7 @@
     <Compile Include="DDS.cs" />
     <Compile Include="DMPBM.cs" />
     <Compile Include="GBIX.cs" />
+    <Compile Include="GCNT.cs" />
     <Compile Include="ImageFormat.cs" />
     <Compile Include="GXT.cs" />
     <Compile Include="KSLT.cs" />

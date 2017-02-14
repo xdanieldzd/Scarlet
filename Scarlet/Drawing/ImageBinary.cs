@@ -1199,6 +1199,7 @@ namespace Scarlet.Drawing
                 case PixelDataFormat.PixelOrderingLinear: pixelOrderingFunc = (int x, int y, int w, int h, PixelDataFormat pf, out int tx, out int ty) => { tx = x; ty = y; }; break;
                 case PixelDataFormat.PixelOrderingTiled: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinatesTiled); break;
                 case PixelDataFormat.PixelOrderingTiled3DS: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinates3DS); break;
+                case PixelDataFormat.PixelOrderingTiledGCN: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinatesGCN); break;
                 case PixelDataFormat.PixelOrderingSwizzledVita: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinatesSwizzledVita); break;
                 case PixelDataFormat.PixelOrderingSwizzledPSP: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinatesPSP); break;
 
@@ -1232,6 +1233,12 @@ namespace Scarlet.Drawing
             52, 53, 60, 61, 54, 55, 62, 63
         };
 
+        static readonly int[] pixelOrderingTiledGCN =
+        {
+             0, 1,
+             2, 3
+        };
+
         private static void GetPixelCoordinatesTiled(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY)
         {
             GetPixelCoordinatesTiledEx(origX, origY, width, height, inputPixelFormat, out transformedX, out transformedY, 8, 8, pixelOrderingTiledDefault);
@@ -1240,6 +1247,11 @@ namespace Scarlet.Drawing
         private static void GetPixelCoordinates3DS(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY)
         {
             GetPixelCoordinatesTiledEx(origX, origY, width, height, inputPixelFormat, out transformedX, out transformedY, 8, 8, pixelOrderingTiled3DS);
+        }
+
+        private static void GetPixelCoordinatesGCN(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY)
+        {
+            GetPixelCoordinatesTiledEx(origX, origY, width, height, inputPixelFormat, out transformedX, out transformedY, 2, 2, pixelOrderingTiledGCN);
         }
 
         private static void GetPixelCoordinatesPSP(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY)
@@ -1270,8 +1282,8 @@ namespace Scarlet.Drawing
             // If applicable, transform by ordering table
             if (pixelOrdering != null && tileSize <= pixelOrdering.Length)
             {
-                inTileX = (pixelOrdering[inTilePixel] % 8);
-                inTileY = (pixelOrdering[inTilePixel] / 8);
+                inTileX = (pixelOrdering[inTilePixel] % tileWidth);
+                inTileY = (pixelOrdering[inTilePixel] / tileHeight);
             }
 
             // Set final image coords
