@@ -23,9 +23,10 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/0c41d10ccb40f0784861971a8826a3a7da950c2e) contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/2ab616efc5d80b16d78f18d9bc232be39779871d) contain the following:
 
 * __Images__
+ * BTGA (ex. various Lego games, 3DS)
  * DDS (DXTx and PVRx; ex. Skullgirls 2nd Encore, PS Vita)
  * DMPBM (ex. Shin Megami Tensei: Devil Survivor Overclocked)
  * GBIX (ex. K-ON! Houkago Live, PSP version)
@@ -55,6 +56,7 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
  * Stellvia DATs (Uchuu no Stellvia, PS2 version)
  * UKArc/PAC (ex. Dengeki Bunko: Fighting Climax, PS Vita version)
 * __Compression__
+ * DR 1/2/AE (Danganronpa 1, 2 and Another Episode, PS Vita)
  * GZip (generic; also ex. Dengeki Bunko: Fighting Climax, PS Vita version)
  * NIS LZS (ex. Disgaea 4, PS3 and PS Vita versions)
  * Nintendo DS LZSS-0x10 (generic; also ex. Shin Megami Tensei: Devil Survivor Overclocked)
@@ -78,10 +80,6 @@ Acknowledgements
 * PVRTC texture decompression code ported from [PowerVR Graphics Native SDK](https://github.com/powervr-graphics/Native_SDK), Copyright (c) Imagination Technologies Ltd.
  * see *\Scarlet\Drawing\Compression\PVRTC.cs* and *LICENSE.md*
 * Includes [NetRevisionTool](http://unclassified.software/apps/netrevisiontool) by Yves Goergen for injecting Git revision information
-* Initial VTXP format notes by [BlackDragonHunt](https://github.com/BlackDragonHunt)
+* Initial VTXP and BTGA format notes and original Danganronpa decompression code by [BlackDragonHunt](https://github.com/BlackDragonHunt)
 * Texture swizzle logic reverse-engineering and original C implementation by [FireyFly](https://github.com/FireyFly)
 * Sample files, testing and moral support by [Ehm2k](https://twitter.com/Ehm2k)
-
-See Also
-========
-* [GXTConvert](https://github.com/xdanieldzd/GXTConvert), a dedicated GXT-to-PNG converter (might not have feature parity with Scarlet)
