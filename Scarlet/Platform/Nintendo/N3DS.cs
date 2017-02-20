@@ -34,9 +34,27 @@ namespace Scarlet.Platform.Nintendo
         ETC1AlphaRGB8A4NativeDMP = 0x675B
     };
 
+    public enum SdkPixelFormat : ushort
+    {
+        RGBA8 = 0x0000,
+        RGB8 = 0x0001,
+        RGBA5551 = 0x0002,
+        RGB565 = 0x0003,
+        RGBA4 = 0x0004,
+        LA8 = 0x0005,
+        HILO8 = 0x0006,
+        L8 = 0x0007,
+        A8 = 0x0008,
+        LA4 = 0x0009,
+        L4 = 0x000A,
+        A4 = 0x000B,
+        ETC1 = 0x000C,
+        ETC1A4 = 0x000D
+    };
+
     public static class N3DS
     {
-        static readonly Dictionary<Tuple<PicaDataType, PicaPixelFormat>, PixelDataFormat> formatMap = new Dictionary<Tuple<PicaDataType, PicaPixelFormat>, PixelDataFormat>()
+        static readonly Dictionary<Tuple<PicaDataType, PicaPixelFormat>, PixelDataFormat> formatMapPica = new Dictionary<Tuple<PicaDataType, PicaPixelFormat>, PixelDataFormat>()
         {
             /* RGBA4444 */  { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedShort4444, PicaPixelFormat.RGBANativeDMP), PixelDataFormat.FormatRgba4444 | PixelDataFormat.PixelOrderingTiled3DS },
             /* RGBA5551 */  { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedShort5551, PicaPixelFormat.RGBANativeDMP), PixelDataFormat.FormatRgba5551 | PixelDataFormat.PixelOrderingTiled3DS },
@@ -53,11 +71,35 @@ namespace Scarlet.Platform.Nintendo
             /* LA44 */      { new Tuple<PicaDataType, PicaPixelFormat>(PicaDataType.UnsignedByte44DMP, PicaPixelFormat.LuminanceAlphaNativeDMP), PixelDataFormat.FormatLuminanceAlpha44 | PixelDataFormat.PixelOrderingTiled3DS }
         };
 
+        static readonly Dictionary<SdkPixelFormat, PixelDataFormat> formatMapSdk = new Dictionary<SdkPixelFormat, PixelDataFormat>()
+        {
+            /* RGBA8 */     { SdkPixelFormat.RGBA8, PixelDataFormat.FormatRgba8888 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* RGB8 */      { SdkPixelFormat.RGB8, PixelDataFormat.FormatRgb888 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* RGBA5551 */  { SdkPixelFormat.RGBA5551, PixelDataFormat.FormatRgba5551 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* RGB565 */    { SdkPixelFormat.RGB565, PixelDataFormat.FormatRgb565 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* RGBA4 */     { SdkPixelFormat.RGBA4, PixelDataFormat.FormatRgba4444 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* LA8 */       { SdkPixelFormat.LA8, PixelDataFormat.FormatLuminanceAlpha88 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* HILO8 */     { SdkPixelFormat.HILO8, PixelDataFormat.FormatLuminanceAlpha88 | PixelDataFormat.PixelOrderingTiled3DS },   // FIXME, what IS HILO8 anyway?
+            /* L8 */        { SdkPixelFormat.L8, PixelDataFormat.FormatLuminance8 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* A8 */        { SdkPixelFormat.A8, PixelDataFormat.FormatAlpha8 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* LA4 */       { SdkPixelFormat.LA4, PixelDataFormat.FormatLuminanceAlpha44 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* L4 */        { SdkPixelFormat.L4, PixelDataFormat.FormatLuminance4 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* A4 */        { SdkPixelFormat.A4, PixelDataFormat.FormatAlpha4 | PixelDataFormat.PixelOrderingTiled3DS },
+            /* ETC1 */      { SdkPixelFormat.ETC1, PixelDataFormat.FormatETC1_3DS },
+            /* ETC1_A4 */   { SdkPixelFormat.ETC1A4, PixelDataFormat.FormatETC1A4_3DS },
+        };
+
         public static PixelDataFormat GetPixelDataFormat(PicaDataType dataType, PicaPixelFormat pixelFormat)
         {
             Tuple<PicaDataType, PicaPixelFormat> tuple = new Tuple<PicaDataType, PicaPixelFormat>(dataType, pixelFormat);
-            if (!formatMap.ContainsKey(tuple)) throw new Exception("No matching pixel data format known");
-            return formatMap[tuple];
+            if (!formatMapPica.ContainsKey(tuple)) throw new Exception("No matching pixel data format known");
+            return formatMapPica[tuple];
+        }
+
+        public static PixelDataFormat GetPixelDataFormat(SdkPixelFormat pixelFormat)
+        {
+            if (!formatMapSdk.ContainsKey(pixelFormat)) throw new Exception("No matching pixel data format known");
+            return formatMapSdk[pixelFormat];
         }
     }
 }
