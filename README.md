@@ -82,4 +82,4 @@ Acknowledgements
 * Includes [NetRevisionTool](http://unclassified.software/apps/netrevisiontool) by Yves Goergen for injecting Git revision information
 * Initial VTXP and BTGA format notes and original Danganronpa decompression code by [BlackDragonHunt](https://github.com/BlackDragonHunt)
 * Texture swizzle logic reverse-engineering and original C implementation by [FireyFly](https://github.com/FireyFly)
-* Sample files, testing and moral support by [Ehm2k](https://twitter.com/Ehm2k)
+* Sample files, testing and moral support by [Ehm](https://twitter.com/OtherEhm)
