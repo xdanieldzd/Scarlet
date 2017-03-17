@@ -114,7 +114,7 @@ namespace Scarlet.IO.ImageFormats
         }
     }
 
-    [FilenamePattern("^.*\\.(btga|lga|tga)$")]
+    [FilenamePattern("^.*\\.(btga|lga)$")]
     public class BTGA : ImageFormat
     {
         IBTGAHeader header;
