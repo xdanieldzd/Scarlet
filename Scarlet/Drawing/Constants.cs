@@ -19,8 +19,8 @@ namespace Scarlet.Drawing
          * Grn 0000000007800000
          * Blu 0000000038000000
          * Alp 00000001C0000000
-         * Spc 00003FFE00000000
-         * Ord 0003C00000000000
+         * Spc 00001FFE00000000
+         * Ord 0003E00000000000
          * Fil 000C000000000000
          * Rsv FFF0000000000000
          */
@@ -330,7 +330,7 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Mask for extracting special format value
         /// </summary>
-        MaskSpecial = ((((ulong)1 << 13) - 1) << 33), /* 00003FFE00000000 */
+        MaskSpecial = ((((ulong)1 << 12) - 1) << 33), /* 00001FFE00000000 */
 
         /// <summary>
         /// Format has pixels in linear order
@@ -340,12 +340,17 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format has pixels in tiled order
         /// </summary>
-        PixelOrderingTiled = ((ulong)1 << 46),
+        PixelOrderingTiled = ((ulong)1 << 45),
 
         /// <summary>
         /// Format has pixels in tiled order, 3DS-style
         /// </summary>
-        PixelOrderingTiled3DS = ((ulong)1 << 47),
+        PixelOrderingTiled3DS = ((ulong)1 << 46),
+        
+        /// <summary>
+        /// Format has pixels in tiled order, GCN-style
+        /// </summary>
+        PixelOrderingTiledGCN = ((ulong)1 << 47),
 
         /// <summary>
         /// Format has pixels in swizzled order, Vita-style
@@ -360,7 +365,7 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Mask for extracting pixel ordering value
         /// </summary>
-        MaskPixelOrdering = ((((ulong)1 << 4) - 1) << 46), /* 0003C00000000000 */
+        MaskPixelOrdering = ((((ulong)1 << 5) - 1) << 45), /* 0003E00000000000 */
 
         /// <summary>
         /// Format will not apply filtering

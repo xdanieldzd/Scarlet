@@ -57,6 +57,7 @@
     <Compile Include="IO\FilenamePatternAttribute.cs" />
     <Compile Include="IO\FileFormat.cs" />
     <Compile Include="IO\MagicNumberAttribute.cs" />
+    <Compile Include="Platform\Nintendo\GCN.cs" />
     <Compile Include="Platform\Nintendo\N3DS.cs" />
     <Compile Include="Platform\Sony\PS2.cs" />
     <Compile Include="Platform\Sony\PSVita.cs" />
