@@ -46,11 +46,14 @@
     <Compile Include="DATAkiba.cs" />
     <Compile Include="DATStellvia.cs" />
     <Compile Include="FMDX.cs" />
+    <Compile Include="GARv2.cs" />
+    <Compile Include="GARv5.cs" />
     <Compile Include="NISPACK.cs" />
     <Compile Include="NSAC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PSPFSv1.cs" />
     <Compile Include="UKArc.cs" />
+    <Compile Include="ZARv1.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Scarlet\Scarlet.csproj">
