@@ -40,7 +40,6 @@ namespace Scarlet.IO.ImageFormats
     }
 
     [MagicNumber("ctxb", 0x00)]
-    [FilenamePattern("^.*\\.ctxb$")]
     public class CTXB : ImageFormat
     {
         /* ctxb */
