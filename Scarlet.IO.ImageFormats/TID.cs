@@ -177,7 +177,7 @@ namespace Scarlet.IO.ImageFormats
             imageBinary.Width = (int)Width;
             imageBinary.Height = (int)Height;
             imageBinary.InputPixelFormat = pixelFormat;
-            imageBinary.InputEndianness = Endian.LittleEndian;
+            imageBinary.InputEndianness = Endian.BigEndian;
 
             imageBinary.AddInputPixels(PixelData);
         }
@@ -189,7 +189,7 @@ namespace Scarlet.IO.ImageFormats
 
         public override int GetPaletteCount()
         {
-            return 1;
+            return 0;
         }
 
         protected override Bitmap OnGetBitmap(int imageIndex, int paletteIndex)
