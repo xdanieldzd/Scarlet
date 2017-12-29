@@ -23,10 +23,11 @@ Parts
 
 Formats
 =======
-File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/2ab616efc5d80b16d78f18d9bc232be39779871d) contain the following:
+File formats that can be loaded and exported/extracted by the libraries as of [this commit](https://github.com/xdanieldzd/Scarlet/tree/30ff7d03987ced0613344a57d39cccf98f728ccf) contain the following:
 
 * __Images__
   * BTGA (ex. various Lego games, 3DS)
+  * CTXB (various Nintendo 3DS games)
   * DDS (DXTx and PVRx; ex. Skullgirls 2nd Encore, PS Vita)
   * DMPBM (ex. Shin Megami Tensei: Devil Survivor Overclocked)
   * GBIX (ex. K-ON! Houkago Live, PSP version)
@@ -50,13 +51,16 @@ File formats that can be loaded and exported/extracted by the libraries as of [t
 * __Containers__
   * FADEBABE (ex. Akiba's Trip, original PSP version, namely DATA1.DAT)
   * FMDX (ex. K-ON! Houkago Live, PSP version)
+  * GAR v2 and v5 (ex. The Legend of Zelda: Majora's Mask 3D, Ever Oasis)
   * NISPACK (various Nippon Ichi Software games)
   * NSAC (ex. Disgaea 4, PS Vita version, possibly more Nippon Ichi Software games)
   * PSPFS_V1 (ex. Phantom Brave, PSP version, possibly more Nippon Ichi Software games)
   * Stellvia DATs (Uchuu no Stellvia, PS2 version)
   * UKArc/PAC (ex. Dengeki Bunko: Fighting Climax, PS Vita version)
+  * ZAR v1 (ex. The Legend of Zelda: Ocarina of Time 3D)
 * __Compression__
   * DR 1/2/AE (Danganronpa 1, 2 and Another Episode, PS Vita)
+  * Grezzo LzS (ex. The Legend of Zelda: Majora's Mask 3D)
   * GZip (generic; also ex. Dengeki Bunko: Fighting Climax, PS Vita version)
   * NIS LZS (ex. Disgaea 4, PS3 and PS Vita versions)
   * Nintendo DS LZSS-0x10 (generic; also ex. Shin Megami Tensei: Devil Survivor Overclocked)
@@ -82,4 +86,5 @@ Acknowledgements
 * Includes [NetRevisionTool](http://unclassified.software/apps/netrevisiontool) by Yves Goergen for injecting Git revision information
 * Initial VTXP and BTGA format notes and original Danganronpa decompression code by [BlackDragonHunt](https://github.com/BlackDragonHunt)
 * Texture swizzle logic reverse-engineering and original C implementation by [FireyFly](https://github.com/FireyFly)
+* ZAR v1 and GAR v2 container support adapted from documentation and/or code by Twili and [ShimmerFairy](https://github.com/ShimmerFairy) respectively
 * Sample files, testing and moral support by [Ehm](https://twitter.com/OtherEhm)
