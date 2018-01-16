@@ -63,15 +63,54 @@ namespace Scarlet.IO.ImageFormats
             {
                 // TODO: actually implement uncompressed DDS formats...?
 
-                /*if (DDSHeader.PixelFormat.Flags == DDPF.Alpha)
+                PixelDataFormat alphaFormat = PixelDataFormat.Undefined, colorFormat = PixelDataFormat.Undefined;
+
+                if (DDSHeader.PixelFormat.Flags.HasFlag(DDPF.AlphaPixels))
                 {
-                    inputPixelFormat |= PixelDataFormat.ChannelsAlpha | PixelDataFormat.Bpp8;
                     switch (DDSHeader.PixelFormat.ABitMask)
                     {
-                        case 0xFF: inputPixelFormat |= PixelDataFormat.AlphaBits8; break;
+                        case 0xFF000000: alphaFormat |= PixelDataFormat.AlphaBits8; break;
                         default: throw new NotImplementedException("DDS alpha bit mask not implemented");
                     }
-                }*/
+                }
+
+                if (DDSHeader.PixelFormat.Flags.HasFlag(DDPF.RGB))
+                {
+                    switch (DDSHeader.PixelFormat.RBitMask)
+                    {
+                        case 0x00FF0000: colorFormat |= PixelDataFormat.RedBits8; break;
+                        default: throw new NotImplementedException("DDS red bit mask not implemented");
+                    }
+
+                    switch (DDSHeader.PixelFormat.GBitMask)
+                    {
+                        case 0x0000FF00: colorFormat |= PixelDataFormat.GreenBits8; break;
+                        default: throw new NotImplementedException("DDS green bit mask not implemented");
+                    }
+
+                    switch (DDSHeader.PixelFormat.BBitMask)
+                    {
+                        case 0x000000FF: colorFormat |= PixelDataFormat.BlueBits8; break;
+                        default: throw new NotImplementedException("DDS blue bit mask not implemented");
+                    }
+                }
+
+                if (DDSHeader.PixelFormat.RBitMask != 0 && DDSHeader.PixelFormat.GBitMask != 0 && DDSHeader.PixelFormat.BBitMask != 0 && DDSHeader.PixelFormat.ABitMask != 0)
+                {
+                    inputPixelFormat |= PixelDataFormat.ChannelsArgb;
+                }
+                else
+                    throw new NotImplementedException("DDS channel setup not implemented");
+
+                if (DDSHeader.PixelFormat.RGBBitCount == 32)
+                {
+                    inputPixelFormat |= PixelDataFormat.Bpp32;
+                }
+                else
+                    throw new NotImplementedException("DDS bits per pixel not implemented");
+
+                inputPixelFormat |= colorFormat;
+                inputPixelFormat |= alphaFormat;
 
                 physicalWidth = (int)DDSHeader.Width;
                 physicalHeight = (int)DDSHeader.Height;
@@ -80,9 +119,11 @@ namespace Scarlet.IO.ImageFormats
             if (inputPixelFormat == PixelDataFormat.Undefined)
                 throw new NotImplementedException("DDS pixel format not implemented");
 
-            // TODO: total guesswork, verify me!
             if (DDSHeader.Reserved1[0x0A] == 0x00020008)
+            {
+                // TODO: total guesswork, verify me!
                 inputPixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
+            }
 
             ImageBinary imageBinary = new ImageBinary();
 

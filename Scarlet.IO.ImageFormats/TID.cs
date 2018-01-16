@@ -12,6 +12,8 @@ namespace Scarlet.IO.ImageFormats
 {
     // TODO: finish & verify me! Can TIDs contain multiple images? If so, how's it work?
 
+    // "E:\[SSD User Data]\Downloads\[[[nep-test]]]\GAME.cpk RB1 Vita" "E:\[SSD User Data]\Downloads\[[[nep-test]]]\GAME00000 RB1 PC"
+
     public enum TidFormatUnknownBit0 : byte
     {
         Unset = 0x00,
