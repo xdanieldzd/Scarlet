@@ -2,33 +2,36 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Numerics;
 
 using Scarlet.IO;
 using Scarlet.Drawing;
 
 namespace Scarlet.Drawing.Compression
 {
-    /* https://www.khronos.org/registry/OpenGL/extensions/ARB/ARB_texture_compression_bptc.txt
-     * https://msdn.microsoft.com/en-us/library/windows/desktop/hh308953(v=vs.85).aspx */
+    /* Ported from detex by Harm Hanemaaijer
+     * https://github.com/hglm/detex
+     * Based on revision https://github.com/hglm/detex/tree/cab11584d9be140602a66fd9a88ef0b99f08a97a */
+
+    /* detex license (ISC):
+     * 
+     * Copyright (c) 2015 Harm Hanemaaijer <fgenfb@yahoo.com>
+     * 
+     * Permission to use, copy, modify, and/or distribute this software for any
+     * purpose with or without fee is hereby granted, provided that the above
+     * copyright notice and this permission notice appear in all copies.
+     * 
+     * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+     * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+     * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+     * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+     * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+     * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+     * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+     */
 
     internal static class BC7
     {
-        internal static readonly int[] numSubsetsPerPartition = { 3, 2, 3, 2, 1, 1, 1, 2 };
-        internal static readonly int[] partitionBits = { 4, 6, 6, 6, 0, 0, 0, 6 };
-        internal static readonly int[] rotationBits = { 0, 0, 0, 0, 2, 2, 0, 0 };
-        internal static readonly int[] indexSelectionBits = { 0, 0, 0, 0, 1, 0, 0, 0 };
-        internal static readonly int[] colorBits = { 4, 6, 5, 7, 5, 7, 7, 5 };
-        internal static readonly int[] alphaBits = { 0, 0, 0, 0, 6, 8, 7, 5 };
-        internal static readonly int[] endpointPBits = { 1, 0, 0, 1, 0, 0, 1, 1 };
-        internal static readonly int[] sharedPBits = { 0, 1, 0, 0, 0, 0, 0, 0 };
-        internal static readonly int[] indexBitsPerElement = { 3, 3, 2, 2, 2, 2, 4, 2 };
-        internal static readonly int[] secondaryIndexBitsPerElement = { 0, 0, 0, 0, 3, 2, 0, 0 };
-
-        internal static readonly int[] interpolationFactors2 = { 0, 21, 43, 64 };
-        internal static readonly int[] interpolationFactors3 = { 0, 9, 18, 27, 37, 46, 55, 64 };
-        internal static readonly int[] interpolationFactors4 = { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
-
+        /* Shim functions */
         public static byte[] Decompress(EndianBinaryReader reader, int width, int height, PixelDataFormat inputFormat, long readLength)
         {
             byte[] outPixels = new byte[readLength * 8];
@@ -68,141 +71,706 @@ namespace Scarlet.Drawing.Compression
         {
             byte[] outData = new byte[(4 * 4) * 4];
 
-            BC7Block inBlock = null;
-
-            inBlock = new BC7Block(reader.ReadUInt64(), reader.ReadUInt64());
-
-            for (int y = 0; y < 4; y++)
-            {
-                for (int x = 0; x < 4; x++)
-                {
-                    byte[] pixelData = inBlock.GetPixelColor(x, y);
-                    Buffer.BlockCopy(pixelData, 0, outData, ((y * 4) + x) * 4, pixelData.Length);
-                }
-            }
+            detexDecompressBlockBPTC(reader, 0xFFFFFFFF, 0, ref outData);
 
             return outData;
         }
-    }
 
-    internal class BC7Block
-    {
-        public BigInteger Data { get; private set; }
+        /* All following ported from detex */
 
-        public int Mode { get; private set; }
-        public int NumSubsets { get; private set; }
-        public int Partitions { get; private set; }
-        public int Rotation { get; private set; }
-        public int IndexSelection { get; private set; }
-        public int[,,] Color { get; private set; }
-        public int[,,] Alpha { get; private set; }
-        public int EndpointPBit { get; private set; }
-        public int SharedPBit { get; private set; }
-        public int[] PrimaryIndices { get; private set; }
-        public int[] SecondaryIndices { get; private set; }
+        // TODO: cleanup, remove unneeded stuff, etc
 
-        bool isValid;
-        bool hasAlpha { get { return (BC7.alphaBits[Mode] != 0); } }
+        static readonly byte[] color_precision_table = { 4, 6, 5, 7, 5, 7, 7, 5 };
+        static readonly byte[] color_precision_plus_pbit_table = { 5, 7, 5, 8, 5, 7, 8, 6 };
+        static readonly byte[] alpha_precision_table = { 0, 0, 0, 0, 6, 8, 7, 5 };
+        static readonly byte[] alpha_precision_plus_pbit_table = { 0, 0, 0, 0, 6, 8, 8, 6 };
+        static readonly sbyte[] components_in_qword0_table = { 2, -1, 1, 1, 3, 3, 3, 2 };
 
-        public BC7Block(ulong data0, ulong data1)
+        static void ExtractEndpoints(int mode, int nu_subsets, detexBlock128 block, byte[] endpoint_array)
         {
-            // Assemble BigInteger
-            Data = data1;
-            Data <<= 64;
-            Data |= data0;
-
-            // Skip empty blocks
-            if (Data == 0)
-                return;
-
-            // Extract mode value
-            Mode = -1;
-            for (int i = 0; i < 8; i++)
+            // Optimized version avoiding the use of block_extract_bits().
+            int components_in_qword0 = components_in_qword0_table[mode];
+            ulong data = block.data0 >> block.index;
+            byte precision = color_precision_table[mode];
+            byte mask = (byte)((1 << precision) - 1);
+            int total_bits_per_component = nu_subsets * 2 * precision;
+            for (int i = 0; i < components_in_qword0; i++)  // For each color component.
+                for (int j = 0; j < nu_subsets; j++)    // For each subset.
+                    for (int k = 0; k < 2; k++)
+                    {   // For each endpoint.
+                        endpoint_array[j * 8 + k * 4 + i] = (byte)(data & mask);
+                        data >>= precision;
+                    }
+            block.index += components_in_qword0 * total_bits_per_component;
+            if (components_in_qword0 < 3)
             {
-                if ((Data & (ulong)(1 << i)) != 0)
-                {
-                    Mode = i;
-                    break;
-                }
+                // Handle the color component that crosses the boundary between data0 and data1
+                data = block.data0 >> block.index;
+                data |= block.data1 << (64 - block.index);
+                int i = components_in_qword0;
+                for (int j = 0; j < nu_subsets; j++)    // For each subset.
+                    for (int k = 0; k < 2; k++)
+                    {   // For each endpoint.
+                        endpoint_array[j * 8 + k * 4 + i] = (byte)(data & mask);
+                        data >>= precision;
+                    }
+                block.index += total_bits_per_component;
             }
-            if (Mode == -1)
-                throw new Exception("Unexpected/unknown BC7 block mode");
-
-            // Store number of subsets
-            NumSubsets = BC7.numSubsetsPerPartition[Mode];
-
-            // Extract data
-            int index = (Mode + 1);
-            Partitions = ExtractData(ref index, BC7.partitionBits[Mode]);
-            Rotation = ExtractData(ref index, BC7.rotationBits[Mode]);
-            IndexSelection = ExtractData(ref index, BC7.indexSelectionBits[Mode]);
-
-            Color = new int[2, NumSubsets, 3];
-            for (int ep = 0; ep < 2; ep++)
-                for (int sub = 0; sub < NumSubsets; sub++)
-                    for (int col = 0; col < 3; col++)
-                        Color[ep, sub, col] = ExtractData(ref index, BC7.colorBits[Mode]);
-
-            Alpha = new int[2, NumSubsets, 1];
-            for (int ep = 0; ep < 2; ep++)
-                for (int sub = 0; sub < NumSubsets; sub++)
-                    for (int alp = 0; alp < 1; alp++)
-                        Alpha[ep, sub, alp] = ExtractData(ref index, BC7.alphaBits[Mode]);
-
-            EndpointPBit = ExtractData(ref index, BC7.endpointPBits[Mode]);
-            SharedPBit = ExtractData(ref index, BC7.sharedPBits[Mode]);
-
-            PrimaryIndices = new int[16];
-            for (int idx = 0; idx < PrimaryIndices.Length; idx++)
-                PrimaryIndices[idx] = ExtractData(ref index, BC7.indexBitsPerElement[Mode]);
-
-            SecondaryIndices = new int[16];
-            for (int idx = 0; idx < SecondaryIndices.Length; idx++)
-                SecondaryIndices[idx] = ExtractData(ref index, BC7.secondaryIndexBitsPerElement[Mode]);
-
-            isValid = true;
+            if (components_in_qword0 < 2)
+            {
+                // Handle the color component that is wholly in data1.
+                data = block.data1 >> (block.index - 64);
+                int i = 2;
+                for (int j = 0; j < nu_subsets; j++)    // For each subset.
+                    for (int k = 0; k < 2; k++)
+                    {   // For each endpoint.
+                        endpoint_array[j * 8 + k * 4 + i] = (byte)(data & mask);
+                        data >>= precision;
+                    }
+                block.index += total_bits_per_component;
+            }
+            // Alpha component.
+            if (alpha_precision_table[mode] > 0)
+            {
+                // For mode 7, the alpha data is wholly in data1.
+                // For modes 4 and 6, the alpha data is wholly in data0.
+                // For mode 5, the alpha data is in data0 and data1.
+                if (mode == 7)
+                    data = block.data1 >> (block.index - 64);
+                else if (mode == 5)
+                    data = (block.data0 >> block.index) | ((block.data1 & 0x3) << 14);
+                else
+                    data = block.data0 >> block.index;
+                byte alpha_precision = alpha_precision_table[mode];
+                mask = (byte)((1 << alpha_precision) - 1);
+                for (int j = 0; j < nu_subsets; j++)
+                    for (int k = 0; k < 2; k++)
+                    {   // For each endpoint.
+                        endpoint_array[j * 8 + k * 4 + 3] = (byte)(data & mask);
+                        data >>= alpha_precision;
+                    }
+                block.index += nu_subsets * 2 * alpha_precision;
+            }
         }
 
-        private int ExtractData(ref int index, int len)
+        static readonly byte[] mode_has_p_bits = { 1, 1, 0, 1, 0, 0, 1, 1 };
+
+        static void FullyDecodeEndpoints(byte[] endpoint_array, int nu_subsets, int mode, detexBlock128 block)
         {
-            int last = (index + len);
-            BigInteger mask = (((BigInteger)(1 << (last - index)) - 1) << index);
-            int value = (int)((Data & mask) >> index);
-            index += len;
+            if (mode_has_p_bits[mode] != 0)
+            {
+                // Mode 1 (shared P-bits) handled elsewhere.
+                // Extract end-point P-bits. Take advantage of the fact that they don't cross the
+                // 64-bit word boundary in any mode.
+                uint bits;
+                if (block.index < 64)
+                    bits = (uint)(block.data0 >> block.index);
+                else
+                    bits = (uint)(block.data1 >> (block.index - 64));
+                for (int i = 0; i < nu_subsets * 2; i++)
+                {
+                    endpoint_array[i * 4 + 0] <<= 1;
+                    endpoint_array[i * 4 + 1] <<= 1;
+                    endpoint_array[i * 4 + 2] <<= 1;
+                    endpoint_array[i * 4 + 3] <<= 1;
+                    endpoint_array[i * 4 + 0] |= (byte)(bits & 1);
+                    endpoint_array[i * 4 + 1] |= (byte)(bits & 1);
+                    endpoint_array[i * 4 + 2] |= (byte)(bits & 1);
+                    endpoint_array[i * 4 + 3] |= (byte)(bits & 1);
+                    bits >>= 1;
+                }
+                block.index += nu_subsets * 2;
+            }
+            int color_prec = color_precision_plus_pbit_table[mode];
+            int alpha_prec = alpha_precision_plus_pbit_table[mode];
+            for (int i = 0; i < nu_subsets * 2; i++)
+            {
+                // Color_component_precision & alpha_component_precision includes pbit
+                // left shift endpoint components so that their MSB lies in bit 7
+                endpoint_array[i * 4 + 0] <<= (8 - color_prec);
+                endpoint_array[i * 4 + 1] <<= (8 - color_prec);
+                endpoint_array[i * 4 + 2] <<= (8 - color_prec);
+                endpoint_array[i * 4 + 3] <<= (8 - alpha_prec);
+
+                // Replicate each component's MSB into the LSBs revealed by the left-shift operation above.
+                endpoint_array[i * 4 + 0] |= (byte)(endpoint_array[i * 4 + 0] >> color_prec);
+                endpoint_array[i * 4 + 1] |= (byte)(endpoint_array[i * 4 + 1] >> color_prec);
+                endpoint_array[i * 4 + 2] |= (byte)(endpoint_array[i * 4 + 2] >> color_prec);
+                endpoint_array[i * 4 + 3] |= (byte)(endpoint_array[i * 4 + 3] >> alpha_prec);
+            }
+            if (mode <= 3)
+            {
+                for (int i = 0; i < nu_subsets * 2; i++)
+                    endpoint_array[i * 4 + 3] = 0xFF;
+            }
+        }
+
+        static byte Interpolate(byte e0, byte e1, byte index, byte indexprecision)
+        {
+            if (indexprecision == 2)
+                return (byte)(((64 - detex_bptc_table_aWeight2[index]) * (ushort)e0 + detex_bptc_table_aWeight2[index] * (ushort)e1 + 32) >> 6);
+            else
+            if (indexprecision == 3)
+                return (byte)(((64 - detex_bptc_table_aWeight3[index]) * (ushort)e0 + detex_bptc_table_aWeight3[index] * (ushort)e1 + 32) >> 6);
+            else // indexprecision == 4
+                return (byte)(((64 - detex_bptc_table_aWeight4[index]) * (ushort)e0 + detex_bptc_table_aWeight4[index] * (ushort)e1 + 32) >> 6);
+        }
+
+        static readonly byte[] bptc_color_index_bitcount = { 3, 3, 2, 2, 2, 2, 4, 2 };
+        static readonly byte[] bptc_alpha_index_bitcount = { 3, 3, 2, 2, 3, 2, 4, 2 };
+        static readonly byte[] bptc_NS = { 3, 2, 3, 2, 1, 1, 1, 2 };
+        static readonly byte[] PB = { 4, 6, 6, 6, 0, 0, 0, 6 };
+        static readonly byte[] RB = { 0, 0, 0, 0, 2, 2, 0, 0 };
+
+        // Functions to extract parameters. */
+
+        static int ExtractMode(detexBlock128 block)
+        {
+            for (int i = 0; i < 8; i++)
+                if ((block.data0 & ((ulong)1 << i)) != 0)
+                {
+                    block.index = i + 1;
+                    return i;
+                }
+            // Illegal.
+            return -1;
+        }
+
+        static int ExtractPartitionSetID(detexBlock128 block, int mode)
+        {
+            return (int)detexBlock128ExtractBits(block, PB[mode]);
+        }
+
+        static byte GetPartitionIndex(int nu_subsets, int partition_set_id, int i)
+        {
+            if (nu_subsets == 1)
+                return 0;
+            if (nu_subsets == 2)
+                return detex_bptc_table_P2[partition_set_id * 16 + i];
+            return detex_bptc_table_P3[partition_set_id * 16 + i];
+        }
+
+        static int ExtractRotationBits(detexBlock128 block, int mode)
+        {
+            return (int)detexBlock128ExtractBits(block, RB[mode]);
+        }
+
+        static byte GetAnchorIndex(int partition_set_id, int partition, int nu_subsets)
+        {
+            if (partition == 0)
+                return 0;
+            if (nu_subsets == 2)
+                return detex_bptc_table_anchor_index_second_subset[partition_set_id];
+            if (partition == 1)
+                return detex_bptc_table_anchor_index_second_subset_of_three[partition_set_id];
+            return detex_bptc_table_anchor_index_third_subset[partition_set_id];
+        }
+
+        static readonly byte[] IB = { 3, 3, 2, 2, 2, 2, 4, 2 };
+        static readonly byte[] IB2 = { 0, 0, 0, 0, 3, 2, 0, 0 };
+        static readonly byte[] mode_has_partition_bits = { 1, 1, 1, 1, 0, 0, 0, 1 };
+
+        /* Decompress a 128-bit 4x4 pixel texture block compressed using BPTC mode 1. */
+
+        static bool DecompressBlockBPTCMode1(detexBlock128 block, ref byte[] pixel_buffer)
+        {
+            ulong data0 = block.data0;
+            ulong data1 = block.data1;
+            int partition_set_id = (int)detexGetBits64(data0, 2, 7);
+            byte[] endpoint = new byte[2 * 2 * 3];    // 2 subsets.
+            endpoint[0] = (byte)detexGetBits64(data0, 8, 13); // red, subset 0, endpoint 0
+            endpoint[3] = (byte)detexGetBits64(data0, 14, 19);    // red, subset 0, endpoint 1
+            endpoint[6] = (byte)detexGetBits64(data0, 20, 25);    // red, subset 1, endpoint 0
+            endpoint[9] = (byte)detexGetBits64(data0, 26, 31);    // red, subset 1, endpoint 1
+            endpoint[1] = (byte)detexGetBits64(data0, 32, 37);    // green, subset 0, endpoint 0
+            endpoint[4] = (byte)detexGetBits64(data0, 38, 43);    // green, subset 0, endpoint 1
+            endpoint[7] = (byte)detexGetBits64(data0, 44, 49);    // green, subset 1, endpoint 0
+            endpoint[10] = (byte)detexGetBits64(data0, 50, 55);   // green, subset 1, endpoint 1
+            endpoint[2] = (byte)detexGetBits64(data0, 56, 61);    // blue, subset 0, endpoint 0
+            endpoint[5] = (byte)((byte)detexGetBits64(data0, 62, 63) | (byte)(detexGetBits64(data1, 0, 3) << 2)); // blue, subset 0, endpoint 1
+            endpoint[8] = (byte)detexGetBits64(data1, 4, 9);  // blue, subset 1, endpoint 0
+            endpoint[11] = (byte)detexGetBits64(data1, 10, 15);   // blue, subset 1, endpoint 1
+                                                                  // Decode endpoints.
+            for (int i = 0; i < 2 * 2; i++)
+            {
+                //component-wise left-shift
+                endpoint[i * 3 + 0] <<= 2;
+                endpoint[i * 3 + 1] <<= 2;
+                endpoint[i * 3 + 2] <<= 2;
+            }
+            // P-bit is shared.
+            byte pbit_zero = (byte)(detexGetBits64(data1, 16, 16) << 1);
+            byte pbit_one = (byte)(detexGetBits64(data1, 17, 17) << 1);
+            // RGB only pbits for mode 1, one for each subset.
+            for (int j = 0; j < 3; j++)
+            {
+                endpoint[0 * 3 + j] |= pbit_zero;
+                endpoint[1 * 3 + j] |= pbit_zero;
+                endpoint[2 * 3 + j] |= pbit_one;
+                endpoint[3 * 3 + j] |= pbit_one;
+            }
+            for (int i = 0; i < 2 * 2; i++)
+            {
+                // Replicate each component's MSB into the LSB.
+                endpoint[i * 3 + 0] |= (byte)(endpoint[i * 3 + 0] >> 7);
+                endpoint[i * 3 + 1] |= (byte)(endpoint[i * 3 + 1] >> 7);
+                endpoint[i * 3 + 2] |= (byte)(endpoint[i * 3 + 2] >> 7);
+            }
+
+            byte[] subset_index = new byte[16];
+            for (int i = 0; i < 16; i++)
+                // subset_index[i] is a number from 0 to 1.
+                subset_index[i] = detex_bptc_table_P2[partition_set_id * 16 + i];
+            byte[] anchor_index = new byte[2];
+            anchor_index[0] = 0;
+            anchor_index[1] = detex_bptc_table_anchor_index_second_subset[partition_set_id];
+            byte[] color_index = new byte[16];
+            // Extract primary index bits.
+            data1 >>= 18;
+            for (int i = 0; i < 16; i++)
+                if (i == anchor_index[subset_index[i]])
+                {
+                    // Highest bit is zero.
+                    color_index[i] = (byte)(data1 & 3); // Get two bits.
+                    data1 >>= 2;
+                }
+                else
+                {
+                    color_index[i] = (byte)(data1 & 7); // Get three bits.
+                    data1 >>= 3;
+                }
+
+            for (int i = 0; i < 16; i++)
+            {
+                byte[] endpoint_start = new byte[3];
+                byte[] endpoint_end = new byte[3];
+                for (int j = 0; j < 3; j++)
+                {
+                    endpoint_start[j] = endpoint[2 * subset_index[i] * 3 + j];
+                    endpoint_end[j] = endpoint[(2 * subset_index[i] + 1) * 3 + j];
+                }
+                byte r = (Interpolate(endpoint_start[0], endpoint_end[0], color_index[i], 3));
+                byte g = (Interpolate(endpoint_start[1], endpoint_end[1], color_index[i], 3));
+                byte b = (Interpolate(endpoint_start[2], endpoint_end[2], color_index[i], 3));
+                byte a = 0xFF;
+
+                pixel_buffer[(i * 4) + 0] = a;
+                pixel_buffer[(i * 4) + 1] = r;
+                pixel_buffer[(i * 4) + 2] = g;
+                pixel_buffer[(i * 4) + 3] = b;
+            }
+            return true;
+        }
+
+        /* Decompress a 128-bit 4x4 pixel texture block compressed using the BPTC */
+        /* (BC7) format. */
+        static bool detexDecompressBlockBPTC(EndianBinaryReader reader, uint mode_mask, uint flags, ref byte[] pixel_buffer)
+        {
+            detexBlock128 block = new detexBlock128();
+            block.data0 = reader.ReadUInt64();
+            block.data1 = reader.ReadUInt64();
+            block.index = 0;
+            int mode = ExtractMode(block);
+            if (mode == -1)
+                return false;
+            // Allow compression tied to specific modes (according to mode_mask).
+            if ((mode_mask & (1 << mode)) == 0)
+                return false;
+            if (mode >= 4 && /*(flags & DETEX_DECOMPRESS_FLAG_OPAQUE_ONLY)*/ false)
+                return false;
+            if (mode < 4 && /*(flags & DETEX_DECOMPRESS_FLAG_NON_OPAQUE_ONLY)*/ false)
+                return false;
+            if (mode == 1)
+                return DecompressBlockBPTCMode1(block, ref pixel_buffer);
+
+            int nu_subsets = 1;
+            int partition_set_id = 0;
+            if (mode_has_partition_bits[mode] != 0)
+            {
+                nu_subsets = bptc_NS[mode];
+                partition_set_id = ExtractPartitionSetID(block, mode);
+            }
+            int rotation = ExtractRotationBits(block, mode);
+            int index_selection_bit = 0;
+            if (mode == 4)
+                index_selection_bit = (int)detexBlock128ExtractBits(block, 1);
+
+            byte alpha_index_bitcount = (byte)(bptc_alpha_index_bitcount[mode] - index_selection_bit);
+            byte color_index_bitcount = (byte)(bptc_color_index_bitcount[mode] + index_selection_bit);
+
+            byte[] endpoint_array = new byte[3 * 2 * 4]; // Max. 3 subsets.
+
+            ExtractEndpoints(mode, nu_subsets, block, endpoint_array);
+
+            FullyDecodeEndpoints(endpoint_array, nu_subsets, mode, block);
+
+            byte[] subset_index = new byte[16];
+            for (int i = 0; i < 16; i++)
+                // subset_index[i] is a number from 0 to 2, or 0 to 1, or 0 depending on the number of subsets.
+                subset_index[i] = GetPartitionIndex(nu_subsets, partition_set_id, i);
+            byte[] anchor_index = new byte[4];   // Only need max. 3 elements.
+            for (int i = 0; i < nu_subsets; i++)
+                anchor_index[i] = GetAnchorIndex(partition_set_id, i, nu_subsets);
+            byte[] color_index = new byte[16];
+            byte[] alpha_index = new byte[16];
+            // Extract primary index bits.
+            ulong data1;
+            if (block.index >= 64)
+            {
+                // Because the index bits are all in the second 64-bit word, there is no need to use
+                // block_extract_bits().
+                // This implies the mode is not 4.
+                data1 = block.data1 >> (block.index - 64);
+                byte mask1 = (byte)((1 << IB[mode]) - 1);
+                byte mask2 = (byte)((1 << (IB[mode] - 1)) - 1);
+                for (int i = 0; i < 16; i++)
+                    if (i == anchor_index[subset_index[i]])
+                    {
+                        // Highest bit is zero.
+                        color_index[i] = (byte)(data1 & mask2);
+                        data1 >>= IB[mode] - 1;
+                        alpha_index[i] = color_index[i];
+                    }
+                    else
+                    {
+                        color_index[i] = (byte)(data1 & mask1);
+                        data1 >>= IB[mode];
+                        alpha_index[i] = color_index[i];
+                    }
+            }
+            else
+            {   // Implies mode 4.
+                // Because the bits cross the 64-bit word boundary, we have to be careful.
+                // Block index is 50 at this point.
+                ulong data = block.data0 >> 50;
+                data |= block.data1 << 14;
+                for (int i = 0; i < 16; i++)
+                    if (i == anchor_index[subset_index[i]])
+                    {
+                        // Highest bit is zero.
+                        if (index_selection_bit != 0)
+                        {   // Implies mode == 4.
+                            alpha_index[i] = (byte)(data & 0x1);
+                            data >>= 1;
+                        }
+                        else
+                        {
+                            color_index[i] = (byte)(data & 0x1);
+                            data >>= 1;
+                        }
+                    }
+                    else
+                    {
+                        if (index_selection_bit != 0)
+                        {   // Implies mode == 4.
+                            alpha_index[i] = (byte)(data & 0x3);
+                            data >>= 2;
+                        }
+                        else
+                        {
+                            color_index[i] = (byte)(data & 0x3);
+                            data >>= 2;
+                        }
+                    }
+                // Block index is 81 at this point.
+                data1 = block.data1 >> (81 - 64);
+            }
+            // Extract secondary index bits.
+            if (IB2[mode] > 0)
+            {
+                byte mask1 = (byte)((1 << IB2[mode]) - 1);
+                byte mask2 = (byte)((1 << (IB2[mode] - 1)) - 1);
+                for (int i = 0; i < 16; i++)
+                    if (i == anchor_index[subset_index[i]])
+                    {
+                        // Highest bit is zero.
+                        if (index_selection_bit != 0)
+                        {
+                            color_index[i] = (byte)(data1 & 0x3);
+                            data1 >>= 2;
+                        }
+                        else
+                        {
+                            //alpha_index[i] = block_extract_bits(&block, IB2[mode] - 1);       ???
+                            alpha_index[i] = (byte)(data1 & mask2);
+                            data1 >>= IB2[mode] - 1;
+                        }
+                    }
+                    else
+                    {
+                        if (index_selection_bit != 0)
+                        {
+                            color_index[i] = (byte)(data1 & 0x7);
+                            data1 >>= 3;
+                        }
+                        else
+                        {
+                            //alpha_index[i] = block_extract_bits(&block, IB2[mode]);       ???
+                            alpha_index[i] = (byte)(data1 & mask1);
+                            data1 >>= IB2[mode];
+                        }
+                    }
+            }
+
+            for (int i = 0; i < 16; i++)
+            {
+                byte[] endpoint_start = new byte[4];
+                byte[] endpoint_end = new byte[4];
+                for (int j = 0; j < 4; j++)
+                {
+                    endpoint_start[j] = endpoint_array[2 * subset_index[i] * 4 + j];
+                    endpoint_end[j] = endpoint_array[(2 * subset_index[i] + 1) * 4 + j];
+                }
+
+                byte r = (Interpolate(endpoint_start[0], endpoint_end[0], color_index[i], color_index_bitcount));
+                byte g = (Interpolate(endpoint_start[1], endpoint_end[1], color_index[i], color_index_bitcount));
+                byte b = (Interpolate(endpoint_start[2], endpoint_end[2], color_index[i], color_index_bitcount));
+                byte a = (Interpolate(endpoint_start[3], endpoint_end[3], alpha_index[i], alpha_index_bitcount));
+
+                if (rotation > 0)
+                {
+                    byte temp = 0;
+                    if (rotation == 1)
+                    {
+                        temp = r;
+                        r = a;
+                        a = temp;
+                    }
+                    else if (rotation == 2)
+                    {
+                        temp = g;
+                        g = a;
+                        a = temp;
+                    }
+                    else // rotation == 3
+                    {
+                        temp = b;
+                        b = a;
+                        a = temp;
+                    }
+                }
+
+                pixel_buffer[(i * 4) + 0] = a;
+                pixel_buffer[(i * 4) + 1] = r;
+                pixel_buffer[(i * 4) + 2] = g;
+                pixel_buffer[(i * 4) + 3] = b;
+            }
+            return true;
+        }
+
+        static uint detexGetBits64(ulong data, int bit0, int bit1)
+        {
+            return (uint)((data & (((ulong)1 << (bit1 + 1)) - 1)) >> bit0);
+        }
+
+        static uint detexBlock128ExtractBits(detexBlock128 block, int nu_bits)
+        {
+            uint value = 0;
+            for (int i = 0; i < nu_bits; i++)
+            {
+                if (block.index < 64)
+                {
+                    int shift = block.index - i;
+                    if (shift < 0)
+                        value |= (uint)((block.data0 & ((ulong)1 << block.index)) << (-shift));
+                    else
+                        value |= (uint)((block.data0 & ((ulong)1 << block.index)) >> shift);
+                }
+                else
+                {
+                    int shift = ((block.index - 64) - i);
+                    if (shift < 0)
+                        value |= (uint)((block.data1 & ((ulong)1 << (block.index - 64))) << (-shift));
+                    else
+                        value |= (uint)((block.data1 & ((ulong)1 << (block.index - 64))) >> shift);
+                }
+                block.index++;
+            }
+
             return value;
         }
 
-        public byte[] GetPixelColor(int x, int y)
+        static readonly byte[] detex_bptc_table_P2 =
         {
-            byte[] pixelData = new byte[4];
+            0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,
+            0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,
+            0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,
+            0,0,0,1,0,0,1,1,0,0,1,1,0,1,1,1,
+            0,0,0,0,0,0,0,1,0,0,0,1,0,0,1,1,
+            0,0,1,1,0,1,1,1,0,1,1,1,1,1,1,1,
+            0,0,0,1,0,0,1,1,0,1,1,1,1,1,1,1,
+            0,0,0,0,0,0,0,1,0,0,1,1,0,1,1,1,
+            0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,
+            0,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,
+            0,0,0,0,0,0,0,1,0,1,1,1,1,1,1,1,
+            0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,
+            0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,
+            0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,
+            0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+            0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+            0,0,0,0,1,0,0,0,1,1,1,0,1,1,1,1,
+            0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,1,0,0,0,1,1,1,0,
+            0,1,1,1,0,0,1,1,0,0,0,1,0,0,0,0,
+            0,0,1,1,0,0,0,1,0,0,0,0,0,0,0,0,
+            0,0,0,0,1,0,0,0,1,1,0,0,1,1,1,0,
+            0,0,0,0,0,0,0,0,1,0,0,0,1,1,0,0,
+            0,1,1,1,0,0,1,1,0,0,1,1,0,0,0,1,
+            0,0,1,1,0,0,0,1,0,0,0,1,0,0,0,0,
+            0,0,0,0,1,0,0,0,1,0,0,0,1,1,0,0,
+            0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,
+            0,0,1,1,0,1,1,0,0,1,1,0,1,1,0,0,
+            0,0,0,1,0,1,1,1,1,1,1,0,1,0,0,0,
+            0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,
+            0,1,1,1,0,0,0,1,1,0,0,0,1,1,1,0,
+            0,0,1,1,1,0,0,1,1,0,0,1,1,1,0,0,
+            0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+            0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,
+            0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,
+            0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0,
+            0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,
+            0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,
+            0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,
+            0,1,0,1,1,0,1,0,1,0,1,0,0,1,0,1,
+            0,1,1,1,0,0,1,1,1,1,0,0,1,1,1,0,
+            0,0,0,1,0,0,1,1,1,1,0,0,1,0,0,0,
+            0,0,1,1,0,0,1,0,0,1,0,0,1,1,0,0,
+            0,0,1,1,1,0,1,1,1,1,0,1,1,1,0,0,
+            0,1,1,0,1,0,0,1,1,0,0,1,0,1,1,0,
+            0,0,1,1,1,1,0,0,1,1,0,0,0,0,1,1,
+            0,1,1,0,0,1,1,0,1,0,0,1,1,0,0,1,
+            0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,
+            0,1,0,0,1,1,1,0,0,1,0,0,0,0,0,0,
+            0,0,1,0,0,1,1,1,0,0,1,0,0,0,0,0,
+            0,0,0,0,0,0,1,0,0,1,1,1,0,0,1,0,
+            0,0,0,0,0,1,0,0,1,1,1,0,0,1,0,0,
+            0,1,1,0,1,1,0,0,1,0,0,1,0,0,1,1,
+            0,0,1,1,0,1,1,0,1,1,0,0,1,0,0,1,
+            0,1,1,0,0,0,1,1,1,0,0,1,1,1,0,0,
+            0,0,1,1,1,0,0,1,1,1,0,0,0,1,1,0,
+            0,1,1,0,1,1,0,0,1,1,0,0,1,0,0,1,
+            0,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1,
+            0,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,
+            0,0,0,1,1,0,0,0,1,1,1,0,0,1,1,1,
+            0,0,0,0,1,1,1,1,0,0,1,1,0,0,1,1,
+            0,0,1,1,0,0,1,1,1,1,1,1,0,0,0,0,
+            0,0,1,0,0,0,1,0,1,1,1,0,1,1,1,0,
+            0,1,0,0,0,1,0,0,0,1,1,1,0,1,1,1
+        };
 
-            if (isValid)
-            {
-                int idx = (y * 4) + x;
-                int colorIdx = PrimaryIndices[idx];
-                int alphaIdx = SecondaryIndices[idx];
-
-                pixelData[1] = Interpolate(Color[0, 0, 0], Color[1, 0, 0], colorIdx, BC7.indexBitsPerElement[Mode]);
-                pixelData[2] = Interpolate(Color[0, 0, 1], Color[1, 0, 1], colorIdx, BC7.indexBitsPerElement[Mode]);
-                pixelData[3] = Interpolate(Color[0, 0, 2], Color[1, 0, 2], colorIdx, BC7.indexBitsPerElement[Mode]);
-
-                if (hasAlpha)
-                    pixelData[0] = Interpolate(Alpha[0, 0, 0], Alpha[1, 0, 0], alphaIdx, BC7.secondaryIndexBitsPerElement[Mode]);
-                else
-                    pixelData[0] = 0xFF;
-            }
-
-            return pixelData;
-        }
-
-        private byte Interpolate(int ep0, int ep1, int index, int bits)
+        static readonly byte[] detex_bptc_table_P3 =
         {
-            if (bits == 2)
-                return (byte)((((64 - BC7.interpolationFactors2[index]) * ep0) + (BC7.interpolationFactors2[index] * ep1) + 32) >> 6);
-            else if (bits == 3)
-                return (byte)((((64 - BC7.interpolationFactors3[index]) * ep0) + (BC7.interpolationFactors3[index] * ep1) + 32) >> 6);
-            else
-                return (byte)((((64 - BC7.interpolationFactors4[index]) * ep0) + (BC7.interpolationFactors4[index] * ep1) + 32) >> 6);
-        }
+            0,0,1,1,0,0,1,1,0,2,2,1,2,2,2,2,
+            0,0,0,1,0,0,1,1,2,2,1,1,2,2,2,1,
+            0,0,0,0,2,0,0,1,2,2,1,1,2,2,1,1,
+            0,2,2,2,0,0,2,2,0,0,1,1,0,1,1,1,
+            0,0,0,0,0,0,0,0,1,1,2,2,1,1,2,2,
+            0,0,1,1,0,0,1,1,0,0,2,2,0,0,2,2,
+            0,0,2,2,0,0,2,2,1,1,1,1,1,1,1,1,
+            0,0,1,1,0,0,1,1,2,2,1,1,2,2,1,1,
+            0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,
+            0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,
+            0,0,0,0,1,1,1,1,2,2,2,2,2,2,2,2,
+            0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,
+            0,1,1,2,0,1,1,2,0,1,1,2,0,1,1,2,
+            0,1,2,2,0,1,2,2,0,1,2,2,0,1,2,2,
+            0,0,1,1,0,1,1,2,1,1,2,2,1,2,2,2,
+            0,0,1,1,2,0,0,1,2,2,0,0,2,2,2,0,
+            0,0,0,1,0,0,1,1,0,1,1,2,1,1,2,2,
+            0,1,1,1,0,0,1,1,2,0,0,1,2,2,0,0,
+            0,0,0,0,1,1,2,2,1,1,2,2,1,1,2,2,
+            0,0,2,2,0,0,2,2,0,0,2,2,1,1,1,1,
+            0,1,1,1,0,1,1,1,0,2,2,2,0,2,2,2,
+            0,0,0,1,0,0,0,1,2,2,2,1,2,2,2,1,
+            0,0,0,0,0,0,1,1,0,1,2,2,0,1,2,2,
+            0,0,0,0,1,1,0,0,2,2,1,0,2,2,1,0,
+            0,1,2,2,0,1,2,2,0,0,1,1,0,0,0,0,
+            0,0,1,2,0,0,1,2,1,1,2,2,2,2,2,2,
+            0,1,1,0,1,2,2,1,1,2,2,1,0,1,1,0,
+            0,0,0,0,0,1,1,0,1,2,2,1,1,2,2,1,
+            0,0,2,2,1,1,0,2,1,1,0,2,0,0,2,2,
+            0,1,1,0,0,1,1,0,2,0,0,2,2,2,2,2,
+            0,0,1,1,0,1,2,2,0,1,2,2,0,0,1,1,
+            0,0,0,0,2,0,0,0,2,2,1,1,2,2,2,1,
+            0,0,0,0,0,0,0,2,1,1,2,2,1,2,2,2,
+            0,2,2,2,0,0,2,2,0,0,1,2,0,0,1,1,
+            0,0,1,1,0,0,1,2,0,0,2,2,0,2,2,2,
+            0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,
+            0,0,0,0,1,1,1,1,2,2,2,2,0,0,0,0,
+            0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,
+            0,1,2,0,2,0,1,2,1,2,0,1,0,1,2,0,
+            0,0,1,1,2,2,0,0,1,1,2,2,0,0,1,1,
+            0,0,1,1,1,1,2,2,2,2,0,0,0,0,1,1,
+            0,1,0,1,0,1,0,1,2,2,2,2,2,2,2,2,
+            0,0,0,0,0,0,0,0,2,1,2,1,2,1,2,1,
+            0,0,2,2,1,1,2,2,0,0,2,2,1,1,2,2,
+            0,0,2,2,0,0,1,1,0,0,2,2,0,0,1,1,
+            0,2,2,0,1,2,2,1,0,2,2,0,1,2,2,1,
+            0,1,0,1,2,2,2,2,2,2,2,2,0,1,0,1,
+            0,0,0,0,2,1,2,1,2,1,2,1,2,1,2,1,
+            0,1,0,1,0,1,0,1,0,1,0,1,2,2,2,2,
+            0,2,2,2,0,1,1,1,0,2,2,2,0,1,1,1,
+            0,0,0,2,1,1,1,2,0,0,0,2,1,1,1,2,
+            0,0,0,0,2,1,1,2,2,1,1,2,2,1,1,2,
+            0,2,2,2,0,1,1,1,0,1,1,1,0,2,2,2,
+            0,0,0,2,1,1,1,2,1,1,1,2,0,0,0,2,
+            0,1,1,0,0,1,1,0,0,1,1,0,2,2,2,2,
+            0,0,0,0,0,0,0,0,2,1,1,2,2,1,1,2,
+            0,1,1,0,0,1,1,0,2,2,2,2,2,2,2,2,
+            0,0,2,2,0,0,1,1,0,0,1,1,0,0,2,2,
+            0,0,2,2,1,1,2,2,1,1,2,2,0,0,2,2,
+            0,0,0,0,0,0,0,0,0,0,0,0,2,1,1,2,
+            0,0,0,2,0,0,0,1,0,0,0,2,0,0,0,1,
+            0,2,2,2,1,2,2,2,0,2,2,2,1,2,2,2,
+            0,1,0,1,2,2,2,2,2,2,2,2,2,2,2,2,
+            0,1,1,1,2,0,1,1,2,2,0,1,2,2,2,0,
+        };
+
+        static readonly byte[] detex_bptc_table_anchor_index_second_subset =
+        {
+            15,15,15,15,15,15,15,15,
+            15,15,15,15,15,15,15,15,
+            15, 2, 8, 2, 2, 8, 8,15,
+             2, 8, 2, 2, 8, 8, 2, 2,
+            15,15, 6, 8, 2, 8,15,15,
+             2, 8, 2, 2, 2,15,15, 6,
+             6, 2, 6, 8,15,15, 2, 2,
+            15,15,15,15,15, 2, 2,15
+        };
+
+        static readonly byte[] detex_bptc_table_anchor_index_second_subset_of_three =
+        {
+             3, 3,15,15, 8, 3,15,15,
+             8, 8, 6, 6, 6, 5, 3, 3,
+             3, 3, 8,15, 3, 3, 6,10,
+             5, 8, 8, 6, 8, 5,15,15,
+             8,15, 3, 5, 6,10, 8,15,
+            15, 3,15, 5,15,15,15,15,
+             3,15, 5, 5, 5, 8, 5,10,
+             5,10, 8,13,15,12, 3, 3
+        };
+
+        static readonly byte[] detex_bptc_table_anchor_index_third_subset =
+        {
+            15, 8, 8, 3,15,15, 3, 8,
+            15,15,15,15,15,15,15, 8,
+            15, 8,15, 3,15, 8,15, 8,
+             3,15, 6,10,15,15,10, 8,
+            15, 3,15,10,10, 8, 9,10,
+             6,15, 8,15, 3, 6, 6, 8,
+            15, 3,15,15,15,15,15,15,
+            15,15,15,15, 3,15,15, 8
+        };
+
+        static readonly ushort[] detex_bptc_table_aWeight2 = { 0, 21, 43, 64 };
+        static readonly ushort[] detex_bptc_table_aWeight3 = { 0, 9, 18, 27, 37, 46, 55, 64 };
+        static readonly ushort[] detex_bptc_table_aWeight4 = { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
+    }
+
+    internal class detexBlock128
+    {
+        public ulong data0 { get; set; }
+        public ulong data1 { get; set; }
+        public int index { get; set; }
     }
 }
