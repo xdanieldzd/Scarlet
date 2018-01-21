@@ -150,7 +150,6 @@ namespace Scarlet.IO.ImageFormats
             height = (int)(ExtractData(ImageInformation2, 14, 27) + 1);
             depth = (int)(ExtractData(ImageInformation4, 0, 12));
             pitch = (int)(ExtractData(ImageInformation4, 13, 26) + 1);
-            //Console.WriteLine($"dataFormat:0x{dataFormat:X}, numFormat:0x{numFormat:X}, width:{width}, height:{height}");
 
             /* Initialize ImageBinary */
             imageBinary = new ImageBinary();
@@ -161,20 +160,13 @@ namespace Scarlet.IO.ImageFormats
 
             byte[] preparedPixelData = PixelData;
 
-            // TODO: stupid 16-bit/ch formats, BC4-BC7 compression....
+            // TODO: stupid formats Scarlet can't support yet, like stuff with 16bits per channel
             if (dataFormat == GnfDataFormat.Format16_16_16_16)
             {
                 preparedPixelData = new byte[PixelData.Length / 2];
                 for (int i = 0, j = 0; i < PixelData.Length; i += 2, j++)
                 {
                     preparedPixelData[j] = PixelData[i];
-                }
-            }
-            else if (dataFormat == GnfDataFormat.FormatBC7)
-            {
-                using (EndianBinaryReader compReader = new EndianBinaryReader(new MemoryStream(PixelData)))
-                {
-                    preparedPixelData = Drawing.Compression.BC7.Decompress(compReader, width, height, PixelDataFormat.PixelOrderingTiled3DS, PixelData.Length);
                 }
             }
 
@@ -184,15 +176,15 @@ namespace Scarlet.IO.ImageFormats
                 case GnfDataFormat.FormatBC1: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT1Rgba_PSP; break;
                 case GnfDataFormat.FormatBC2: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT3_PSP; break;
                 case GnfDataFormat.FormatBC3: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT5_PSP; break;
+                case GnfDataFormat.FormatBC7: imageBinary.InputPixelFormat = PixelDataFormat.FormatBC7; break;
 
                 // TODO
                 case GnfDataFormat.Format16_16_16_16: imageBinary.InputPixelFormat = PixelDataFormat.FormatBgra8888; break;
-                case GnfDataFormat.FormatBC7: imageBinary.InputPixelFormat = PixelDataFormat.FormatBgra8888; break;
 
                 default: throw new Exception($"Unimplemented GNF data format {dataFormat}");
             }
 
-            //imageBinary.InputPixelFormat |= PixelDataFormat.PixelOrderingTiled3DS;
+            imageBinary.InputPixelFormat |= PixelDataFormat.PixelOrderingTiled3DS;
 
             imageBinary.AddInputPixels(preparedPixelData);
         }

@@ -354,10 +354,10 @@ namespace Scarlet.Drawing.Compression
                 byte b = (Interpolate(endpoint_start[2], endpoint_end[2], color_index[i], 3));
                 byte a = 0xFF;
 
-                pixel_buffer[(i * 4) + 0] = a;
-                pixel_buffer[(i * 4) + 1] = r;
-                pixel_buffer[(i * 4) + 2] = g;
-                pixel_buffer[(i * 4) + 3] = b;
+                pixel_buffer[(i * 4) + 0] = b;
+                pixel_buffer[(i * 4) + 1] = g;
+                pixel_buffer[(i * 4) + 2] = r;
+                pixel_buffer[(i * 4) + 3] = a;
             }
             return true;
         }
@@ -550,10 +550,10 @@ namespace Scarlet.Drawing.Compression
                     }
                 }
 
-                pixel_buffer[(i * 4) + 0] = a;
-                pixel_buffer[(i * 4) + 1] = r;
-                pixel_buffer[(i * 4) + 2] = g;
-                pixel_buffer[(i * 4) + 3] = b;
+                pixel_buffer[(i * 4) + 0] = b;
+                pixel_buffer[(i * 4) + 1] = g;
+                pixel_buffer[(i * 4) + 2] = r;
+                pixel_buffer[(i * 4) + 3] = a;
             }
             return true;
         }

@@ -13,7 +13,7 @@ namespace ScarletUnitTests
         [TestMethod]
         public void TestPixelDataFormatEnumeration()
         {
-            ulong[] maskValues = new ulong[10];
+            ulong[] maskValues = new ulong[9];
             maskValues[0] = (ulong)PixelDataFormat.MaskBpp;
             maskValues[1] = (ulong)PixelDataFormat.MaskChannels;
             maskValues[2] = (ulong)PixelDataFormat.MaskRedBits;
@@ -23,8 +23,7 @@ namespace ScarletUnitTests
             maskValues[6] = (ulong)PixelDataFormat.MaskSpecial;
             maskValues[7] = (ulong)PixelDataFormat.MaskPixelOrdering;
             maskValues[8] = (ulong)PixelDataFormat.MaskFilter;
-            maskValues[9] = (ulong)PixelDataFormat.MaskReserved;
-
+            
             ulong expectedSum = 0;
             for (int i = 0; i < maskValues.Length; i++) expectedSum |= maskValues[i];
             Assert.AreEqual(ulong.MaxValue, expectedSum);

@@ -19,10 +19,9 @@ namespace Scarlet.Drawing
          * Grn 0000000007800000
          * Blu 0000000038000000
          * Alp 00000001C0000000
-         * Spc 00003FFE00000000
-         * Ord 0003C00000000000
-         * Fil 000C000000000000
-         * Rsv FFF0000000000000
+         * Spc 03FFFFFE00000000
+         * Ord 3C00000000000000
+         * Fil C000000000000000
          */
 
         // TODO: special formats seem kinda iffy now, maybe rething those?
@@ -328,9 +327,14 @@ namespace Scarlet.Drawing
         SpecialFormatPVRT4_Vita = ((ulong)1 << 42),
 
         /// <summary>
+        /// Special format with generic BC7 data
+        /// </summary>
+        SpecialFormatBC7 = ((ulong)1 << 43),
+
+        /// <summary>
         /// Mask for extracting special format value
         /// </summary>
-        MaskSpecial = ((((ulong)1 << 13) - 1) << 33), /* 00003FFE00000000 */
+        MaskSpecial = ((((ulong)1 << 25) - 1) << 33), /* 03FFFFFE00000000 */
 
         /// <summary>
         /// Format has pixels in linear order
@@ -340,27 +344,27 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format has pixels in tiled order
         /// </summary>
-        PixelOrderingTiled = ((ulong)1 << 46),
+        PixelOrderingTiled = ((ulong)1 << 58),
 
         /// <summary>
         /// Format has pixels in tiled order, 3DS-style
         /// </summary>
-        PixelOrderingTiled3DS = ((ulong)1 << 47),
+        PixelOrderingTiled3DS = ((ulong)1 << 59),
 
         /// <summary>
         /// Format has pixels in swizzled order, Vita-style
         /// </summary>
-        PixelOrderingSwizzledVita = ((ulong)1 << 48),
+        PixelOrderingSwizzledVita = ((ulong)1 << 60),
 
         /// <summary>
         /// Format has pixels in swizzled order, PSP-style
         /// </summary>
-        PixelOrderingSwizzledPSP = ((ulong)1 << 49),
+        PixelOrderingSwizzledPSP = ((ulong)1 << 61),
 
         /// <summary>
         /// Mask for extracting pixel ordering value
         /// </summary>
-        MaskPixelOrdering = ((((ulong)1 << 4) - 1) << 46), /* 0003C00000000000 */
+        MaskPixelOrdering = ((((ulong)1 << 4) - 1) << 58), /* 3C00000000000000 */
 
         /// <summary>
         /// Format will not apply filtering
@@ -370,22 +374,12 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format applies simple, ordered dither filter
         /// </summary>
-        FilterOrderedDither = ((ulong)1 << 50),
+        FilterOrderedDither = ((ulong)1 << 62),
 
         /// <summary>
         /// Mask for extracting filtering value
         /// </summary>
-        MaskFilter = ((((ulong)1 << 2) - 1) << 50), /* 000C000000000000 */
-
-        /// <summary>
-        /// Reserved
-        /// </summary>
-        Reserved = Undefined,
-
-        /// <summary>
-        /// Mask for extracting reserved bits
-        /// </summary>
-        MaskReserved = ((((ulong)1 << 12) - 1) << 52), /* FFF0000000000000 */
+        MaskFilter = ((((ulong)1 << 2) - 1) << 62), /* C000000000000000 */
 
         /// <summary>
         /// Format is 24-bit RGB888
@@ -596,6 +590,11 @@ namespace Scarlet.Drawing
         /// Format is Vita-style PVRT4
         /// </summary>
         FormatPVRT4_Vita = (SpecialFormatPVRT4_Vita),
+
+        /// <summary>
+        /// Format is BC7
+        /// </summary>
+        FormatBC7 = (SpecialFormatBC7),
 
         /// <summary>
         /// Undefined value

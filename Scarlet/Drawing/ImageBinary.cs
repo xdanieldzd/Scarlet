@@ -641,6 +641,10 @@ namespace Scarlet.Drawing
                     outputData = DXTx.Decompress(reader, physicalWidth, physicalHeight, inputPixelFormat, reader.BaseStream.Length);
                     break;
 
+                case PixelDataFormat.SpecialFormatBC7:
+                    outputData = BC7.Decompress(reader, physicalWidth, physicalHeight, inputPixelFormat, reader.BaseStream.Length);
+                    break;
+
                 default: throw new Exception("Unimplemented special format");
             }
 
