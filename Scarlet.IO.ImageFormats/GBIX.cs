@@ -46,20 +46,6 @@ namespace Scarlet.IO.ImageFormats
         // Unknown3 w/ mipmaps? 0x8F
     }
 
-    internal class GbixMipmapInfo
-    {
-        public int Width { get; private set; }
-        public int Height { get; private set; }
-        public byte[] PixelData { get; private set; }
-
-        public GbixMipmapInfo(int width, int height, byte[] data)
-        {
-            Width = width;
-            Height = height;
-            PixelData = data;
-        }
-    }
-
     [MagicNumber("GBIX", 0x00)]
     public class GBIX : ImageFormat
     {
@@ -99,7 +85,7 @@ namespace Scarlet.IO.ImageFormats
 
         bool isIndexed, isCompressed, hasMipmaps;
 
-        List<GbixMipmapInfo> mipmapData;
+        List<MipmapLevel> mipmapData;
 
         protected override void OnOpen(EndianBinaryReader reader)
         {
@@ -145,7 +131,7 @@ namespace Scarlet.IO.ImageFormats
 
             PixelData = reader.ReadBytes((int)(UVRTDataSize - 8 - (PaletteData != null ? PaletteData.Length : 0)));
 
-            mipmapData = new List<GbixMipmapInfo>();
+            mipmapData = new List<MipmapLevel>();
             if (hasMipmaps)
             {
                 int mipWidth = Width;
@@ -164,14 +150,14 @@ namespace Scarlet.IO.ImageFormats
                     Buffer.BlockCopy(PixelData, readOffset, mipPixelData, 0, mipPixelData.Length);
                     readOffset += mipPixelData.Length;
 
-                    mipmapData.Add(new GbixMipmapInfo(mipWidth, mipHeight, mipPixelData));
+                    mipmapData.Add(new MipmapLevel(mipWidth, mipHeight, mipPixelData));
 
                     mipCount++;
                 }
             }
             else
             {
-                mipmapData.Add(new GbixMipmapInfo(Width, Height, PixelData));
+                mipmapData.Add(new MipmapLevel(Width, Height, PixelData));
             }
         }
 

@@ -48,6 +48,7 @@
     <Compile Include="Drawing\Compression\PVRTC.cs" />
     <Compile Include="Drawing\Constants.cs" />
     <Compile Include="Drawing\ImageBinary.cs" />
+    <Compile Include="Drawing\MipmapLevel.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="AssemblyHelpers.cs" />
     <Compile Include="IO\CommandLineArgsException.cs" />

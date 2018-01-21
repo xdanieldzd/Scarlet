@@ -16,20 +16,6 @@ namespace Scarlet.IO.ImageFormats
      * Whatever the additional pixel data in ex. lightmap_5_10_a_grawpstory001 is -- it's not mipmaps, but also *probably* not garbage as DataSize & co. include it...?
      * Figure out relationship between Unknown0x10, DataSize and DataSizeAlt */
 
-    internal class BTGAMipmapInfo
-    {
-        public int Width { get; private set; }
-        public int Height { get; private set; }
-        public byte[] PixelData { get; private set; }
-
-        public BTGAMipmapInfo(int width, int height, byte[] data)
-        {
-            Width = width;
-            Height = height;
-            PixelData = data;
-        }
-    }
-
     internal interface IBTGAHeader
     {
         ushort Width { get; }
@@ -119,7 +105,7 @@ namespace Scarlet.IO.ImageFormats
     {
         IBTGAHeader header;
 
-        List<BTGAMipmapInfo> mipmapData;
+        List<MipmapLevel> mipmapData;
 
         protected override void OnOpen(EndianBinaryReader reader)
         {
@@ -167,7 +153,7 @@ namespace Scarlet.IO.ImageFormats
             // We should already be here, but just to be safe?
             reader.BaseStream.Seek(0x38, SeekOrigin.Begin);
 
-            mipmapData = new List<BTGAMipmapInfo>();
+            mipmapData = new List<MipmapLevel>();
             for (int i = 0; i < header.NumMipmaps; i++)
             {
                 // Calculate dimensions, datasize for this mipmap level
@@ -177,7 +163,7 @@ namespace Scarlet.IO.ImageFormats
                 byte[] mipPixelData = reader.ReadBytes(mipDataSize);
 
                 // Store infos in list for later
-                mipmapData.Add(new BTGAMipmapInfo(mipWidth, mipHeight, mipPixelData));
+                mipmapData.Add(new MipmapLevel(mipWidth, mipHeight, mipPixelData));
             }
         }
 
