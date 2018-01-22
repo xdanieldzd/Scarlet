@@ -29,7 +29,7 @@ namespace Scarlet.Drawing.Compression
      * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
      */
 
-    internal static class BC7
+    internal static class BPTC
     {
         /* Shim functions */
         public static byte[] Decompress(EndianBinaryReader reader, int width, int height, PixelDataFormat inputFormat, long readLength)

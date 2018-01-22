@@ -173,10 +173,13 @@ namespace Scarlet.IO.ImageFormats
             switch (dataFormat)
             {
                 case GnfDataFormat.Format8_8_8_8: imageBinary.InputPixelFormat = PixelDataFormat.FormatBgra8888; break;
-                case GnfDataFormat.FormatBC1: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT1Rgba_PSP; break;
-                case GnfDataFormat.FormatBC2: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT3_PSP; break;
-                case GnfDataFormat.FormatBC3: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT5_PSP; break;
-                case GnfDataFormat.FormatBC7: imageBinary.InputPixelFormat = PixelDataFormat.FormatBC7; break;
+                case GnfDataFormat.FormatBC1: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT1Rgba; break;
+                case GnfDataFormat.FormatBC2: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT3; break;
+                case GnfDataFormat.FormatBC3: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT5; break;
+                case GnfDataFormat.FormatBC4: imageBinary.InputPixelFormat = (numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatRGTC1_Signed : PixelDataFormat.FormatRGTC1); break;
+                case GnfDataFormat.FormatBC5: imageBinary.InputPixelFormat = (numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatRGTC2_Signed : PixelDataFormat.FormatRGTC2); break;
+                //
+                case GnfDataFormat.FormatBC7: imageBinary.InputPixelFormat = PixelDataFormat.FormatBPTC; break;
 
                 // TODO
                 case GnfDataFormat.Format16_16_16_16: imageBinary.InputPixelFormat = PixelDataFormat.FormatBgra8888; break;

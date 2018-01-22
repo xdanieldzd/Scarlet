@@ -333,9 +333,29 @@ namespace Scarlet.Drawing
         SpecialFormatPVRT4_Vita = ((ulong)10 << 36),
 
         /// <summary>
-        /// Special format with generic BC7 data
+        /// Special format with unsigned RGTC1 data
         /// </summary>
-        SpecialFormatBC7 = ((ulong)11 << 36),
+        SpecialFormatRGTC1 = ((ulong)11 << 36),
+
+        /// <summary>
+        /// Special format with signed RGTC1 data
+        /// </summary>
+        SpecialFormatRGTC1_Signed = ((ulong)12 << 36),
+
+        /// <summary>
+        /// Special format with unsigned RGTC2 data
+        /// </summary>
+        SpecialFormatRGTC2 = ((ulong)13 << 36),
+
+        /// <summary>
+        /// Special format with signed RGTC2 data
+        /// </summary>
+        SpecialFormatRGTC2_Signed = ((ulong)14 << 36),
+
+        /// <summary>
+        /// Special format with generic BPTC data
+        /// </summary>
+        SpecialFormatBPTC = ((ulong)15 << 36),
 
         /// <summary>
         /// Mask for extracting special format value
@@ -608,9 +628,29 @@ namespace Scarlet.Drawing
         FormatPVRT4_Vita = (SpecialFormatPVRT4_Vita),
 
         /// <summary>
-        /// Format is BC7
+        /// Format is unsigned RGTC1
         /// </summary>
-        FormatBC7 = (SpecialFormatBC7),
+        FormatRGTC1 = (SpecialFormatRGTC1),
+
+        /// <summary>
+        /// Format is signed RGTC1
+        /// </summary>
+        FormatRGTC1_Signed = (SpecialFormatRGTC1_Signed),
+
+        /// <summary>
+        /// Format is unsigned RGTC2
+        /// </summary>
+        FormatRGTC2 = (SpecialFormatRGTC2),
+
+        /// <summary>
+        /// Format is signed RGTC2
+        /// </summary>
+        FormatRGTC2_Signed = (SpecialFormatRGTC2_Signed),
+
+        /// <summary>
+        /// Format is BPTC
+        /// </summary>
+        FormatBPTC = (SpecialFormatBPTC),
 
         /// <summary>
         /// Undefined value
