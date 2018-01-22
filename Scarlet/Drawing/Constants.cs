@@ -13,18 +13,19 @@ namespace Scarlet.Drawing
     public enum PixelDataFormat : ulong
     {
         /*
-         * BPP 000000000000001F
-         * Cha 00000000000FFFE0
-         * Red 0000000000700000
-         * Grn 0000000007800000
-         * Blu 0000000038000000
-         * Alp 00000001C0000000
-         * Spc 03FFFFFE00000000
-         * Ord 3C00000000000000
-         * Fil C000000000000000
+         * BPP 0000000000000007
+         * Cha 00000000000000F8
+         * Red 0000000000007F00
+         * Grn 00000000003F8000
+         * Blu 000000001FC00000
+         * Alp 0000000FE0000000
+         * Spc 000001F000000000
+         * Ord 0001FE0000000000
+         * Fil 01FE000000000000
+         * Rsv FE00000000000000
          */
 
-        // TODO: special formats seem kinda iffy now, maybe rething those?
+        // TODO: maaaybe just split into multiple enums instead...?
 
         /// <summary>
         /// Format has 0 bits per pixel (invalid)
@@ -39,27 +40,32 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format has 8 bits per pixel
         /// </summary>
-        Bpp8 = ((ulong)1 << 1),
+        Bpp8 = ((ulong)2 << 0),
 
         /// <summary>
         /// Format has 16 bits per pixel
         /// </summary>
-        Bpp16 = ((ulong)1 << 2),
+        Bpp16 = ((ulong)3 << 0),
 
         /// <summary>
         /// Format has 24 bits per pixel
         /// </summary>
-        Bpp24 = ((ulong)1 << 3),
+        Bpp24 = ((ulong)4 << 0),
 
         /// <summary>
         /// Format has 32 bits per pixel
         /// </summary>
-        Bpp32 = ((ulong)1 << 4),
+        Bpp32 = ((ulong)5 << 0),
+
+        /// <summary>
+        /// Format has 64 bits per pixel
+        /// </summary>
+        Bpp64 = ((ulong)6 << 0),
 
         /// <summary>
         /// Mask for extracting BPP value
         /// </summary>
-        MaskBpp = ((((ulong)1 << 5) - 1) << 0), /* 000000000000001F */
+        MaskBpp = ((((ulong)1 << 3) - 1) << 0), /* 0000000000000007 */
 
         /// <summary>
         /// Format has no color channels (invalid)
@@ -69,82 +75,82 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format has channels in RGB order
         /// </summary>
-        ChannelsRgb = ((ulong)1 << 5),
+        ChannelsRgb = ((ulong)1 << 3),
 
         /// <summary>
         /// Format has channels in BGR order
         /// </summary>
-        ChannelsBgr = ((ulong)1 << 6),
+        ChannelsBgr = ((ulong)2 << 3),
 
         /// <summary>
         /// Format has channels in RGBA order
         /// </summary>
-        ChannelsRgba = ((ulong)1 << 7),
+        ChannelsRgba = ((ulong)3 << 3),
 
         /// <summary>
         /// Format has channels in BGRA order
         /// </summary>
-        ChannelsBgra = ((ulong)1 << 8),
+        ChannelsBgra = ((ulong)4 << 3),
 
         /// <summary>
         /// Format has channels in ARGB order
         /// </summary>
-        ChannelsArgb = ((ulong)1 << 9),
+        ChannelsArgb = ((ulong)5 << 3),
 
         /// <summary>
         /// Format has channels in ABGR order
         /// </summary>
-        ChannelsAbgr = ((ulong)1 << 10),
+        ChannelsAbgr = ((ulong)6 << 3),
 
         /// <summary>
         /// Format has channels in RGB order, with trailing dummy A channel
         /// </summary>
-        ChannelsRgbx = ((ulong)1 << 11),
+        ChannelsRgbx = ((ulong)7 << 3),
 
         /// <summary>
         /// Format has channels in BGR order, with trailing dummy A channel
         /// </summary>
-        ChannelsBgrx = ((ulong)1 << 12),
+        ChannelsBgrx = ((ulong)8 << 3),
 
         /// <summary>
         /// Format has channels in RGB order, with leading dummy A channel
         /// </summary>
-        ChannelsXrgb = ((ulong)1 << 13),
+        ChannelsXrgb = ((ulong)9 << 3),
 
         /// <summary>
         /// Format has channels in BGR order, with leading dummy A channel
         /// </summary>
-        ChannelsXbgr = ((ulong)1 << 14),
+        ChannelsXbgr = ((ulong)10 << 3),
 
         /// <summary>
         /// Format has channels in L order
         /// </summary>
-        ChannelsLuminance = ((ulong)1 << 15),
+        ChannelsLuminance = ((ulong)11 << 3),
 
         /// <summary>
         /// Format has channels in A order
         /// </summary>
-        ChannelsAlpha = ((ulong)1 << 16),
+        ChannelsAlpha = ((ulong)12 << 3),
 
         /// <summary>
         /// Format has channels in LA order
         /// </summary>
-        ChannelsLuminanceAlpha = ((ulong)1 << 17),
+        ChannelsLuminanceAlpha = ((ulong)13 << 3),
 
         /// <summary>
         /// Format has channels in AL order
         /// </summary>
-        ChannelsAlphaLuminance = ((ulong)1 << 18),
+        ChannelsAlphaLuminance = ((ulong)14 << 3),
 
         /// <summary>
         /// Format is indexed color
         /// </summary>
-        ChannelsIndexed = ((ulong)1 << 19),
+        ChannelsIndexed = ((ulong)15 << 3),
 
         /// <summary>
         /// Mask for extracting channels value
         /// </summary>
-        MaskChannels = ((((ulong)1 << 15) - 1) << 5), /* 00000000000FFFE0 */
+        MaskChannels = ((((ulong)1 << 5) - 1) << 3), /* 00000000000000F8 */
 
         /// <summary>
         /// Format has 0 bits in red channel
@@ -152,24 +158,24 @@ namespace Scarlet.Drawing
         RedBits0 = Undefined,
 
         /// <summary>
-        /// Format has 8 bits in red channel
+        /// Format has 4 bits in red channel
         /// </summary>
-        RedBits8 = ((ulong)1 << 20),
+        RedBits4 = ((ulong)1 << 8),
 
         /// <summary>
         /// Format has 5 bits in red channel
         /// </summary>
-        RedBits5 = ((ulong)1 << 21),
+        RedBits5 = ((ulong)2 << 8),
 
         /// <summary>
-        /// Format has 4 bits in red channel
+        /// Format has 8 bits in red channel
         /// </summary>
-        RedBits4 = ((ulong)1 << 22),
+        RedBits8 = ((ulong)3 << 8),
 
         /// <summary>
         /// Mask for extracting red bits value
         /// </summary>
-        MaskRedBits = ((((ulong)1 << 3) - 1) << 20), /* 0000000000700000 */
+        MaskRedBits = ((((ulong)1 << 7) - 1) << 8), /* 0000000000007F00 */
 
         /// <summary>
         /// Format has 0 bits in green channel
@@ -177,29 +183,29 @@ namespace Scarlet.Drawing
         GreenBits0 = Undefined,
 
         /// <summary>
-        /// Format has 8 bits in green channel
+        /// Format has 4 bits in green channel
         /// </summary>
-        GreenBits8 = ((ulong)1 << 23),
-
-        /// <summary>
-        /// Format has 6 bits in green channel
-        /// </summary>
-        GreenBits6 = ((ulong)1 << 24),
+        GreenBits4 = ((ulong)1 << 15),
 
         /// <summary>
         /// Format has 5 bits in green channel
         /// </summary>
-        GreenBits5 = ((ulong)1 << 25),
+        GreenBits5 = ((ulong)2 << 15),
 
         /// <summary>
-        /// Format has 4 bits in green channel
+        /// Format has 6 bits in green channel
         /// </summary>
-        GreenBits4 = ((ulong)1 << 26),
+        GreenBits6 = ((ulong)3 << 15),
+
+        /// <summary>
+        /// Format has 8 bits in green channel
+        /// </summary>
+        GreenBits8 = ((ulong)4 << 15),
 
         /// <summary>
         /// Mask for extracting green bits value
         /// </summary>
-        MaskGreenBits = ((((ulong)1 << 4) - 1) << 23), /* 0000000007800000 */
+        MaskGreenBits = ((((ulong)1 << 7) - 1) << 15), /* 00000000003F8000 */
 
         /// <summary>
         /// Format has 0 bits in blue channel
@@ -207,24 +213,24 @@ namespace Scarlet.Drawing
         BlueBits0 = Undefined,
 
         /// <summary>
-        /// Format has 8 bits in blue channel
+        /// Format has 4 bits in blue channel
         /// </summary>
-        BlueBits8 = ((ulong)1 << 27),
+        BlueBits4 = ((ulong)1 << 22),
 
         /// <summary>
         /// Format has 5 bits in blue channel
         /// </summary>
-        BlueBits5 = ((ulong)1 << 28),
+        BlueBits5 = ((ulong)2 << 22),
 
         /// <summary>
-        /// Format has 4 bits in blue channel
+        /// Format has 8 bits in blue channel
         /// </summary>
-        BlueBits4 = ((ulong)1 << 29),
+        BlueBits8 = ((ulong)3 << 22),
 
         /// <summary>
         /// Mask for extracting blue bits value
         /// </summary>
-        MaskBlueBits = ((((ulong)1 << 3) - 1) << 27), /* 0000000038000000 */
+        MaskBlueBits = ((((ulong)1 << 7) - 1) << 22), /* 000000001FC00000 */
 
         /// <summary>
         /// Format has 0 bits in alpha channel
@@ -232,24 +238,24 @@ namespace Scarlet.Drawing
         AlphaBits0 = Undefined,
 
         /// <summary>
-        /// Format has 8 bits in alpha channel
+        /// Format has 1 bit in alpha channel
         /// </summary>
-        AlphaBits8 = ((ulong)1 << 30),
+        AlphaBits1 = ((ulong)1 << 29),
 
         /// <summary>
         /// Format has 4 bits in alpha channel
         /// </summary>
-        AlphaBits4 = ((ulong)1 << 31),
+        AlphaBits4 = ((ulong)2 << 29),
 
         /// <summary>
-        /// Format has 1 bit in alpha channel
+        /// Format has 8 bits in alpha channel
         /// </summary>
-        AlphaBits1 = ((ulong)1 << 32),
+        AlphaBits8 = ((ulong)3 << 29),
 
         /// <summary>
         /// Mask for extracting alpha bits value
         /// </summary>
-        MaskAlphaBits = ((((ulong)1 << 3) - 1) << 30), /* 00000001C0000000 */
+        MaskAlphaBits = ((((ulong)1 << 7) - 1) << 29), /* 0000000FE0000000 */
 
         /// <summary>
         /// Format has 0 bits in luminance channel (same as red bits enumeration)
@@ -279,62 +285,62 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Special format with 3DS-style ETC1 data
         /// </summary>
-        SpecialFormatETC1_3DS = ((ulong)1 << 33),
+        SpecialFormatETC1_3DS = ((ulong)1 << 36),
 
         /// <summary>
         /// Special format with 3DS-style ETC1A4 data
         /// </summary>
-        SpecialFormatETC1A4_3DS = ((ulong)1 << 34),
+        SpecialFormatETC1A4_3DS = ((ulong)2 << 36),
 
         /// <summary>
         /// Special format with generic DXT1 data
         /// </summary>
-        SpecialFormatDXT1 = ((ulong)1 << 35),
+        SpecialFormatDXT1 = ((ulong)3 << 36),
 
         /// <summary>
         /// Special format with PSP-style DXT1 data
         /// </summary>
-        SpecialFormatDXT1_PSP = ((ulong)1 << 36),
+        SpecialFormatDXT1_PSP = ((ulong)4 << 36),
 
         /// <summary>
         /// Special format with generic DXT3 data
         /// </summary>
-        SpecialFormatDXT3 = ((ulong)1 << 37),
+        SpecialFormatDXT3 = ((ulong)5 << 36),
 
         /// <summary>
         /// Special format with PSP-style DXT3 data
         /// </summary>
-        SpecialFormatDXT3_PSP = ((ulong)1 << 38),
+        SpecialFormatDXT3_PSP = ((ulong)6 << 36),
 
         /// <summary>
         /// Special format with generic DXT5 data
         /// </summary>
-        SpecialFormatDXT5 = ((ulong)1 << 39),
+        SpecialFormatDXT5 = ((ulong)7 << 36),
 
         /// <summary>
         /// Special format with PSP-style DXT5 data
         /// </summary>
-        SpecialFormatDXT5_PSP = ((ulong)1 << 40),
+        SpecialFormatDXT5_PSP = ((ulong)8 << 36),
 
         /// <summary>
         /// Special format with Vita-style PVRT2 data
         /// </summary>
-        SpecialFormatPVRT2_Vita = ((ulong)1 << 41),
+        SpecialFormatPVRT2_Vita = ((ulong)9 << 36),
 
         /// <summary>
         /// Special format with Vita-style PVRT4 data
         /// </summary>
-        SpecialFormatPVRT4_Vita = ((ulong)1 << 42),
+        SpecialFormatPVRT4_Vita = ((ulong)10 << 36),
 
         /// <summary>
         /// Special format with generic BC7 data
         /// </summary>
-        SpecialFormatBC7 = ((ulong)1 << 43),
+        SpecialFormatBC7 = ((ulong)11 << 36),
 
         /// <summary>
         /// Mask for extracting special format value
         /// </summary>
-        MaskSpecial = ((((ulong)1 << 25) - 1) << 33), /* 03FFFFFE00000000 */
+        MaskSpecial = ((((ulong)1 << 5) - 1) << 36), /* 000001F000000000 */
 
         /// <summary>
         /// Format has pixels in linear order
@@ -344,27 +350,27 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format has pixels in tiled order
         /// </summary>
-        PixelOrderingTiled = ((ulong)1 << 58),
+        PixelOrderingTiled = ((ulong)1 << 41),
 
         /// <summary>
         /// Format has pixels in tiled order, 3DS-style
         /// </summary>
-        PixelOrderingTiled3DS = ((ulong)1 << 59),
+        PixelOrderingTiled3DS = ((ulong)1 << 42),
 
         /// <summary>
         /// Format has pixels in swizzled order, Vita-style
         /// </summary>
-        PixelOrderingSwizzledVita = ((ulong)1 << 60),
+        PixelOrderingSwizzledVita = ((ulong)1 << 43),
 
         /// <summary>
         /// Format has pixels in swizzled order, PSP-style
         /// </summary>
-        PixelOrderingSwizzledPSP = ((ulong)1 << 61),
+        PixelOrderingSwizzledPSP = ((ulong)1 << 44),
 
         /// <summary>
         /// Mask for extracting pixel ordering value
         /// </summary>
-        MaskPixelOrdering = ((((ulong)1 << 4) - 1) << 58), /* 3C00000000000000 */
+        MaskPixelOrdering = ((((ulong)1 << 8) - 1) << 41), /* 0001FE0000000000 */
 
         /// <summary>
         /// Format will not apply filtering
@@ -374,12 +380,22 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format applies simple, ordered dither filter
         /// </summary>
-        FilterOrderedDither = ((ulong)1 << 62),
+        FilterOrderedDither = ((ulong)1 << 49),
 
         /// <summary>
         /// Mask for extracting filtering value
         /// </summary>
-        MaskFilter = ((((ulong)1 << 2) - 1) << 62), /* C000000000000000 */
+        MaskFilter = ((((ulong)1 << 8) - 1) << 49), /* 01FE000000000000 */
+
+        /// <summary>
+        /// Reserved
+        /// </summary>
+        Reserved = Undefined,
+
+        /// <summary>
+        /// Mask for extracting reserved bits
+        /// </summary>
+        MaskReserved = ((((ulong)1 << 7) - 1) << 57), /* FE00000000000000 */
 
         /// <summary>
         /// Format is 24-bit RGB888

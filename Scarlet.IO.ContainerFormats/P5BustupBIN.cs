@@ -37,8 +37,8 @@ namespace Scarlet.IO.ContainerFormats
     }
 
     // TODO pretty bad pattern, but I'm not sure if I can make this any better? no magic numbers or anything
-    [FilenamePattern("^\\b.*\\.bin$")]
-    [FilenamePattern("^\\b.*\\.dds2$")]
+    [FilenamePattern(@"^b.*\.bin$")]
+    [FilenamePattern(@"^b.*\.dds2$")]
     public class P5BustupBIN : ContainerFormat
     {
         public uint NumFiles { get; private set; }
