@@ -160,13 +160,22 @@ namespace Scarlet.IO.ImageFormats
 
             byte[] preparedPixelData = PixelData;
 
-            // TODO: stupid formats Scarlet can't support yet, like stuff with 16bits per channel
+            // TODO: stupid formats Scarlet can't support yet, like stuff with 16bits per channel, verify BC6, Format32...
             if (dataFormat == GnfDataFormat.Format16_16_16_16)
             {
                 preparedPixelData = new byte[PixelData.Length / 2];
                 for (int i = 0, j = 0; i < PixelData.Length; i += 2, j++)
                 {
                     preparedPixelData[j] = PixelData[i];
+                }
+            }
+            else if (dataFormat == GnfDataFormat.Format32)
+            {
+                preparedPixelData = new byte[PixelData.Length / 4];
+                for (int i = 0, j = 0; i < PixelData.Length; i += 4, j++)
+                {
+                    uint value = BitConverter.ToUInt32(PixelData, i);
+                    preparedPixelData[j] = (byte)(value >> 24);
                 }
             }
 
@@ -178,11 +187,12 @@ namespace Scarlet.IO.ImageFormats
                 case GnfDataFormat.FormatBC3: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT5; break;
                 case GnfDataFormat.FormatBC4: imageBinary.InputPixelFormat = (numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatRGTC1_Signed : PixelDataFormat.FormatRGTC1); break;
                 case GnfDataFormat.FormatBC5: imageBinary.InputPixelFormat = (numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatRGTC2_Signed : PixelDataFormat.FormatRGTC2); break;
-                //
+                case GnfDataFormat.FormatBC6: imageBinary.InputPixelFormat = (numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatBPTC_SignedFloat : PixelDataFormat.FormatBPTC_Float); break;
                 case GnfDataFormat.FormatBC7: imageBinary.InputPixelFormat = PixelDataFormat.FormatBPTC; break;
 
                 // TODO
                 case GnfDataFormat.Format16_16_16_16: imageBinary.InputPixelFormat = PixelDataFormat.FormatBgra8888; break;
+                case GnfDataFormat.Format32: imageBinary.InputPixelFormat = PixelDataFormat.FormatLuminance8; break;
 
                 default: throw new Exception($"Unimplemented GNF data format {dataFormat}");
             }

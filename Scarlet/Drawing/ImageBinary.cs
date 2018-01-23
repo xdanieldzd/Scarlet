@@ -645,6 +645,11 @@ namespace Scarlet.Drawing
                     outputData = DXTxRGTC.Decompress(reader, physicalWidth, physicalHeight, inputPixelFormat, reader.BaseStream.Length);
                     break;
 
+                case PixelDataFormat.SpecialFormatBPTC_Float:
+                case PixelDataFormat.SpecialFormatBPTC_SignedFloat:
+                    outputData = BPTCFloat.Decompress(reader, physicalWidth, physicalHeight, inputPixelFormat, reader.BaseStream.Length);
+                    break;
+
                 case PixelDataFormat.SpecialFormatBPTC:
                     outputData = BPTC.Decompress(reader, physicalWidth, physicalHeight, inputPixelFormat, reader.BaseStream.Length);
                     break;

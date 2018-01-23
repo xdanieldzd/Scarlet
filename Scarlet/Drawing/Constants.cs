@@ -358,6 +358,16 @@ namespace Scarlet.Drawing
         SpecialFormatBPTC = ((ulong)15 << 36),
 
         /// <summary>
+        /// Special format with generic BPTC Float data
+        /// </summary>
+        SpecialFormatBPTC_Float = ((ulong)16 << 36),
+
+        /// <summary>
+        /// Special format with generic BPTC Signed Float data
+        /// </summary>
+        SpecialFormatBPTC_SignedFloat = ((ulong)17 << 36),
+
+        /// <summary>
         /// Mask for extracting special format value
         /// </summary>
         MaskSpecial = ((((ulong)1 << 5) - 1) << 36), /* 000001F000000000 */
@@ -651,6 +661,16 @@ namespace Scarlet.Drawing
         /// Format is BPTC
         /// </summary>
         FormatBPTC = (SpecialFormatBPTC),
+
+        /// <summary>
+        /// Format is BPTC Float
+        /// </summary>
+        FormatBPTC_Float = (SpecialFormatBPTC_Float),
+
+        /// <summary>
+        /// Format is BPTC Signed Float
+        /// </summary>
+        FormatBPTC_SignedFloat = (SpecialFormatBPTC_SignedFloat),
 
         /// <summary>
         /// Undefined value

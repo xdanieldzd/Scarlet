@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Drawing\Compression\BPTC.cs" />
+    <Compile Include="Drawing\Compression\BPTCFloat.cs" />
     <Compile Include="Drawing\Compression\DXTxRGTC.cs" />
     <Compile Include="Drawing\Compression\ETC1.cs" />
     <Compile Include="Drawing\Compression\PVRTC.cs" />

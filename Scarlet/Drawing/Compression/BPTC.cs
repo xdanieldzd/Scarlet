@@ -13,6 +13,7 @@ namespace Scarlet.Drawing.Compression
      * Based on revision https://github.com/hglm/detex/tree/cab11584d9be140602a66fd9a88ef0b99f08a97a */
 
     /* detex license (ISC):
+     * --------------------
      * 
      * Copyright (c) 2015 Harm Hanemaaijer <fgenfb@yahoo.com>
      * 
@@ -612,12 +613,28 @@ namespace Scarlet.Drawing.Compression
             }
         }
 
-        static uint detexGetBits64(ulong data, int bit0, int bit1)
+        internal static uint detexGetBits64(ulong data, int bit0, int bit1)
         {
             return (uint)((data & (((ulong)1 << (bit1 + 1)) - 1)) >> bit0);
         }
 
-        static uint detexBlock128ExtractBits(detexBlock128 block, int nu_bits)
+        internal static uint detexGetBits64Reversed(ulong data, int bit0, int bit1)
+        {
+            // Assumes bit0 > bit1.
+            // Reverse the bits.
+            uint val = 0;
+            for (int i = 0; i <= bit0 - bit1; i++)
+            {
+                int shift_right = bit0 - 2 * i;
+                if (shift_right >= 0)
+                    val |= (uint)((data & ((ulong)1 << (bit0 - i))) >> shift_right);
+                else
+                    val |= (uint)((data & ((ulong)1 << (bit0 - i))) << (-shift_right));
+            }
+            return val;
+        }
+
+        internal static uint detexBlock128ExtractBits(detexBlock128 block, int nu_bits)
         {
             uint value = 0;
             for (int i = 0; i < nu_bits; i++)
@@ -644,7 +661,7 @@ namespace Scarlet.Drawing.Compression
             return value;
         }
 
-        static readonly byte[] detex_bptc_table_P2 =
+        internal static readonly byte[] detex_bptc_table_P2 =
         {
             0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1,
             0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1,
@@ -712,7 +729,7 @@ namespace Scarlet.Drawing.Compression
             0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1
         };
 
-        static readonly byte[] detex_bptc_table_P3 =
+        internal static readonly byte[] detex_bptc_table_P3 =
         {
             0, 0, 1, 1, 0, 0, 1, 1, 0, 2, 2, 1, 2, 2, 2, 2,
             0, 0, 0, 1, 0, 0, 1, 1, 2, 2, 1, 1, 2, 2, 2, 1,
@@ -780,7 +797,7 @@ namespace Scarlet.Drawing.Compression
             0, 1, 1, 1, 2, 0, 1, 1, 2, 2, 0, 1, 2, 2, 2, 0
         };
 
-        static readonly byte[] detex_bptc_table_anchor_index_second_subset =
+        internal static readonly byte[] detex_bptc_table_anchor_index_second_subset =
         {
             15, 15, 15, 15, 15, 15, 15, 15,
             15, 15, 15, 15, 15, 15, 15, 15,
@@ -816,7 +833,7 @@ namespace Scarlet.Drawing.Compression
             15, 15, 15, 15,  3, 15, 15,  8
         };
 
-        static readonly ushort[][] detex_bptc_table_aWeights =
+        internal static readonly ushort[][] detex_bptc_table_aWeights =
         {
             new ushort[] { 0, 21, 43, 64 },                                                 // 2
             new ushort[] { 0, 9, 18, 27, 37, 46, 55, 64 },                                  // 3
