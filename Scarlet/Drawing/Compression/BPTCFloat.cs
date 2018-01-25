@@ -43,7 +43,7 @@ namespace Scarlet.Drawing.Compression
             {
                 for (int x = 0; x < width; x += 4)
                 {
-                    byte[] decompressedBlock = new byte[(4 * 4) * 4];
+                    ushort[] decompressedBlock = new ushort[(4 * 4) * 4];
                     if ((inputFormat & PixelDataFormat.MaskSpecial) == PixelDataFormat.SpecialFormatBPTC_Float)
                         detexDecompressBlockBPTC_FLOAT(reader, ref decompressedBlock);
                     else if ((inputFormat & PixelDataFormat.MaskSpecial) == PixelDataFormat.SpecialFormatBPTC_SignedFloat)
@@ -65,13 +65,42 @@ namespace Scarlet.Drawing.Compression
                             if (ix >= width || iy >= height) continue;
 
                             for (int c = 0; c < 4; c++)
-                                outPixels[(((iy * width) + ix) * 4) + c] = decompressedBlock[(((py * 4) + px) * 4) + c];
+                            {
+                                float value = Float16toFloat32(decompressedBlock[(((py * 4) + px) * 4) + c]);
+                                outPixels[(((iy * width) + ix) * 4) + c] = (byte)(value * 255);
+                            }
                         }
                     }
                 }
             }
 
             return outPixels;
+        }
+
+        private static float Float16toFloat32(int hbits)
+        {
+            int mant = hbits & 0x03FF;
+            int exp = hbits & 0x7C00;
+
+            if (exp == 0x7C00)
+                exp = 0x3FC00;
+            else if (exp != 0)
+            {
+                exp += 0x1C000;
+                if (mant == 0 && exp > 0x1C400)
+                    return BitConverter.ToSingle(BitConverter.GetBytes((hbits & 0x8000) << 16 | exp << 13 | 0x3FF), 0);
+            }
+            else if (mant != 0)
+            {
+                exp = 0x1C400;
+                do
+                {
+                    mant <<= 1;
+                    exp -= 0x400;
+                } while ((mant & 0x400) == 0);
+                mant &= 0x3FF;
+            }
+            return BitConverter.ToSingle(BitConverter.GetBytes((hbits & 0x8000) << 16 | (exp | mant) << 13), 0);
         }
 
         /* All following ported/adapted from detex */
@@ -162,7 +191,7 @@ namespace Scarlet.Drawing.Compression
             return (((64 - BPTC.detex_bptc_table_aWeights[indexprecision - 2][index]) * e0 + BPTC.detex_bptc_table_aWeights[indexprecision - 2][index] * e1 + 32) >> 6);
         }
 
-        static void DecompressBlockBPTCFloatShared(EndianBinaryReader reader, bool signed_flag, ref byte[] pixel_buffer)
+        static void DecompressBlockBPTCFloatShared(EndianBinaryReader reader, bool signed_flag, ref ushort[] pixel_buffer)
         {
             detexBlock128 block = new detexBlock128();
             block.data0 = reader.ReadUInt64();
@@ -607,7 +636,7 @@ namespace Scarlet.Drawing.Compression
                 byte[] color_index = new byte[16];
                 // Extract index bits.
                 int color_index_bit_count = 3;
-                if ((block.data0 & 3) == 3)    // This defines original modes 3, 7, 11, 15                                      //????
+                if ((block.data0 & 3) == 3)    // This defines original modes 3, 7, 11, 15
                     color_index_bit_count = 4;
 
                 // Because the index bits are all in the second 64-bit word, there is no need to use
@@ -642,11 +671,11 @@ namespace Scarlet.Drawing.Compression
                     endpoint_start_b = b[2 * subset_index[i]];
                     endpoint_end_b = b[2 * subset_index[i] + 1];
 
-                    short rout, gout, bout;
+                    int r16, g16, b16;
 
                     if (signed_flag)
                     {
-                        int r16 = InterpolateFloat(endpoint_start_r, endpoint_end_r, color_index[i], (byte)color_index_bit_count);
+                        r16 = InterpolateFloat(endpoint_start_r, endpoint_end_r, color_index[i], (byte)color_index_bit_count);
                         if (r16 < 0)
 
                             r16 = -(((-r16) * 31) >> 5);
@@ -659,7 +688,7 @@ namespace Scarlet.Drawing.Compression
                             r16 = -r16;
                         }
                         r16 |= s;
-                        int g16 = InterpolateFloat(endpoint_start_g, endpoint_end_g, color_index[i], (byte)color_index_bit_count);
+                        g16 = InterpolateFloat(endpoint_start_g, endpoint_end_g, color_index[i], (byte)color_index_bit_count);
                         if (g16 < 0)
 
                             g16 = -(((-g16) * 31) >> 5);
@@ -672,7 +701,7 @@ namespace Scarlet.Drawing.Compression
                             g16 = -g16;
                         }
                         g16 |= s;
-                        int b16 = InterpolateFloat(endpoint_start_b, endpoint_end_b, color_index[i], (byte)color_index_bit_count);
+                        b16 = InterpolateFloat(endpoint_start_b, endpoint_end_b, color_index[i], (byte)color_index_bit_count);
                         if (b16 < 0)
 
                             b16 = -(((-b16) * 31) >> 5);
@@ -685,23 +714,18 @@ namespace Scarlet.Drawing.Compression
                             b16 = -b16;
                         }
                         b16 |= s;
-
-                        rout = (short)r16;
-                        gout = (short)g16;
-                        bout = (short)b16;
                     }
                     else
                     {
-                        rout = (short)(InterpolateFloat(endpoint_start_r, endpoint_end_r, color_index[i], (byte)color_index_bit_count) * 31 / 64);
-                        gout = (short)(InterpolateFloat(endpoint_start_g, endpoint_end_g, color_index[i], (byte)color_index_bit_count) * 31 / 64);
-                        bout = (short)(InterpolateFloat(endpoint_start_b, endpoint_end_b, color_index[i], (byte)color_index_bit_count) * 31 / 64);
+                        r16 = (InterpolateFloat(endpoint_start_r, endpoint_end_r, color_index[i], (byte)color_index_bit_count) * 31 / 64);
+                        g16 = (InterpolateFloat(endpoint_start_g, endpoint_end_g, color_index[i], (byte)color_index_bit_count) * 31 / 64);
+                        b16 = (InterpolateFloat(endpoint_start_b, endpoint_end_b, color_index[i], (byte)color_index_bit_count) * 31 / 64);
                     }
 
-                    // TODO: 16 to 8 is baaaaaad
-                    pixel_buffer[(i * 4) + 0] = (byte)(bout >> 8);
-                    pixel_buffer[(i * 4) + 1] = (byte)(gout >> 8);
-                    pixel_buffer[(i * 4) + 2] = (byte)(rout >> 8);
-                    pixel_buffer[(i * 4) + 3] = 0xFF;
+                    pixel_buffer[(i * 4) + 0] = (ushort)b16;
+                    pixel_buffer[(i * 4) + 1] = (ushort)g16;
+                    pixel_buffer[(i * 4) + 2] = (ushort)r16;
+                    pixel_buffer[(i * 4) + 3] = 0x3C00;
                 }
             }
         }
@@ -709,7 +733,7 @@ namespace Scarlet.Drawing.Compression
         /* Decompress a 128-bit 4x4 pixel texture block compressed using the */
         /* BPTC_FLOAT (BC6H) format. The output format is */
         /* DETEX_PIXEL_FORMAT_FLOAT_RGBX16. */
-        static void detexDecompressBlockBPTC_FLOAT(EndianBinaryReader reader, ref byte[] pixel_buffer)
+        static void detexDecompressBlockBPTC_FLOAT(EndianBinaryReader reader, ref ushort[] pixel_buffer)
         {
             DecompressBlockBPTCFloatShared(reader, false, ref pixel_buffer);
         }
@@ -717,7 +741,7 @@ namespace Scarlet.Drawing.Compression
         /* Decompress a 128-bit 4x4 pixel texture block compressed using the */
         /* BPTC_FLOAT (BC6H_FLOAT) format. The output format is */
         /* DETEX_PIXEL_FORMAT_SIGNED_FLOAT_RGBX16. */
-        static void detexDecompressBlockBPTC_SIGNED_FLOAT(EndianBinaryReader reader, ref byte[] pixel_buffer)
+        static void detexDecompressBlockBPTC_SIGNED_FLOAT(EndianBinaryReader reader, ref ushort[] pixel_buffer)
         {
             DecompressBlockBPTCFloatShared(reader, true, ref pixel_buffer);
         }

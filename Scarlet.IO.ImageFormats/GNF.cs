@@ -174,8 +174,15 @@ namespace Scarlet.IO.ImageFormats
                 preparedPixelData = new byte[PixelData.Length / 4];
                 for (int i = 0, j = 0; i < PixelData.Length; i += 4, j++)
                 {
-                    uint value = BitConverter.ToUInt32(PixelData, i);
-                    preparedPixelData[j] = (byte)(value >> 24);
+                    float value = BitConverter.ToSingle(PixelData, i);
+                    if (numFormat == GnfNumFormat.FormatFloat)
+                    {
+                        preparedPixelData[j] = (byte)(value + 128.0f);
+                    }
+                    else
+                    {
+                        preparedPixelData[j] = (byte)(value * 255);
+                    }
                 }
             }
 
