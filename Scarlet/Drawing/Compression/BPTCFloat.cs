@@ -30,6 +30,8 @@ namespace Scarlet.Drawing.Compression
      * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
      */
 
+    // TODO: little conversion issues here and there, fixme!
+
     internal static class BPTCFloat
     {
         /* Shim functions */
@@ -45,9 +47,9 @@ namespace Scarlet.Drawing.Compression
                 {
                     ushort[] decompressedBlock = new ushort[(4 * 4) * 4];
                     if ((inputFormat & PixelDataFormat.MaskSpecial) == PixelDataFormat.SpecialFormatBPTC_Float)
-                        detexDecompressBlockBPTC_FLOAT(reader, ref decompressedBlock);
+                        DecompressBlockBPTCFloatShared(reader, false, ref decompressedBlock);
                     else if ((inputFormat & PixelDataFormat.MaskSpecial) == PixelDataFormat.SpecialFormatBPTC_SignedFloat)
-                        detexDecompressBlockBPTC_SIGNED_FLOAT(reader, ref decompressedBlock);
+                        DecompressBlockBPTCFloatShared(reader, true, ref decompressedBlock);
                     else
                         throw new Exception("Trying to decode BPTC Float/SignedFloat with format set to non-BPTC");
 
@@ -77,6 +79,7 @@ namespace Scarlet.Drawing.Compression
             return outPixels;
         }
 
+        // http://codereview.stackexchange.com/q/45007
         private static float Float16toFloat32(int hbits)
         {
             int mant = hbits & 0x03FF;
@@ -728,22 +731,6 @@ namespace Scarlet.Drawing.Compression
                     pixel_buffer[(i * 4) + 3] = 0x3C00;
                 }
             }
-        }
-
-        /* Decompress a 128-bit 4x4 pixel texture block compressed using the */
-        /* BPTC_FLOAT (BC6H) format. The output format is */
-        /* DETEX_PIXEL_FORMAT_FLOAT_RGBX16. */
-        static void detexDecompressBlockBPTC_FLOAT(EndianBinaryReader reader, ref ushort[] pixel_buffer)
-        {
-            DecompressBlockBPTCFloatShared(reader, false, ref pixel_buffer);
-        }
-
-        /* Decompress a 128-bit 4x4 pixel texture block compressed using the */
-        /* BPTC_FLOAT (BC6H_FLOAT) format. The output format is */
-        /* DETEX_PIXEL_FORMAT_SIGNED_FLOAT_RGBX16. */
-        static void detexDecompressBlockBPTC_SIGNED_FLOAT(EndianBinaryReader reader, ref ushort[] pixel_buffer)
-        {
-            DecompressBlockBPTCFloatShared(reader, true, ref pixel_buffer);
         }
     }
 }

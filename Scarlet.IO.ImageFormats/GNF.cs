@@ -122,6 +122,7 @@ namespace Scarlet.IO.ImageFormats
         GnfDataFormat dataFormat;
         GnfNumFormat numFormat;
         int width, height, depth, pitch;
+
         ImageBinary imageBinary;
 
         protected override void OnOpen(EndianBinaryReader reader)
@@ -185,21 +186,35 @@ namespace Scarlet.IO.ImageFormats
                     }
                 }
             }
+            else if (dataFormat == GnfDataFormat.Format32_32_32_32)
+            {
+                preparedPixelData = new byte[PixelData.Length / 4];
+                for (int i = 0, j = 0; i < PixelData.Length; i += 4, j++)
+                {
+                    float value = BitConverter.ToSingle(PixelData, i);
+                    preparedPixelData[j] = (byte)(value * 255);
+                }
+            }
 
             switch (dataFormat)
             {
-                case GnfDataFormat.Format8_8_8_8: imageBinary.InputPixelFormat = PixelDataFormat.FormatBgra8888; break;
+                case GnfDataFormat.Format8_8_8_8: imageBinary.InputPixelFormat = PixelDataFormat.FormatArgb8888;/*(numFormat == GnfNumFormat.FormatSRGB ? PixelDataFormat.FormatAbgr8888 : PixelDataFormat.FormatArgb8888);*/ break; // TODO: fixme!
                 case GnfDataFormat.FormatBC1: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT1Rgba; break;
                 case GnfDataFormat.FormatBC2: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT3; break;
                 case GnfDataFormat.FormatBC3: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT5; break;
                 case GnfDataFormat.FormatBC4: imageBinary.InputPixelFormat = (numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatRGTC1_Signed : PixelDataFormat.FormatRGTC1); break;
                 case GnfDataFormat.FormatBC5: imageBinary.InputPixelFormat = (numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatRGTC2_Signed : PixelDataFormat.FormatRGTC2); break;
-                case GnfDataFormat.FormatBC6: imageBinary.InputPixelFormat = (numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatBPTC_SignedFloat : PixelDataFormat.FormatBPTC_Float); break;
+                case GnfDataFormat.FormatBC6: imageBinary.InputPixelFormat = PixelDataFormat.FormatBPTC_Float;/*(numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatBPTC_SignedFloat : PixelDataFormat.FormatBPTC_Float);*/ break;   // TODO: fixme!!
                 case GnfDataFormat.FormatBC7: imageBinary.InputPixelFormat = PixelDataFormat.FormatBPTC; break;
 
                 // TODO
-                case GnfDataFormat.Format16_16_16_16: imageBinary.InputPixelFormat = PixelDataFormat.FormatBgra8888; break;
+                case GnfDataFormat.Format16_16_16_16: imageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888; break;
                 case GnfDataFormat.Format32: imageBinary.InputPixelFormat = PixelDataFormat.FormatLuminance8; break;
+                case GnfDataFormat.Format32_32_32_32: imageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888; break;
+
+                // WRONG
+                case GnfDataFormat.Format8: imageBinary.InputPixelFormat = PixelDataFormat.FormatLuminance8; break;
+                case GnfDataFormat.Format8_8: imageBinary.InputPixelFormat = PixelDataFormat.FormatLuminance8; break;
 
                 default: throw new Exception($"Unimplemented GNF data format {dataFormat}");
             }
