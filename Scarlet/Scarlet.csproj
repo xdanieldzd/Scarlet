@@ -36,6 +36,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -43,7 +44,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Drawing\Compression\DXTx.cs" />
+    <Compile Include="Drawing\Compression\BPTC.cs" />
+    <Compile Include="Drawing\Compression\BPTCFloat.cs" />
+    <Compile Include="Drawing\Compression\DXTxRGTC.cs" />
     <Compile Include="Drawing\Compression\ETC1.cs" />
     <Compile Include="Drawing\Compression\PVRTC.cs" />
     <Compile Include="Drawing\Constants.cs" />

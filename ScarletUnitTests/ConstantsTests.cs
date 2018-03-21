@@ -26,7 +26,7 @@ namespace ScarletUnitTests
             maskValues[9] = (ulong)PixelDataFormat.MaskReserved;
 
             ulong expectedSum = 0;
-            for (int i = 0; i < maskValues.Length; i++) expectedSum |= maskValues[i];
+            for (int i = 0; i < maskValues.Length; i++) expectedSum ^= maskValues[i];
             Assert.AreEqual(ulong.MaxValue, expectedSum);
         }
     }

@@ -83,6 +83,8 @@ Acknowledgements
 ================
 * PVRTC texture decompression code ported from [PowerVR Graphics Native SDK](https://github.com/powervr-graphics/Native_SDK), Copyright (c) Imagination Technologies Ltd.
   * see *\Scarlet\Drawing\Compression\PVRTC.cs* and *LICENSE.md*
+* BC7 texture decompression code ported from [detex](https://github.com/hglm/detex) by Harm Hanemaaijer
+  * see *\Scarlet\Drawing\Compression\BC7.cs* and *LICENSE.md*
 * Includes [NetRevisionTool](http://unclassified.software/apps/netrevisiontool) by Yves Goergen for injecting Git revision information
 * Initial VTXP and BTGA format notes and original Danganronpa decompression code by [BlackDragonHunt](https://github.com/BlackDragonHunt)
 * Texture swizzle logic reverse-engineering and original C implementation by [FireyFly](https://github.com/FireyFly)
