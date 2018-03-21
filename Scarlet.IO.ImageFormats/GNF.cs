@@ -204,17 +204,17 @@ namespace Scarlet.IO.ImageFormats
                 case GnfDataFormat.FormatBC3: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT5; break;
                 case GnfDataFormat.FormatBC4: imageBinary.InputPixelFormat = (numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatRGTC1_Signed : PixelDataFormat.FormatRGTC1); break;
                 case GnfDataFormat.FormatBC5: imageBinary.InputPixelFormat = (numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatRGTC2_Signed : PixelDataFormat.FormatRGTC2); break;
-                case GnfDataFormat.FormatBC6: imageBinary.InputPixelFormat = PixelDataFormat.FormatBPTC_Float;/*(numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatBPTC_SignedFloat : PixelDataFormat.FormatBPTC_Float);*/ break;   // TODO: fixme!!
+                //case GnfDataFormat.FormatBC6: imageBinary.InputPixelFormat = PixelDataFormat.FormatBPTC_Float;/*(numFormat == GnfNumFormat.FormatSNorm ? PixelDataFormat.FormatBPTC_SignedFloat : PixelDataFormat.FormatBPTC_Float);*/ break;   // TODO: fixme!!
                 case GnfDataFormat.FormatBC7: imageBinary.InputPixelFormat = PixelDataFormat.FormatBPTC; break;
 
                 // TODO
-                case GnfDataFormat.Format16_16_16_16: imageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888; break;
-                case GnfDataFormat.Format32: imageBinary.InputPixelFormat = PixelDataFormat.FormatLuminance8; break;
-                case GnfDataFormat.Format32_32_32_32: imageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888; break;
+                //case GnfDataFormat.Format16_16_16_16: imageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888; break;
+                //case GnfDataFormat.Format32: imageBinary.InputPixelFormat = PixelDataFormat.FormatLuminance8; break;
+                //case GnfDataFormat.Format32_32_32_32: imageBinary.InputPixelFormat = PixelDataFormat.FormatAbgr8888; break;
 
                 // WRONG
-                case GnfDataFormat.Format8: imageBinary.InputPixelFormat = PixelDataFormat.FormatLuminance8; break;
-                case GnfDataFormat.Format8_8: imageBinary.InputPixelFormat = PixelDataFormat.FormatLuminance8; break;
+                //case GnfDataFormat.Format8: imageBinary.InputPixelFormat = PixelDataFormat.FormatLuminance8; break;
+                //case GnfDataFormat.Format8_8: imageBinary.InputPixelFormat = PixelDataFormat.FormatLuminance8; break;
 
                 default: throw new Exception($"Unimplemented GNF data format {dataFormat}");
             }
