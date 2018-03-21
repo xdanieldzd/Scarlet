@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Scarlet.IO
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
     public class FilenamePatternAttribute : Attribute
     {
         public string Pattern { get; private set; }

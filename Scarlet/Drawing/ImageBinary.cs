@@ -638,7 +638,20 @@ namespace Scarlet.Drawing
                 case PixelDataFormat.SpecialFormatDXT3_PSP:
                 case PixelDataFormat.SpecialFormatDXT5:
                 case PixelDataFormat.SpecialFormatDXT5_PSP:
-                    outputData = DXTx.Decompress(reader, physicalWidth, physicalHeight, inputPixelFormat, reader.BaseStream.Length);
+                case PixelDataFormat.SpecialFormatRGTC1:
+                case PixelDataFormat.SpecialFormatRGTC1_Signed:
+                case PixelDataFormat.SpecialFormatRGTC2:
+                case PixelDataFormat.SpecialFormatRGTC2_Signed:
+                    outputData = DXTxRGTC.Decompress(reader, physicalWidth, physicalHeight, inputPixelFormat, reader.BaseStream.Length);
+                    break;
+
+                case PixelDataFormat.SpecialFormatBPTC_Float:
+                case PixelDataFormat.SpecialFormatBPTC_SignedFloat:
+                    outputData = BPTCFloat.Decompress(reader, physicalWidth, physicalHeight, inputPixelFormat, reader.BaseStream.Length);
+                    break;
+
+                case PixelDataFormat.SpecialFormatBPTC:
+                    outputData = BPTC.Decompress(reader, physicalWidth, physicalHeight, inputPixelFormat, reader.BaseStream.Length);
                     break;
 
                 default: throw new Exception("Unimplemented special format");
@@ -1255,6 +1268,8 @@ namespace Scarlet.Drawing
 
         private static void GetPixelCoordinatesTiledEx(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY, int tileWidth, int tileHeight, int[] pixelOrdering)
         {
+            // TODO: sometimes eats the last few blocks(?) in the image (ex. BC7 GNFs)
+
             // Calculate coords in image
             int tileSize = (tileWidth * tileHeight);
             int globalPixel = ((origY * width) + origX);
@@ -1284,11 +1299,11 @@ namespace Scarlet.Drawing
 
         private static int Compact1By1(int x)
         {
-            x &= 0x55555555; // x = -f-e -d-c -b-a -9-8 -7-6 -5-4 -3-2 -1-0
-            x = (x ^ (x >> 1)) & 0x33333333; // x = --fe --dc --ba --98 --76 --54 --32 --10
-            x = (x ^ (x >> 2)) & 0x0f0f0f0f; // x = ---- fedc ---- ba98 ---- 7654 ---- 3210
-            x = (x ^ (x >> 4)) & 0x00ff00ff; // x = ---- ---- fedc ba98 ---- ---- 7654 3210
-            x = (x ^ (x >> 8)) & 0x0000ffff; // x = ---- ---- ---- ---- fedc ba98 7654 3210
+            x &= 0x55555555;                    // x = -f-e -d-c -b-a -9-8 -7-6 -5-4 -3-2 -1-0
+            x = (x ^ (x >> 1)) & 0x33333333;    // x = --fe --dc --ba --98 --76 --54 --32 --10
+            x = (x ^ (x >> 2)) & 0x0f0f0f0f;    // x = ---- fedc ---- ba98 ---- 7654 ---- 3210
+            x = (x ^ (x >> 4)) & 0x00ff00ff;    // x = ---- ---- fedc ba98 ---- ---- 7654 3210
+            x = (x ^ (x >> 8)) & 0x0000ffff;    // x = ---- ---- ---- ---- fedc ba98 7654 3210
             return x;
         }
 

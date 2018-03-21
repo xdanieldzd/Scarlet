@@ -8,12 +8,17 @@ using Scarlet.Drawing;
 
 namespace Scarlet.Drawing.Compression
 {
-    /* https://www.opengl.org/registry/specs/EXT/texture_compression_s3tc.txt */
+    /* DXT1 (BC1), DXT3 (BC2), DXT5 (BC3) */
+    /* https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_texture_compression_s3tc.txt */
 
-    internal enum DXTxBlockLayout { Normal, PSP }
-    internal delegate byte[] DXTxBlockDecoderDelegate(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxBlockLayout blockLayout);
+    /* RGTC1 (BC4), RGTC2 (BC5) */
+    /* https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_texture_compression_rgtc.txt */
 
-    internal static class DXTx
+    internal enum DXTxRGTCBlockLayout { Normal, PSP }
+    internal enum DXTxRGTCSignedness { Unsigned, Signed }
+    internal delegate byte[] DXTxRGTCBlockDecoderDelegate(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxRGTCBlockLayout blockLayout, DXTxRGTCSignedness signedness);
+
+    internal static class DXTxRGTC
     {
         public static byte[] Decompress(EndianBinaryReader reader, int width, int height, PixelDataFormat inputFormat, long readLength)
         {
@@ -21,29 +26,34 @@ namespace Scarlet.Drawing.Compression
 
             PixelOrderingDelegate pixelOrderingFunc = ImageBinary.GetPixelOrderingFunction(inputFormat & PixelDataFormat.MaskPixelOrdering);
 
-            DXTxBlockDecoderDelegate blockDecoder;
-            DXTxBlockLayout blockLayout;
+            DXTxRGTCBlockDecoderDelegate blockDecoder;
+            DXTxRGTCBlockLayout blockLayout;
+            DXTxRGTCSignedness signedness;
 
             PixelDataFormat specialFormat = (inputFormat & PixelDataFormat.MaskSpecial);
             switch (specialFormat)
             {
-                case PixelDataFormat.SpecialFormatDXT1: blockDecoder = DecodeDXT1Block; blockLayout = DXTxBlockLayout.Normal; break;
-                case PixelDataFormat.SpecialFormatDXT3: blockDecoder = DecodeDXT3Block; blockLayout = DXTxBlockLayout.Normal; break;
-                case PixelDataFormat.SpecialFormatDXT5: blockDecoder = DecodeDXT5Block; blockLayout = DXTxBlockLayout.Normal; break;
+                case PixelDataFormat.SpecialFormatDXT1: blockDecoder = DecodeDXT1Block; blockLayout = DXTxRGTCBlockLayout.Normal; signedness = DXTxRGTCSignedness.Unsigned; break;
+                case PixelDataFormat.SpecialFormatDXT3: blockDecoder = DecodeDXT3Block; blockLayout = DXTxRGTCBlockLayout.Normal; signedness = DXTxRGTCSignedness.Unsigned; break;
+                case PixelDataFormat.SpecialFormatDXT5: blockDecoder = DecodeDXT5Block; blockLayout = DXTxRGTCBlockLayout.Normal; signedness = DXTxRGTCSignedness.Unsigned; break;
+                case PixelDataFormat.SpecialFormatRGTC1: blockDecoder = DecodeRGTC1Block; blockLayout = DXTxRGTCBlockLayout.Normal; signedness = DXTxRGTCSignedness.Unsigned; break;
+                case PixelDataFormat.SpecialFormatRGTC1_Signed: blockDecoder = DecodeRGTC1Block; blockLayout = DXTxRGTCBlockLayout.PSP; signedness = DXTxRGTCSignedness.Signed; break;
+                case PixelDataFormat.SpecialFormatRGTC2: blockDecoder = DecodeRGTC2Block; blockLayout = DXTxRGTCBlockLayout.Normal; signedness = DXTxRGTCSignedness.Unsigned; break;
+                case PixelDataFormat.SpecialFormatRGTC2_Signed: blockDecoder = DecodeRGTC2Block; blockLayout = DXTxRGTCBlockLayout.PSP; signedness = DXTxRGTCSignedness.Signed; break;
 
-                case PixelDataFormat.SpecialFormatDXT1_PSP: blockDecoder = DecodeDXT1Block; blockLayout = DXTxBlockLayout.PSP; break;
-                case PixelDataFormat.SpecialFormatDXT3_PSP: blockDecoder = DecodeDXT3Block; blockLayout = DXTxBlockLayout.PSP; break;
-                case PixelDataFormat.SpecialFormatDXT5_PSP: blockDecoder = DecodeDXT5Block; blockLayout = DXTxBlockLayout.PSP; break;
+                case PixelDataFormat.SpecialFormatDXT1_PSP: blockDecoder = DecodeDXT1Block; blockLayout = DXTxRGTCBlockLayout.PSP; signedness = DXTxRGTCSignedness.Unsigned; break;
+                case PixelDataFormat.SpecialFormatDXT3_PSP: blockDecoder = DecodeDXT3Block; blockLayout = DXTxRGTCBlockLayout.PSP; signedness = DXTxRGTCSignedness.Unsigned; break;
+                case PixelDataFormat.SpecialFormatDXT5_PSP: blockDecoder = DecodeDXT5Block; blockLayout = DXTxRGTCBlockLayout.PSP; signedness = DXTxRGTCSignedness.Unsigned; break;
 
                 default:
-                    throw new Exception("Trying to decode DXT with format set to non-DXT");
+                    throw new Exception("Trying to decode DXT/RGTC with format set to non-DXT/RGTC");
             }
 
             for (int y = 0; y < height; y += 4)
             {
                 for (int x = 0; x < width; x += 4)
                 {
-                    byte[] decompressedBlock = blockDecoder(reader, inputFormat, blockLayout);
+                    byte[] decompressedBlock = blockDecoder(reader, inputFormat, blockLayout, signedness);
 
                     int rx, ry;
                     pixelOrderingFunc(x / 4, y / 4, width / 4, height / 4, inputFormat, out rx, out ry);
@@ -123,13 +133,13 @@ namespace Scarlet.Drawing.Compression
             return outData;
         }
 
-        private static byte[] DecodeDXT1Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxBlockLayout blockLayout)
+        private static byte[] DecodeDXT1Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxRGTCBlockLayout blockLayout, DXTxRGTCSignedness signedness)
         {
             DXT1Block inBlock = new DXT1Block(reader, blockLayout);
             return DecodeColorBlock(inBlock, (inputFormat & PixelDataFormat.MaskChannels) != PixelDataFormat.ChannelsRgb, true);
         }
 
-        private static byte[] DecodeDXT3Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxBlockLayout blockLayout)
+        private static byte[] DecodeDXT3Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxRGTCBlockLayout blockLayout, DXTxRGTCSignedness signedness)
         {
             DXT3Block inBlock = new DXT3Block(reader, blockLayout);
             byte[] outData = DecodeColorBlock(inBlock.Color, false, false);
@@ -144,7 +154,7 @@ namespace Scarlet.Drawing.Compression
             return outData;
         }
 
-        private static byte[] DecodeDXT5Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxBlockLayout blockLayout)
+        private static byte[] DecodeDXT5Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxRGTCBlockLayout blockLayout, DXTxRGTCSignedness signedness)
         {
             DXT5Block inBlock = new DXT5Block(reader, blockLayout);
             byte[] outData = DecodeColorBlock(inBlock.Color, false, false);
@@ -190,6 +200,95 @@ namespace Scarlet.Drawing.Compression
             return outData;
         }
 
+        private static byte[] DecodeRGTC1Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxRGTCBlockLayout blockLayout, DXTxRGTCSignedness signedness)
+        {
+            RGTCBlock inBlock = new RGTCBlock(reader, blockLayout);
+            byte[] outData = new byte[(4 * 4) * 4];
+
+            for (int y = 0; y < 4; y++)
+            {
+                for (int x = 0; x < 4; x++)
+                {
+                    int destOffset = (((y * 4) + x) * 4);
+                    outData[destOffset + 0] = DecodeRGTCValue(inBlock, x, y, signedness);
+                    outData[destOffset + 1] = 0x00;
+                    outData[destOffset + 2] = 0x00;
+                    outData[destOffset + 3] = 0xFF;
+                }
+            }
+
+            return outData;
+        }
+
+        private static byte[] DecodeRGTC2Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxRGTCBlockLayout blockLayout, DXTxRGTCSignedness signedness)
+        {
+            RGTCBlock inBlockRed = new RGTCBlock(reader, blockLayout);
+            RGTCBlock inBlockGreen = new RGTCBlock(reader, blockLayout);
+            byte[] outData = new byte[(4 * 4) * 4];
+
+            for (int y = 0; y < 4; y++)
+            {
+                for (int x = 0; x < 4; x++)
+                {
+                    int destOffset = (((y * 4) + x) * 4);
+                    outData[destOffset + 0] = DecodeRGTCValue(inBlockRed, x, y, signedness);
+                    outData[destOffset + 1] = DecodeRGTCValue(inBlockGreen, x, y, signedness);
+                    outData[destOffset + 2] = 0x00;
+                    outData[destOffset + 3] = 0xFF;
+                }
+            }
+
+            return outData;
+        }
+
+        private static byte DecodeRGTCValue(RGTCBlock inBlock, int x, int y, DXTxRGTCSignedness signedness)
+        {
+            int code = inBlock.Bits[(y * 4) + x];
+
+            byte data0, data1;
+            if (signedness == DXTxRGTCSignedness.Unsigned)
+            {
+                data0 = inBlock.Data0;
+                data1 = inBlock.Data1;
+            }
+            else
+            {
+                data0 = (byte)(((sbyte)inBlock.Data0) + 128);
+                data1 = (byte)(((sbyte)inBlock.Data1) + 128);
+            }
+
+            if (data0 > data1)
+            {
+                switch (code)
+                {
+                    case 0x00: return data0;
+                    case 0x01: return data1;
+                    case 0x02: return (byte)((6 * data0 + 1 * data1) / 7);
+                    case 0x03: return (byte)((5 * data0 + 2 * data1) / 7);
+                    case 0x04: return (byte)((4 * data0 + 3 * data1) / 7);
+                    case 0x05: return (byte)((3 * data0 + 4 * data1) / 7);
+                    case 0x06: return (byte)((2 * data0 + 5 * data1) / 7);
+                    case 0x07: return (byte)((1 * data0 + 6 * data1) / 7);
+                }
+            }
+            else
+            {
+                switch (code)
+                {
+                    case 0x00: return data0;
+                    case 0x01: return data1;
+                    case 0x02: return (byte)((4 * data0 + 1 * data1) / 5);
+                    case 0x03: return (byte)((3 * data0 + 2 * data1) / 5);
+                    case 0x04: return (byte)((2 * data0 + 3 * data1) / 5);
+                    case 0x05: return (byte)((1 * data0 + 4 * data1) / 5);
+                    case 0x06: return 0x00;
+                    case 0x07: return 0xFF;
+                }
+            }
+
+            throw new Exception("RGTC value decode exception; this shouldn't happen!");
+        }
+
         public static byte[] ExtractBits(ulong bits, int numBits)
         {
             byte[] bitsExt = new byte[16];
@@ -216,13 +315,13 @@ namespace Scarlet.Drawing.Compression
         public ushort Color1 { get; private set; }
         public byte[] Bits { get; private set; }
 
-        public DXT1Block(EndianBinaryReader reader, DXTxBlockLayout blockLayout)
+        public DXT1Block(EndianBinaryReader reader, DXTxRGTCBlockLayout blockLayout)
         {
             byte color0_hi, color0_lo, color1_hi, color1_lo, bits_3, bits_2, bits_1, bits_0;
 
             switch (blockLayout)
             {
-                case DXTxBlockLayout.Normal:
+                case DXTxRGTCBlockLayout.Normal:
                     color0_hi = reader.ReadByte();
                     color0_lo = reader.ReadByte();
                     color1_hi = reader.ReadByte();
@@ -233,7 +332,7 @@ namespace Scarlet.Drawing.Compression
                     bits_0 = reader.ReadByte();
                     break;
 
-                case DXTxBlockLayout.PSP:
+                case DXTxRGTCBlockLayout.PSP:
                     bits_3 = reader.ReadByte();
                     bits_2 = reader.ReadByte();
                     bits_1 = reader.ReadByte();
@@ -248,7 +347,7 @@ namespace Scarlet.Drawing.Compression
                     throw new Exception("Unknown block layout");
             }
 
-            Bits = DXTx.ExtractBits((((uint)bits_0 << 24) | ((uint)bits_1 << 16) | ((uint)bits_2 << 8) | (uint)bits_3), 2);
+            Bits = DXTxRGTC.ExtractBits((((uint)bits_0 << 24) | ((uint)bits_1 << 16) | ((uint)bits_2 << 8) | (uint)bits_3), 2);
             Color0 = (ushort)(((ushort)color0_lo << 8) | (ushort)color0_hi);
             Color1 = (ushort)(((ushort)color1_lo << 8) | (ushort)color1_hi);
         }
@@ -259,16 +358,16 @@ namespace Scarlet.Drawing.Compression
         public ulong Alpha { get; private set; }
         public DXT1Block Color { get; private set; }
 
-        public DXT3Block(EndianBinaryReader reader, DXTxBlockLayout blockLayout)
+        public DXT3Block(EndianBinaryReader reader, DXTxRGTCBlockLayout blockLayout)
         {
             switch (blockLayout)
             {
-                case DXTxBlockLayout.Normal:
+                case DXTxRGTCBlockLayout.Normal:
                     Alpha = reader.ReadUInt64();
                     Color = new DXT1Block(reader, blockLayout);
                     break;
 
-                case DXTxBlockLayout.PSP:
+                case DXTxRGTCBlockLayout.PSP:
                     Color = new DXT1Block(reader, blockLayout);
                     Alpha = reader.ReadUInt64();
                     break;
@@ -286,13 +385,13 @@ namespace Scarlet.Drawing.Compression
         public byte[] Bits { get; private set; }
         public DXT1Block Color { get; private set; }
 
-        public DXT5Block(EndianBinaryReader reader, DXTxBlockLayout blockLayout)
+        public DXT5Block(EndianBinaryReader reader, DXTxRGTCBlockLayout blockLayout)
         {
             byte bits_5, bits_4, bits_3, bits_2, bits_1, bits_0;
 
             switch (blockLayout)
             {
-                case DXTxBlockLayout.Normal:
+                case DXTxRGTCBlockLayout.Normal:
                     Alpha0 = reader.ReadByte();
                     Alpha1 = reader.ReadByte();
 
@@ -302,12 +401,12 @@ namespace Scarlet.Drawing.Compression
                     bits_2 = reader.ReadByte();
                     bits_1 = reader.ReadByte();
                     bits_0 = reader.ReadByte();
-                    Bits = DXTx.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3);
+                    Bits = DXTxRGTC.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3);
 
                     Color = new DXT1Block(reader, blockLayout);
                     break;
 
-                case DXTxBlockLayout.PSP:
+                case DXTxRGTCBlockLayout.PSP:
                     Color = new DXT1Block(reader, blockLayout);
                     Alpha0 = reader.ReadByte();
                     Alpha1 = reader.ReadByte();
@@ -318,7 +417,51 @@ namespace Scarlet.Drawing.Compression
                     bits_2 = reader.ReadByte();
                     bits_1 = reader.ReadByte();
                     bits_0 = reader.ReadByte();
-                    Bits = DXTx.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3);
+                    Bits = DXTxRGTC.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3);
+                    break;
+
+                default:
+                    throw new Exception("Unknown block layout");
+            }
+        }
+    }
+
+    internal class RGTCBlock
+    {
+        public byte Data0 { get; private set; }
+        public byte Data1 { get; private set; }
+        public byte[] Bits { get; private set; }
+
+        public RGTCBlock(EndianBinaryReader reader, DXTxRGTCBlockLayout blockLayout)
+        {
+            byte bits_5, bits_4, bits_3, bits_2, bits_1, bits_0;
+
+            switch (blockLayout)
+            {
+                case DXTxRGTCBlockLayout.Normal:
+                    Data0 = reader.ReadByte();
+                    Data1 = reader.ReadByte();
+
+                    bits_5 = reader.ReadByte();
+                    bits_4 = reader.ReadByte();
+                    bits_3 = reader.ReadByte();
+                    bits_2 = reader.ReadByte();
+                    bits_1 = reader.ReadByte();
+                    bits_0 = reader.ReadByte();
+                    Bits = DXTxRGTC.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3);
+                    break;
+
+                case DXTxRGTCBlockLayout.PSP:
+                    Data0 = reader.ReadByte();
+                    Data1 = reader.ReadByte();
+
+                    bits_5 = reader.ReadByte();
+                    bits_4 = reader.ReadByte();
+                    bits_3 = reader.ReadByte();
+                    bits_2 = reader.ReadByte();
+                    bits_1 = reader.ReadByte();
+                    bits_0 = reader.ReadByte();
+                    Bits = DXTxRGTC.ExtractBits((((ulong)bits_0 << 40) | ((ulong)bits_1 << 32) | ((ulong)bits_2 << 24) | ((ulong)bits_3 << 16) | ((ulong)bits_4 << 8) | (ulong)bits_5), 3);
                     break;
 
                 default:

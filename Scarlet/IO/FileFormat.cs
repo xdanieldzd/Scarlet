@@ -115,7 +115,7 @@ namespace Scarlet.IO
                         {
                             string pattern = (fnPatternAttrib as FilenamePatternAttribute).Pattern;
                             Regex regEx = new Regex(pattern, RegexOptions.IgnoreCase);
-                            if (regEx.IsMatch(fileStream.Name))
+                            if (regEx.IsMatch(Path.GetFileName(fileStream.Name)))
                                 patternMatch = new IdentificationMatch(type, (uint)pattern.Length);
                         }
 

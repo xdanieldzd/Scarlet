@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BTEX.cs" />
     <Compile Include="BTGA.cs" />
     <Compile Include="CBG.cs" />
     <Compile Include="CTXB.cs" />
@@ -50,6 +51,7 @@
     <Compile Include="DDS.cs" />
     <Compile Include="DMPBM.cs" />
     <Compile Include="GBIX.cs" />
+    <Compile Include="GNF.cs" />
     <Compile Include="ImageFormat.cs" />
     <Compile Include="GXT.cs" />
     <Compile Include="KSLT.cs" />
