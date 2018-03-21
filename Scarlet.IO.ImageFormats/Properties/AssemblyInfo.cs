@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("xdaniel")]
 [assembly: AssemblyProduct("Scarlet.IO.ImageFormats")]
-[assembly: AssemblyCopyright("Written 2016-2017 by xdaniel - https://github.com/xdanieldzd/")]
+[assembly: AssemblyCopyright("Written 2016-2018 by xdaniel - https://github.com/xdanieldzd/")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -15,6 +15,6 @@ using System.Runtime.InteropServices;
 
 [assembly: Guid("7588480e-eb18-4dc0-aafb-31da0c45540b")]
 
-[assembly: AssemblyVersion("0.8.0.0")]
-[assembly: AssemblyFileVersion("0.8.0.0")]
+[assembly: AssemblyVersion("0.9.0.0")]
+[assembly: AssemblyFileVersion("0.9.0.0")]
 [assembly: AssemblyInformationalVersion("{branch}-{chash:7}{!:-dirty}")]

@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("xdaniel")]
 [assembly: AssemblyProduct("Scarlet.IO.CompressionFormats")]
-[assembly: AssemblyCopyright("Written 2016-2017 by xdaniel - https://github.com/xdanieldzd/")]
+[assembly: AssemblyCopyright("Written 2016-2018 by xdaniel - https://github.com/xdanieldzd/")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -15,6 +15,6 @@ using System.Runtime.InteropServices;
 
 [assembly: Guid("bcb9b70c-03d8-4ef0-994e-fd8ed56df51c")]
 
-[assembly: AssemblyVersion("0.8.0.0")]
-[assembly: AssemblyFileVersion("0.8.0.0")]
+[assembly: AssemblyVersion("0.9.0.0")]
+[assembly: AssemblyFileVersion("0.9.0.0")]
 [assembly: AssemblyInformationalVersion("{branch}-{chash:7}{!:-dirty}")]
