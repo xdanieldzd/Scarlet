@@ -11,6 +11,7 @@ using Scarlet.IO;
 namespace Scarlet.IO.ImageFormats
 {
     // TODO: finish & verify me! Can TIDs contain multiple images? If so, how's it work?
+    // TODO #2: check for more indexed TIDs & verify them, Nep-Sega has at least a few!
 
     // "E:\[SSD User Data]\Downloads\[[[nep-test]]]\GAME.cpk RB1 Vita" "E:\[SSD User Data]\Downloads\[[[nep-test]]]\GAME00000 RB1 PC"
 
@@ -68,7 +69,7 @@ namespace Scarlet.IO.ImageFormats
         public string MagicNumber { get; private set; }
         public byte PixelFormat { get; private set; }
         public uint FileSize { get; private set; }
-        public uint DataOffset { get; private set; } // 0x80?
+        public uint ImageDataOffset { get; private set; } // mostly 0x80?
         public uint Unknown0x0C { get; private set; } // 1? Num images?
         public uint Unknown0x10 { get; private set; } // 1? Num filenames?
         public uint Unknown0x14 { get; private set; } // 0x20? Filename offset?
@@ -78,12 +79,12 @@ namespace Scarlet.IO.ImageFormats
         public uint Unknown0x40 { get; private set; }
         public uint Width { get; private set; }
         public uint Height { get; private set; }
-        public uint Unknown0x4C { get; private set; } // 0x20?
+        public uint BitsPerPixel { get; private set; } // 32 for non-indexed, 8 for indexed (Nep-Sega)?
         public ushort Unknown0x50 { get; private set; } // 1?
         public ushort Unknown0x52 { get; private set; } // 1?
-        public uint Unknown0x54 { get; private set; }
+        public uint PaletteDataSize { get; private set; }
         public uint ImageDataSize { get; private set; }
-        public uint Unknown0x5C { get; private set; } // 0x80?
+        public uint Unknown0x5C { get; private set; } // mostly 0x80; same as ImageDataOffset?
         public uint Unknown0x60 { get; private set; } // mostly 0, 0x04 w/ DXT5?
         public string CompressionFourCC { get; private set; }
         public uint Unknown0x68 { get; private set; } // mostly 0?
@@ -97,6 +98,7 @@ namespace Scarlet.IO.ImageFormats
         public ushort Unknown0x7E { get; private set; }
 
         public byte[] PixelData { get; private set; }
+        public byte[] PaletteData { get; private set; }
 
         ImageBinary imageBinary;
 
@@ -105,7 +107,7 @@ namespace Scarlet.IO.ImageFormats
             MagicNumber = Encoding.ASCII.GetString(reader.ReadBytes(3));
             PixelFormat = reader.ReadByte();
             FileSize = reader.ReadUInt32();
-            DataOffset = reader.ReadUInt32();
+            ImageDataOffset = reader.ReadUInt32();
             Unknown0x0C = reader.ReadUInt32();
             Unknown0x10 = reader.ReadUInt32();
             Unknown0x14 = reader.ReadUInt32();
@@ -115,10 +117,10 @@ namespace Scarlet.IO.ImageFormats
             Unknown0x40 = reader.ReadUInt32();
             Width = reader.ReadUInt32();
             Height = reader.ReadUInt32();
-            Unknown0x4C = reader.ReadUInt32();
+            BitsPerPixel = reader.ReadUInt32();
             Unknown0x50 = reader.ReadUInt16();
             Unknown0x52 = reader.ReadUInt16();
-            Unknown0x54 = reader.ReadUInt32();
+            PaletteDataSize = reader.ReadUInt32();
             ImageDataSize = reader.ReadUInt32();
             Unknown0x5C = reader.ReadUInt32();
             Unknown0x60 = reader.ReadUInt32();
@@ -133,7 +135,12 @@ namespace Scarlet.IO.ImageFormats
             Unknown0x7C = reader.ReadUInt16();
             Unknown0x7E = reader.ReadUInt16();
 
-            reader.BaseStream.Seek(DataOffset, SeekOrigin.Begin);
+            if (reader.BaseStream.Position != 0x80)
+                throw new Exception("TID stream position mismatch");
+
+            PaletteData = reader.ReadBytes((int)PaletteDataSize);
+
+            reader.BaseStream.Seek(ImageDataOffset, SeekOrigin.Begin);
             PixelData = reader.ReadBytes((int)ImageDataSize);
 
             TidFormatChannelOrder pixelChannelOrder = ((TidFormatChannelOrder)PixelFormat & TidFormatChannelOrder.Argb);
@@ -146,7 +153,7 @@ namespace Scarlet.IO.ImageFormats
             bool pixelUnknownBit6 = (((TidFormatUnknownBit6)PixelFormat & TidFormatUnknownBit6.Set) == TidFormatUnknownBit6.Set);
             bool pixelUnknownBit7 = (((TidFormatUnknownBit7)PixelFormat & TidFormatUnknownBit7.Set) == TidFormatUnknownBit7.Set);
 
-            PixelDataFormat pixelFormat;
+            PixelDataFormat pixelFormat, paletteFormat = PixelDataFormat.Undefined;
 
             if (pixelCompression == TidFormatCompressionFlag.Compressed)
             {
@@ -160,15 +167,37 @@ namespace Scarlet.IO.ImageFormats
             }
             else if (pixelCompression == TidFormatCompressionFlag.NotCompressed)
             {
-                if (pixelChannelOrder == TidFormatChannelOrder.Rgba)
-                    pixelFormat = PixelDataFormat.FormatRgba8888;
-                else if (pixelChannelOrder == TidFormatChannelOrder.Argb)
-                    pixelFormat = PixelDataFormat.FormatArgb8888;
+                if (PaletteDataSize != 0)
+                {
+                    if (pixelChannelOrder == TidFormatChannelOrder.Rgba)
+                        paletteFormat = PixelDataFormat.FormatRgba8888;
+                    else if (pixelChannelOrder == TidFormatChannelOrder.Argb)
+                        paletteFormat = PixelDataFormat.FormatArgb8888;
+                    else
+                        throw new Exception("Invalid TID channel order; should not be reached?!");
+
+                    if (BitsPerPixel == 8)
+                        pixelFormat = PixelDataFormat.FormatIndexed8;
+                    else
+                        throw new Exception("Invalid or unsupported TID bits per pixel in indexed mode");
+                }
                 else
-                    throw new Exception("Invalid channel order; should not be reached?!");
+                {
+                    if (BitsPerPixel == 32)
+                    {
+                        if (pixelChannelOrder == TidFormatChannelOrder.Rgba)
+                            pixelFormat = PixelDataFormat.FormatRgba8888;
+                        else if (pixelChannelOrder == TidFormatChannelOrder.Argb)
+                            pixelFormat = PixelDataFormat.FormatArgb8888;
+                        else
+                            throw new Exception("Invalid TID channel order; should not be reached?!");
+                    }
+                    else
+                        throw new Exception("Invalid or unsupported TID bits per pixel in non-indexed mode");
+                }
             }
             else
-                throw new Exception("Invalid compression flag; should not be reached?!");
+                throw new Exception("Invalid TID compression flag; should not be reached?!");
 
             // TODO: verify if [Compressed == Swizzled] is correct, or if swizzling depends on other factors
 
@@ -179,9 +208,11 @@ namespace Scarlet.IO.ImageFormats
             imageBinary.Width = (int)Width;
             imageBinary.Height = (int)Height;
             imageBinary.InputPixelFormat = pixelFormat;
+            imageBinary.InputPaletteFormat = paletteFormat;
             imageBinary.InputEndianness = Endian.BigEndian;
 
             imageBinary.AddInputPixels(PixelData);
+            imageBinary.AddInputPalette(PaletteData);
         }
 
         public override int GetImageCount()
