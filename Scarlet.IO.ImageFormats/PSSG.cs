@@ -270,6 +270,10 @@ namespace Scarlet.IO.ImageFormats
                     pixelFormat = PixelDataFormat.FormatDXT1Rgba;
                     flipY = true;
                     break;
+                case "dxt5":
+                    pixelFormat = PixelDataFormat.FormatDXT5;
+                    flipY = true;
+                    break;
                 default:
                     throw new NotSupportedException(String.Format("Unsupported PSSG texel Format: {0}", texelFormat));
             }
