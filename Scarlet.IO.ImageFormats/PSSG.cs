@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Drawing;
-using System.Drawing.Imaging;
 
 using Scarlet.Drawing;
 using Scarlet.IO;
