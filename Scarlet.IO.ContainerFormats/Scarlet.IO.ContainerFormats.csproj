@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ContainerFormat.cs" />
+    <Compile Include="CPK.cs" />
     <Compile Include="DATAkiba.cs" />
     <Compile Include="DATStellvia.cs" />
     <Compile Include="FMDX.cs" />

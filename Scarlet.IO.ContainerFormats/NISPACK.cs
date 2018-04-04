@@ -15,7 +15,7 @@ namespace Scarlet.IO.ContainerFormats
 
         public NISPACKFile(EndianBinaryReader reader)
         {
-            Filename = Encoding.ASCII.GetString(reader.ReadBytes(0x20)).TrimEnd('\0');
+            Filename = Encoding.GetEncoding("SJIS").GetString(reader.ReadBytes(0x20)).TrimEnd('\0');
             Offset = reader.ReadUInt32();
             FileSize = reader.ReadUInt32();
             Unknown0x28 = reader.ReadUInt32();
