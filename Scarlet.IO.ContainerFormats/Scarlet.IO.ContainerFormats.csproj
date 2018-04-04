@@ -48,11 +48,13 @@
     <Compile Include="FMDX.cs" />
     <Compile Include="GARv2.cs" />
     <Compile Include="GARv5.cs" />
+    <Compile Include="NARC.cs" />
     <Compile Include="NISPACK.cs" />
     <Compile Include="NSAC.cs" />
     <Compile Include="P5BustupBIN.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PSPFSv1.cs" />
+    <Compile Include="TPPK.cs" />
     <Compile Include="UKArc.cs" />
     <Compile Include="ZARv1.cs" />
   </ItemGroup>
