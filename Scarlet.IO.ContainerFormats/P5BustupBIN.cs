@@ -36,7 +36,7 @@ namespace Scarlet.IO.ContainerFormats
         }
     }
 
-    // TODO pretty bad pattern, but I'm not sure if I can make this any better? no magic numbers or anything
+    [FormatDetection(typeof(P5BustupBIN), nameof(DetectFormat))]
     [FilenamePattern(@"^b.*\.bin$")]
     [FilenamePattern(@"^b.*\.dds2$")]
     public class P5BustupBIN : ContainerFormat
@@ -68,6 +68,27 @@ namespace Scarlet.IO.ContainerFormats
         {
             if (elementIndex < 0 || elementIndex >= Files.Length) throw new IndexOutOfRangeException("Invalid file index specified");
             return Files[elementIndex];
+        }
+
+        public static bool DetectFormat(EndianBinaryReader reader)
+        {
+            reader.Endianness = Endian.BigEndian;
+
+            /* Check filesize; if less than 0x28 bytes, i.e. "number of files + one file entry", assume invalid */
+            if (reader.BaseStream.Length < 0x28) return false;
+
+            /* Check number of files; if less than 1 OR more than 64, assume invalid */
+            reader.BaseStream.Seek(0x00, SeekOrigin.Begin);
+            uint numFiles = reader.ReadUInt32();
+            if (numFiles < 0x01 || numFiles > 0x40) return false;
+
+            /* Check first file's length; if greater than filesize, assume invalid */
+            reader.BaseStream.Seek(0x24, SeekOrigin.Begin);
+            uint firstFileSize = reader.ReadUInt32();
+            if (firstFileSize > reader.BaseStream.Length) return false;
+
+            /* Assume file is valid */
+            return true;
         }
     }
 }

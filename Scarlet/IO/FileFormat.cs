@@ -94,9 +94,23 @@ namespace Scarlet.IO
 
                         var customAttribs = type.GetCustomAttributes(false);
                         bool requireMagicAndPattern = customAttribs.Any(x => x is MagicNumberAttribute) && customAttribs.Any(x => x is FilenamePatternAttribute);
+
+                        var formatDetectionAttrib = customAttribs.FirstOrDefault(x => x is FormatDetectionAttribute);
+                        if (formatDetectionAttrib != null)
+                        {
+                            long lastPosition = reader.BaseStream.Position;
+                            Endian lastEndianness = reader.Endianness;
+
+                            if ((formatDetectionAttrib as FormatDetectionAttribute).FormatDetectionDelegate.Invoke(reader))
+                                matchedTypes.Add(new IdentificationMatch(type, uint.MaxValue));
+
+                            reader.BaseStream.Position = lastPosition;
+                            reader.Endianness = lastEndianness;
+                        }
+
                         var magicNumberAttrib = customAttribs.FirstOrDefault(x => x is MagicNumberAttribute);
 
-                        var verifyMethod = type.GetMethod("VerifyMagicNumber", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+                        var verifyMethod = type.GetMethod(nameof(VerifyMagicNumber), BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
                         if (verifyMethod == null) throw new NullReferenceException("Reflection error on method fetch for file verification");
                         VerifyResult verifyResult = ((VerifyResult)verifyMethod.Invoke(null, new object[] { reader, type }));
 
