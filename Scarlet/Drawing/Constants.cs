@@ -22,7 +22,8 @@ namespace Scarlet.Drawing
          * Spc 000001F000000000
          * Ord 0001FE0000000000
          * Fil 01FE000000000000
-         * Rsv FE00000000000000
+         * FCh 0200000000000000
+         * Rsv FC00000000000000
          */
 
         // TODO: maaaybe just split into multiple enums instead...?
@@ -418,6 +419,21 @@ namespace Scarlet.Drawing
         MaskFilter = ((((ulong)1 << 8) - 1) << 49), /* 01FE000000000000 */
 
         /// <summary>
+        /// Format will force unused color channels to zero
+        /// </summary>
+        ForceClear = Undefined,
+
+        /// <summary>
+        /// Format will force unused color channels to the maximum value
+        /// </summary>
+        ForceFull = ((ulong)1 << 57),
+
+        /// <summary>
+        /// Mask for extracting channel forcing value
+        /// </summary>
+        MaskForceChannel = ((((ulong)1 << 1) - 1) << 57), /* 0200000000000000 */
+
+        /// <summary>
         /// Reserved
         /// </summary>
         Reserved = Undefined,
@@ -425,27 +441,27 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Mask for extracting reserved bits
         /// </summary>
-        MaskReserved = ((((ulong)1 << 7) - 1) << 57), /* FE00000000000000 */
+        MaskReserved = ((((ulong)1 << 6) - 1) << 58), /* FC00000000000000 */
 
         /// <summary>
         /// Format is 24-bit RGB888
         /// </summary>
-        FormatRgb888 = (Bpp24 | ChannelsRgb | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits0),
+        FormatRgb888 = (Bpp24 | ChannelsRgb | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits0 | ForceFull),
 
         /// <summary>
         /// Format is 16-bit RGB565
         /// </summary>
-        FormatRgb565 = (Bpp16 | ChannelsRgb | RedBits5 | GreenBits6 | BlueBits5 | AlphaBits0),
+        FormatRgb565 = (Bpp16 | ChannelsRgb | RedBits5 | GreenBits6 | BlueBits5 | AlphaBits0 | ForceFull),
 
         /// <summary>
         /// Format is 24-bit BGR888
         /// </summary>
-        FormatBgr888 = (Bpp24 | ChannelsBgr | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits0),
+        FormatBgr888 = (Bpp24 | ChannelsBgr | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits0 | ForceFull),
 
         /// <summary>
         /// Format is 16-bit BGR565
         /// </summary>
-        FormatBgr565 = (Bpp16 | ChannelsBgr | RedBits5 | GreenBits6 | BlueBits5 | AlphaBits0),
+        FormatBgr565 = (Bpp16 | ChannelsBgr | RedBits5 | GreenBits6 | BlueBits5 | AlphaBits0 | ForceFull),
 
         /// <summary>
         /// Format is 32-bit RGBA8888
@@ -510,22 +526,22 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format is 32-bit RGB888 with dummy trailing 8-bit alpha channel
         /// </summary>
-        FormatRgbx8888 = (Bpp32 | ChannelsRgbx | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
+        FormatRgbx8888 = (Bpp32 | ChannelsRgbx | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8 | ForceFull),
 
         /// <summary>
         /// Format is 32-bit BGR888 with dummy trailing 8-bit alpha channel
         /// </summary>
-        FormatBgrx8888 = (Bpp32 | ChannelsBgrx | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
+        FormatBgrx8888 = (Bpp32 | ChannelsBgrx | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8 | ForceFull),
 
         /// <summary>
         /// Format is 32-bit RGB888 with dummy leading 8-bit alpha channel
         /// </summary>
-        FormatXrgb8888 = (Bpp32 | ChannelsXrgb | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
+        FormatXrgb8888 = (Bpp32 | ChannelsXrgb | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8 | ForceFull),
 
         /// <summary>
         /// Format is 32-bit BGR888 with dummy leading 8-bit alpha channel
         /// </summary>
-        FormatXbgr8888 = (Bpp32 | ChannelsXbgr | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8),
+        FormatXbgr8888 = (Bpp32 | ChannelsXbgr | RedBits8 | GreenBits8 | BlueBits8 | AlphaBits8 | ForceFull),
 
         /// <summary>
         /// Format is 16-bit LA88
@@ -550,22 +566,22 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format is 8-bit L8
         /// </summary>
-        FormatLuminance8 = (Bpp8 | ChannelsLuminance | RedBits8 | GreenBits0 | BlueBits0 | AlphaBits0),
+        FormatLuminance8 = (Bpp8 | ChannelsLuminance | RedBits8 | GreenBits0 | BlueBits0 | AlphaBits0 | ForceFull),
 
         /// <summary>
         /// Format is 4-bit L4
         /// </summary>
-        FormatLuminance4 = (Bpp4 | ChannelsLuminance | RedBits4 | GreenBits0 | BlueBits0 | AlphaBits0),
+        FormatLuminance4 = (Bpp4 | ChannelsLuminance | RedBits4 | GreenBits0 | BlueBits0 | AlphaBits0 | ForceFull),
 
         /// <summary>
         /// Format is 8-bit A8
         /// </summary>
-        FormatAlpha8 = (Bpp8 | ChannelsAlpha | RedBits0 | GreenBits0 | BlueBits0 | AlphaBits8),
+        FormatAlpha8 = (Bpp8 | ChannelsAlpha | RedBits0 | GreenBits0 | BlueBits0 | AlphaBits8 | ForceClear),
 
         /// <summary>
         /// Format is 4-bit A4
         /// </summary>
-        FormatAlpha4 = (Bpp4 | ChannelsAlpha | RedBits0 | GreenBits0 | BlueBits0 | AlphaBits4),
+        FormatAlpha4 = (Bpp4 | ChannelsAlpha | RedBits0 | GreenBits0 | BlueBits0 | AlphaBits4 | ForceClear),
 
         /// <summary>
         /// Format is 8-bit indexed

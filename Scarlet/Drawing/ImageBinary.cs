@@ -702,6 +702,8 @@ namespace Scarlet.Drawing
             int channelBitsBlue = (inBlueBits != PixelDataFormat.Undefined ? Constants.BitsPerChannel[inBlueBits] : 0);
             int channelBitsAlpha = (inAlphaBits != PixelDataFormat.Undefined ? Constants.BitsPerChannel[inAlphaBits] : 0);
 
+            uint forceChannelValue = ((inputPixelFormat & PixelDataFormat.MaskForceChannel) == PixelDataFormat.ForceClear ? uint.MinValue : uint.MaxValue);
+
             PixelOrderingDelegate pixelOrderingFunc = GetPixelOrderingFunction(inputPixelFormat);
 
             bool isNativeLittleEndian = (EndianBinaryReader.NativeEndianness == Endian.LittleEndian);
@@ -747,7 +749,7 @@ namespace Scarlet.Drawing
                             green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
                             blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
 
-                            alpha = 0xFF;
+                            alpha = forceChannelValue;
                             break;
 
                         case PixelDataFormat.ChannelsBgr:
@@ -755,7 +757,7 @@ namespace Scarlet.Drawing
                             green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
                             red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
 
-                            alpha = 0xFF;
+                            alpha = forceChannelValue;
                             break;
 
                         case PixelDataFormat.ChannelsRgba:
@@ -792,7 +794,7 @@ namespace Scarlet.Drawing
                             blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
 
                             ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp); /* Dummy; throw away */
-                            alpha = 0xFF;
+                            alpha = forceChannelValue;
                             break;
 
                         case PixelDataFormat.ChannelsBgrx:
@@ -801,12 +803,12 @@ namespace Scarlet.Drawing
                             red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
 
                             ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp); /* Dummy; throw away */
-                            alpha = 0xFF;
+                            alpha = forceChannelValue;
                             break;
 
                         case PixelDataFormat.ChannelsXrgb:
                             ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp); /* Dummy; throw away */
-                            alpha = 0xFF;
+                            alpha = forceChannelValue;
 
                             red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
                             green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
@@ -815,7 +817,7 @@ namespace Scarlet.Drawing
 
                         case PixelDataFormat.ChannelsXbgr:
                             ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp); /* Dummy; throw away */
-                            alpha = 0xFF;
+                            alpha = forceChannelValue;
 
                             blue = ExtractChannel(rawData >> (k * inputBpp), channelBitsBlue, ref bppTemp);
                             green = ExtractChannel(rawData >> (k * inputBpp), channelBitsGreen, ref bppTemp);
@@ -826,11 +828,11 @@ namespace Scarlet.Drawing
                             red = ExtractChannel(rawData >> (k * inputBpp), channelBitsRed, ref bppTemp);
 
                             green = blue = red;
-                            alpha = 0xFF;
+                            alpha = forceChannelValue;
                             break;
 
                         case PixelDataFormat.ChannelsAlpha:
-                            red = green = blue = 0x00;
+                            red = green = blue = forceChannelValue;
                             alpha = ExtractChannel(rawData >> (k * inputBpp), channelBitsAlpha, ref bppTemp);
                             break;
 

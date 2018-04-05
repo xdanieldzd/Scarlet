@@ -571,7 +571,8 @@ namespace Scarlet.Platform.Sony
         static readonly Dictionary<SceGxmTextureFormat, PixelDataFormat> formatMap = new Dictionary<SceGxmTextureFormat, PixelDataFormat>()
         {
             /* L8       */ { SceGxmTextureFormat.U8_1RRR, PixelDataFormat.FormatLuminance8 },
-            /* A8       */ { SceGxmTextureFormat.U8_R000, PixelDataFormat.FormatAlpha8 },
+            /* A8 (x00) */ { SceGxmTextureFormat.U8_R000, PixelDataFormat.FormatAlpha8 },
+            /* A8 (xFF) */ { SceGxmTextureFormat.U8_R111, PixelDataFormat.FormatAlpha8 | PixelDataFormat.ForceFull },
             /* LA88     */ { SceGxmTextureFormat.U8U8_RGGG, PixelDataFormat.FormatLuminanceAlpha88 },
             /* AL88     */ { SceGxmTextureFormat.U8U8_GRRR, PixelDataFormat.FormatAlphaLuminance88 },
             // RG88     */ { SceGxmTextureFormat.U8U8_00GR, PixelDataFormat.Undefined },
