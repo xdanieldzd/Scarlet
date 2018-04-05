@@ -99,6 +99,18 @@ namespace Scarlet.IO.ImageFormats
         FormatReserved_15 = 0xf
     }
 
+    public enum GnfSqSel : byte
+    {
+        Sel0 = 0x0,
+        Sel1 = 0x1,
+        SelReserved_0 = 0x2,
+        SelReserved_1 = 0x3,
+        SelX = 0x4,
+        SelY = 0x5,
+        SelZ = 0x6,
+        SelW = 0x7
+    }
+
     [MagicNumber("GNF ", 0x00)]
     public class GNF : ImageFormat
     {
@@ -122,6 +134,7 @@ namespace Scarlet.IO.ImageFormats
         GnfDataFormat dataFormat;
         GnfNumFormat numFormat;
         int width, height, depth, pitch;
+        GnfSqSel destX, destY, destZ, destW;
 
         ImageBinary imageBinary;
 
@@ -151,6 +164,19 @@ namespace Scarlet.IO.ImageFormats
             height = (int)(ExtractData(ImageInformation2, 14, 27) + 1);
             depth = (int)(ExtractData(ImageInformation4, 0, 12));
             pitch = (int)(ExtractData(ImageInformation4, 13, 26) + 1);
+            destX = (GnfSqSel)ExtractData(ImageInformation3, 0, 2);
+            destY = (GnfSqSel)ExtractData(ImageInformation3, 3, 5);
+            destZ = (GnfSqSel)ExtractData(ImageInformation3, 6, 8);
+            destW = (GnfSqSel)ExtractData(ImageInformation3, 9, 11);
+
+            /* Figure out channel order from destX/Y/Z/W values */
+            PixelDataFormat channelOrder;
+            if (destX == GnfSqSel.SelX && destY == GnfSqSel.SelY && destZ == GnfSqSel.SelZ && destW == GnfSqSel.SelW)
+                channelOrder = PixelDataFormat.ChannelsAbgr;
+            else if (destX == GnfSqSel.SelZ && destY == GnfSqSel.SelY && destZ == GnfSqSel.SelX && destW == GnfSqSel.SelW)
+                channelOrder = PixelDataFormat.ChannelsArgb;
+            else
+                throw new Exception($"Unhandled GNF channel destinations (X={destX}, Y={destY}, Z={destZ}, W={destW})");
 
             /* Initialize ImageBinary */
             imageBinary = new ImageBinary();
@@ -198,7 +224,7 @@ namespace Scarlet.IO.ImageFormats
 
             switch (dataFormat)
             {
-                case GnfDataFormat.Format8_8_8_8: imageBinary.InputPixelFormat = PixelDataFormat.FormatArgb8888;/*(numFormat == GnfNumFormat.FormatSRGB ? PixelDataFormat.FormatAbgr8888 : PixelDataFormat.FormatArgb8888);*/ break; // TODO: fixme!
+                case GnfDataFormat.Format8_8_8_8: imageBinary.InputPixelFormat = (PixelDataFormat.Bpp32 | channelOrder | PixelDataFormat.RedBits8 | PixelDataFormat.GreenBits8 | PixelDataFormat.BlueBits8 | PixelDataFormat.AlphaBits8); break;
                 case GnfDataFormat.FormatBC1: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT1Rgba; break;
                 case GnfDataFormat.FormatBC2: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT3; break;
                 case GnfDataFormat.FormatBC3: imageBinary.InputPixelFormat = PixelDataFormat.FormatDXT5; break;
