@@ -62,6 +62,7 @@
     <Compile Include="SHTX.cs" />
     <Compile Include="SHTXFS.cs" />
     <Compile Include="STEX.cs" />
+    <Compile Include="TegraXTX.cs" />
     <Compile Include="TEX.cs" />
     <Compile Include="TID.cs" />
     <Compile Include="TIPS.cs" />

@@ -606,42 +606,42 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format is RGB-mode DXT1
         /// </summary>
-        FormatDXT1Rgb = (SpecialFormatDXT1 | ChannelsRgb),
+        FormatDXT1Rgb = (SpecialFormatDXT1 | Bpp4 | ChannelsRgb),
 
         /// <summary>
         /// Format is RGBA-mode DXT1
         /// </summary>
-        FormatDXT1Rgba = (SpecialFormatDXT1 | ChannelsRgba),
+        FormatDXT1Rgba = (SpecialFormatDXT1 | Bpp4 | ChannelsRgba),
 
         /// <summary>
         /// Format is PSP-style, RGB-mode DXT1
         /// </summary>
-        FormatDXT1Rgb_PSP = (SpecialFormatDXT1_PSP | ChannelsRgb),
+        FormatDXT1Rgb_PSP = (SpecialFormatDXT1_PSP | Bpp4 | ChannelsRgb),
 
         /// <summary>
         /// Format is PSP-style, RGBA-mode DXT1
         /// </summary>
-        FormatDXT1Rgba_PSP = (SpecialFormatDXT1_PSP | ChannelsRgba),
+        FormatDXT1Rgba_PSP = (SpecialFormatDXT1_PSP | Bpp4 | ChannelsRgba),
 
         /// <summary>
         /// Format is RGBA-mode DXT3
         /// </summary>
-        FormatDXT3 = (SpecialFormatDXT3 | ChannelsRgba),
+        FormatDXT3 = (SpecialFormatDXT3 | Bpp8 | ChannelsRgba),
 
         /// <summary>
         /// Format is PSP-style, RGBA-mode DXT3
         /// </summary>
-        FormatDXT3_PSP = (SpecialFormatDXT3_PSP | ChannelsRgba),
+        FormatDXT3_PSP = (SpecialFormatDXT3_PSP | Bpp8 | ChannelsRgba),
 
         /// <summary>
         /// Format is RGBA-mode DXT5
         /// </summary>
-        FormatDXT5 = (SpecialFormatDXT5 | ChannelsRgba),
+        FormatDXT5 = (SpecialFormatDXT5 | Bpp8 | ChannelsRgba),
 
         /// <summary>
         /// Format is PSP-style, RGBA-mode DXT5
         /// </summary>
-        FormatDXT5_PSP = (SpecialFormatDXT5_PSP | ChannelsRgba),
+        FormatDXT5_PSP = (SpecialFormatDXT5_PSP | Bpp8 | ChannelsRgba),
 
         /// <summary>
         /// Format is Vita-style PVRT2
@@ -656,22 +656,22 @@ namespace Scarlet.Drawing
         /// <summary>
         /// Format is unsigned RGTC1
         /// </summary>
-        FormatRGTC1 = (SpecialFormatRGTC1),
+        FormatRGTC1 = (SpecialFormatRGTC1 | Bpp4),
 
         /// <summary>
         /// Format is signed RGTC1
         /// </summary>
-        FormatRGTC1_Signed = (SpecialFormatRGTC1_Signed),
+        FormatRGTC1_Signed = (SpecialFormatRGTC1_Signed | Bpp4),
 
         /// <summary>
         /// Format is unsigned RGTC2
         /// </summary>
-        FormatRGTC2 = (SpecialFormatRGTC2),
+        FormatRGTC2 = (SpecialFormatRGTC2 | Bpp8),
 
         /// <summary>
         /// Format is signed RGTC2
         /// </summary>
-        FormatRGTC2_Signed = (SpecialFormatRGTC2_Signed),
+        FormatRGTC2_Signed = (SpecialFormatRGTC2_Signed | Bpp8),
 
         /// <summary>
         /// Format is BPTC

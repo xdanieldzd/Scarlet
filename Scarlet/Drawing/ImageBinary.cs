@@ -1272,6 +1272,10 @@ namespace Scarlet.Drawing
         {
             // TODO: sometimes eats the last few blocks(?) in the image (ex. BC7 GNFs)
 
+            // Sanity checks
+            if (width == 0) width = tileWidth;
+            if (height == 0) height = tileHeight;
+
             // Calculate coords in image
             int tileSize = (tileWidth * tileHeight);
             int globalPixel = ((origY * width) + origX);
@@ -1321,6 +1325,10 @@ namespace Scarlet.Drawing
 
         private static void GetPixelCoordinatesSwizzledVita(int origX, int origY, int width, int height, PixelDataFormat inputPixelFormat, out int transformedX, out int transformedY)
         {
+            // TODO: verify this is even sensible
+            if (width == 0) width = 16;
+            if (height == 0) height = 16;
+
             int i = (origY * width) + origX;
 
             int min = width < height ? width : height;
