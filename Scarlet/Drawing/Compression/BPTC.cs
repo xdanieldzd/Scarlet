@@ -615,7 +615,8 @@ namespace Scarlet.Drawing.Compression
 
         internal static uint detexGetBits64(ulong data, int bit0, int bit1)
         {
-            return (uint)((data & (((ulong)1 << (bit1 + 1)) - 1)) >> bit0);
+            ulong mask = (((ulong)(1 << ((bit1 + 1) - bit0)) - 1) << bit0);
+            return (uint)((data & mask) >> bit0);
         }
 
         internal static uint detexGetBits64Reversed(ulong data, int bit0, int bit1)

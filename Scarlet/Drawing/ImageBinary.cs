@@ -707,9 +707,10 @@ namespace Scarlet.Drawing
             PixelOrderingDelegate pixelOrderingFunc = GetPixelOrderingFunction(inputPixelFormat);
 
             bool isNativeLittleEndian = (EndianBinaryReader.NativeEndianness == Endian.LittleEndian);
+            int byteReadStep = (inputBppRead / 8);
 
             uint rawData = 0;
-            for (int i = 0, x = 0, y = 0; i < reader.BaseStream.Length; i += (inputBppRead / 8))
+            for (int i = 0, x = 0, y = 0; i < reader.BaseStream.Length - (reader.BaseStream.Length % byteReadStep); i += byteReadStep)
             {
                 switch (inBpp)
                 {
@@ -1216,6 +1217,7 @@ namespace Scarlet.Drawing
                 case PixelDataFormat.PixelOrderingTiled3DS: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinates3DS); break;
                 case PixelDataFormat.PixelOrderingSwizzledVita: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinatesSwizzledVita); break;
                 case PixelDataFormat.PixelOrderingSwizzledPSP: pixelOrderingFunc = new PixelOrderingDelegate(GetPixelCoordinatesPSP); break;
+                case PixelDataFormat.PixelOrderingSwizzledSwitch: throw new Exception("Switch swizzle is unimplemented; check Tegra X1 TRM for Block Linear?");
 
                 default: throw new Exception("Unimplemented pixel ordering mode");
             }

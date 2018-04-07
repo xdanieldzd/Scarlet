@@ -80,10 +80,10 @@ namespace Scarlet.Drawing.Compression
         }
 
         // http://codereview.stackexchange.com/q/45007
-        private static float Float16toFloat32(int hbits)
+        private static float Float16toFloat32(ushort hbits)
         {
-            int mant = hbits & 0x03FF;
-            int exp = hbits & 0x7C00;
+            uint mant = (ushort)(hbits & 0x03FF);
+            uint exp = (ushort)(hbits & 0x7C00);
 
             if (exp == 0x7C00)
                 exp = 0x3FC00;
@@ -91,7 +91,7 @@ namespace Scarlet.Drawing.Compression
             {
                 exp += 0x1C000;
                 if (mant == 0 && exp > 0x1C400)
-                    return BitConverter.ToSingle(BitConverter.GetBytes((hbits & 0x8000) << 16 | exp << 13 | 0x3FF), 0);
+                    return BitConverter.ToSingle(BitConverter.GetBytes((((uint)hbits & 0x8000) << 16) | (exp << 13) | 0x3FF), 0);
             }
             else if (mant != 0)
             {
@@ -103,7 +103,7 @@ namespace Scarlet.Drawing.Compression
                 } while ((mant & 0x400) == 0);
                 mant &= 0x3FF;
             }
-            return BitConverter.ToSingle(BitConverter.GetBytes((hbits & 0x8000) << 16 | (exp | mant) << 13), 0);
+            return BitConverter.ToSingle(BitConverter.GetBytes((((uint)hbits & 0x8000) << 16) | ((exp | mant) << 13)), 0);
         }
 
         /* All following ported/adapted from detex */

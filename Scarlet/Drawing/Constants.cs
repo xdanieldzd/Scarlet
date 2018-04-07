@@ -399,6 +399,11 @@ namespace Scarlet.Drawing
         PixelOrderingSwizzledPSP = ((ulong)1 << 44),
 
         /// <summary>
+        /// Format has pixels in swizzled order, Switch-style
+        /// </summary>
+        PixelOrderingSwizzledSwitch = ((ulong)1 << 45),
+
+        /// <summary>
         /// Mask for extracting pixel ordering value
         /// </summary>
         MaskPixelOrdering = ((((ulong)1 << 8) - 1) << 41), /* 0001FE0000000000 */

@@ -214,7 +214,7 @@ namespace Scarlet.IO.ImageFormats
             ImageBinary imageBinary = new ImageBinary();
             imageBinary.Width = mipmapData[imageIndex].Width;
             imageBinary.Height = mipmapData[imageIndex].Height;
-            imageBinary.InputPixelFormat = mappingInfo.Item1;       // TODO: unswizzle!
+            imageBinary.InputPixelFormat = (mappingInfo.Item1 /*| PixelDataFormat.PixelOrderingSwizzledSwitch*/);
             imageBinary.InputEndianness = Endian.LittleEndian;
             imageBinary.AddInputPixels(mipmapData[imageIndex].PixelData);
 
