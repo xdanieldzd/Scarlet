@@ -10,59 +10,57 @@ using Scarlet.IO;
 
 namespace Scarlet.IO.ImageFormats
 {
-    public interface IG1TGImageHeader
+    public class G1TGImageHeader
     {
-        byte GetPixelFormat();
-        byte GetPackedDimensions();
-    }
+        public readonly byte HeaderSize;
 
-    // TODO: *mostly* used in 0050 G1TGs, but also in some 0060...?
-    public class G1TG0050ImageHeader : IG1TGImageHeader
-    {
-        public byte Unknown0x00 { get; private set; }   /* always 0x01? */
+        /* Common */
+        public byte Unknown0x00 { get; private set; }           /* always 0x01? */
         public byte PixelFormat { get; private set; }
         public byte PackedDimensions { get; private set; }
-        public byte Unknown0x03 { get; private set; }   /* always 0x00? */
-        public uint Unknown0x04 { get; private set; }   /* always 0x00011200? */
+        public byte Unknown0x03 { get; private set; }           /* always 0x00? */
 
-        public G1TG0050ImageHeader(EndianBinaryReader reader)
+        public byte Unknown0x04 { get; private set; }           /* always 0x00? */
+        public byte Unknown0x05 { get; private set; }           /* always 0x01? */
+        public byte Unknown0x06 { get; private set; }           /* always 0x12? */
+        public byte IsExtendedHeader { get; private set; }
+
+        /* Extended */
+        public uint Unknown0x08 { get; private set; }           /* always 0x0000000C? */
+        public uint Unknown0x0C { get; private set; }           /* always zero? */
+        public uint Unknown0x10 { get; private set; }           /* always zero? */
+
+        public G1TGImageHeader(EndianBinaryReader reader)
         {
+            byte headerSize;
+
             Unknown0x00 = reader.ReadByte();
             PixelFormat = reader.ReadByte();
             PackedDimensions = reader.ReadByte();
             Unknown0x03 = reader.ReadByte();
-            Unknown0x04 = reader.ReadUInt32();
+
+            Unknown0x04 = reader.ReadByte();
+            Unknown0x05 = reader.ReadByte();
+            Unknown0x06 = reader.ReadByte();
+            IsExtendedHeader = reader.ReadByte();
+
+            if (IsExtendedHeader == 0x00)
+            {
+                headerSize = 0x08;
+            }
+            else if (IsExtendedHeader == 0x01)
+            {
+                headerSize = 0x14;
+
+                Unknown0x08 = reader.ReadUInt32();
+                Unknown0x0C = reader.ReadUInt32();
+                Unknown0x10 = reader.ReadUInt32();
+            }
+            else
+                throw new Exception($"Unhandled G1TG header format 0x{IsExtendedHeader}");
+
+            HeaderSize = headerSize;
         }
-
-        public byte GetPixelFormat() { return PixelFormat; }
-        public byte GetPackedDimensions() { return PackedDimensions; }
-    }
-
-    public class G1TG0060ImageHeader : IG1TGImageHeader
-    {
-        public byte Unknown0x00 { get; private set; }   /* always 0x01? */
-        public byte PixelFormat { get; private set; }
-        public byte PackedDimensions { get; private set; }
-        public byte Unknown0x03 { get; private set; }   /* always 0x00? */
-        public uint Unknown0x04 { get; private set; }   /* always 0x00011201? */
-        public uint Unknown0x08 { get; private set; }   //0x0000000C ?
-        public uint Unknown0x0C { get; private set; }   //zero?
-        public uint Unknown0x10 { get; private set; }   //zero?
-
-        public G1TG0060ImageHeader(EndianBinaryReader reader)
-        {
-            Unknown0x00 = reader.ReadByte();
-            PixelFormat = reader.ReadByte();
-            PackedDimensions = reader.ReadByte();
-            Unknown0x03 = reader.ReadByte();
-            Unknown0x04 = reader.ReadUInt32();
-            Unknown0x08 = reader.ReadUInt32();
-            Unknown0x0C = reader.ReadUInt32();
-            Unknown0x10 = reader.ReadUInt32();
-        }
-
-        public byte GetPixelFormat() { return PixelFormat; }
-        public byte GetPackedDimensions() { return PackedDimensions; }
     }
 
     internal class G1TGImageDataShim
@@ -72,23 +70,24 @@ namespace Scarlet.IO.ImageFormats
         public PixelDataFormat Format { get; private set; }
         public byte[] Data { get; private set; }
 
-        public G1TGImageDataShim(IG1TGImageHeader header, EndianBinaryReader reader)
+        public G1TGImageDataShim(G1TGImageHeader header, EndianBinaryReader reader)
         {
-            byte pixelFormat = header.GetPixelFormat();
+            /* Determine Scarlet pixel format */
+            byte pixelFormat = header.PixelFormat;
             switch (pixelFormat)
             {
                 case 0x01: Format = PixelDataFormat.FormatRgba8888; break;
-                case 0x06: Format = PixelDataFormat.FormatDXT1Rgb; break;
+                case 0x06: Format = PixelDataFormat.FormatDXT1Rgba; break;
                 case 0x08: Format = PixelDataFormat.FormatDXT5; break;
                 default: throw new Exception($"Unhandled G1TG image format 0x{pixelFormat:X}");
             }
 
-            // TODO: verify this is correct...?
-            byte packedDimensions = header.GetPackedDimensions();
-            Width = (int)Math.Pow(2, ((packedDimensions >> 4) & 0x0F));
-            Height = (int)Math.Pow(2, (packedDimensions & 0x0F));
+            /* Extract packed dimensions */
+            byte packedDimensions = header.PackedDimensions;
+            Width = (1 << ((packedDimensions >> 4) & 0x0F));
+            Height = (1 << (packedDimensions & 0x0F));
 
-            // TODO: also this? there's no datasize thingy for this...
+            /* Read image data */
             Data = reader.ReadBytes((int)((Width * Height) * (Constants.RealBitsPerPixel[Format & PixelDataFormat.MaskBpp] / 8.0)));
         }
     }
@@ -99,11 +98,12 @@ namespace Scarlet.IO.ImageFormats
         public string MagicNumber { get; private set; }                 /* 'G1TG' */
         public string Version { get; private set; }                     /* '0060', '0050' */
         public uint FileSize { get; private set; }
-        public uint Unknown0x0C { get; private set; }                   //0x20,24,28, depending on numimages?
+        public uint HeaderSize { get; private set; }
         public uint NumImages { get; private set; }
         public uint Unknown0x14 { get; private set; }                   /* always 0x00000001? */
         public uint Unknown0x18 { get; private set; }
-        public ulong[] UnknownImageValues { get; private set; }
+        public uint[] UnknownValues0x1C { get; private set; }           /* [uint * NumImage]; always zero? */
+        public uint[] ImageOffsets { get; private set; }                /* [uint * NumImage]; relative to end of header */
 
         G1TGImageDataShim[] imageDataShims;
 
@@ -116,28 +116,24 @@ namespace Scarlet.IO.ImageFormats
             MagicNumber = Encoding.ASCII.GetString(reader.ReadBytes(4));
             Version = Encoding.ASCII.GetString(reader.ReadBytes(4));
             FileSize = reader.ReadUInt32();
-            Unknown0x0C = reader.ReadUInt32();
+            HeaderSize = reader.ReadUInt32();
             NumImages = reader.ReadUInt32();
             Unknown0x14 = reader.ReadUInt32();
             Unknown0x18 = reader.ReadUInt32();
 
-            UnknownImageValues = new ulong[NumImages];
-            for (int i = 0; i < UnknownImageValues.Length; i++) UnknownImageValues[i] = reader.ReadUInt64();
+            UnknownValues0x1C = new uint[NumImages];
+            for (int i = 0; i < UnknownValues0x1C.Length; i++) UnknownValues0x1C[i] = reader.ReadUInt32();
+
+            ImageOffsets = new uint[NumImages];
+            for (int i = 0; i < ImageOffsets.Length; i++) ImageOffsets[i] = reader.ReadUInt32();
 
             imageDataShims = new G1TGImageDataShim[NumImages];
             for (int i = 0; i < NumImages; i++)
             {
-                reader.BaseStream.Seek(4, SeekOrigin.Current);
-                uint headerConst = reader.ReadUInt32();
-                reader.BaseStream.Seek(-8, SeekOrigin.Current);
+                reader.BaseStream.Seek(HeaderSize + ImageOffsets[i], SeekOrigin.Begin);
+                G1TGImageHeader imageHeader = new G1TGImageHeader(reader);
 
-                IG1TGImageHeader imageHeader;
-                switch (headerConst)
-                {
-                    case 0x00011200: imageHeader = new G1TG0050ImageHeader(reader); break;
-                    case 0x00011201: imageHeader = new G1TG0060ImageHeader(reader); break;
-                    default: throw new Exception($"Unimplemented G1TG version {Version}");
-                }
+                reader.BaseStream.Seek((HeaderSize + ImageOffsets[i]) + imageHeader.HeaderSize, SeekOrigin.Begin);
                 imageDataShims[i] = new G1TGImageDataShim(imageHeader, reader);
             }
         }
