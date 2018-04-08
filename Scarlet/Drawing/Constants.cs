@@ -6,10 +6,12 @@ using System.Drawing.Imaging;
 
 namespace Scarlet.Drawing
 {
+    // TODO: cannot use Flags attrib anymore! causes issues w/ new-ish special format handling
+
     /// <summary>
     /// Specifies components of a pixel data format
     /// </summary>
-    [Flags]
+    //[Flags]
     public enum PixelDataFormat : ulong
     {
         /*

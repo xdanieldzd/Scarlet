@@ -50,6 +50,7 @@
     <Compile Include="CSU.cs" />
     <Compile Include="DDS.cs" />
     <Compile Include="DMPBM.cs" />
+    <Compile Include="G1TG.cs" />
     <Compile Include="GBIX.cs" />
     <Compile Include="GNF.cs" />
     <Compile Include="ImageFormat.cs" />
