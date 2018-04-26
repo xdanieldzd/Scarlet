@@ -506,6 +506,22 @@ namespace Scarlet.Drawing
             return image.Clone(new Rectangle(0, 0, virtualWidth, virtualHeight), image.PixelFormat);
         }
 
+        private bool IsValidPixelDataFormat(PixelDataFormat fmt)
+        {
+            return (fmt & PixelDataFormat.MaskBpp).IsValid()
+                && (fmt & PixelDataFormat.MaskChannels).IsValid()
+                && (fmt & PixelDataFormat.MaskRedBits).IsValid()
+                && (fmt & PixelDataFormat.MaskGreenBits).IsValid()
+                && (fmt & PixelDataFormat.MaskBlueBits).IsValid()
+                && (fmt & PixelDataFormat.MaskAlphaBits).IsValid()
+                && (fmt & PixelDataFormat.MaskLuminanceBits).IsValid()
+                && (fmt & PixelDataFormat.MaskSpecial).IsValid()
+                && (fmt & PixelDataFormat.MaskPixelOrdering).IsValid()
+                && (fmt & PixelDataFormat.MaskFilter).IsValid()
+                && (fmt & PixelDataFormat.MaskForceChannel).IsValid()
+                && (fmt & PixelDataFormat.MaskReserved).IsValid();
+        }
+
         private void ValidateImageProperties()
         {
             if (virtualWidth <= 0 || virtualWidth >= 16384) throw new Exception("Invalid virtual width");
@@ -514,11 +530,11 @@ namespace Scarlet.Drawing
             if (physicalWidth <= 0 || physicalWidth >= 16384) physicalWidth = virtualWidth;
             if (physicalHeight <= 0 || physicalHeight >= 16384) physicalHeight = virtualHeight;
 
-            if (!inputPixelFormat.IsValid()) throw new Exception("Invalid input format");
+            if (!IsValidPixelDataFormat(inputPixelFormat)) throw new Exception("Invalid input format");
             if ((inputPixelFormat & PixelDataFormat.MaskSpecial) == PixelDataFormat.Undefined && !Constants.RealBitsPerPixel.ContainsKey(inputPixelFormat & PixelDataFormat.MaskBpp)) throw new Exception("Invalid input bits per pixel");
             if (!inputEndianness.IsValid()) throw new Exception("Invalid input endianness");
 
-            if (!outputFormat.IsValid()) throw new Exception("Invalid output format");
+            if (!IsValidPixelDataFormat(outputFormat)) throw new Exception("Invalid output format");
             if ((outputFormat & PixelDataFormat.MaskSpecial) == PixelDataFormat.Undefined && !Constants.RealBitsPerPixel.ContainsKey(outputFormat & PixelDataFormat.MaskBpp)) throw new Exception("Invalid output bits per pixel");
             if (!outputEndianness.IsValid()) throw new Exception("Invalid output endianness");
         }
