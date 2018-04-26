@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="CompressionFormat.cs" />
     <Compile Include="CRILAYLA.cs" />
+    <Compile Include="DEFLATE.cs" />
     <Compile Include="DS_LZ77x10.cs" />
     <Compile Include="GrezzoLZS.cs" />
     <Compile Include="GZip.cs" />
