@@ -55,6 +55,7 @@
     <Compile Include="NSAC.cs" />
     <Compile Include="P5BustupBIN.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PSFSv1.cs" />
     <Compile Include="PSPFSv1.cs" />
     <Compile Include="TPPK.cs" />
     <Compile Include="UKArc.cs" />
