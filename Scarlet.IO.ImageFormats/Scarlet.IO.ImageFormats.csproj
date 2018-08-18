@@ -65,7 +65,8 @@
     <Compile Include="SHTXFS.cs" />
     <Compile Include="STEX.cs" />
     <Compile Include="TegraXTX.cs" />
-    <Compile Include="TEX.cs" />
+    <Compile Include="CapcomTEX.cs" />
+    <Compile Include="CapcomTEXMHW.cs" />
     <Compile Include="TID.cs" />
     <Compile Include="TIPS.cs" />
     <Compile Include="TMX.cs" />

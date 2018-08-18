@@ -13,7 +13,7 @@ namespace Scarlet.IO.ImageFormats
     // Header layout from https://github.com/FrozenFish24/TurnaboutTools/blob/master/TEXporter/TEXporter/Program.cs
 
     [MagicNumber("TEX\0", 0x00)]
-    public class TEX : ImageFormat
+    public class CapcomTEX : ImageFormat
     {
         public string MagicNumber { get; private set; }
         public uint[] Data { get; private set; }

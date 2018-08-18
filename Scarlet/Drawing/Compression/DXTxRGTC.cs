@@ -199,8 +199,10 @@ namespace Scarlet.Drawing.Compression
 
             return outData;
         }
-
-        private static byte[] DecodeRGTC1Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxRGTCBlockLayout blockLayout, DXTxRGTCSignedness signedness)
+		
+		// TODO: verify channel order! ImageBinary works on ARGB (BGRA b/c endianness), so this *should* be correct now
+		
+		private static byte[] DecodeRGTC1Block(EndianBinaryReader reader, PixelDataFormat inputFormat, DXTxRGTCBlockLayout blockLayout, DXTxRGTCSignedness signedness)
         {
             RGTCBlock inBlock = new RGTCBlock(reader, blockLayout);
             byte[] outData = new byte[(4 * 4) * 4];
@@ -210,9 +212,9 @@ namespace Scarlet.Drawing.Compression
                 for (int x = 0; x < 4; x++)
                 {
                     int destOffset = (((y * 4) + x) * 4);
-                    outData[destOffset + 0] = DecodeRGTCValue(inBlock, x, y, signedness);
+                    outData[destOffset + 0] = 0x00;
                     outData[destOffset + 1] = 0x00;
-                    outData[destOffset + 2] = 0x00;
+                    outData[destOffset + 2] = DecodeRGTCValue(inBlock, x, y, signedness);
                     outData[destOffset + 3] = 0xFF;
                 }
             }
@@ -231,9 +233,9 @@ namespace Scarlet.Drawing.Compression
                 for (int x = 0; x < 4; x++)
                 {
                     int destOffset = (((y * 4) + x) * 4);
-                    outData[destOffset + 0] = DecodeRGTCValue(inBlockRed, x, y, signedness);
+                    outData[destOffset + 0] = 0x00;
                     outData[destOffset + 1] = DecodeRGTCValue(inBlockGreen, x, y, signedness);
-                    outData[destOffset + 2] = 0x00;
+                    outData[destOffset + 2] = DecodeRGTCValue(inBlockRed, x, y, signedness);
                     outData[destOffset + 3] = 0xFF;
                 }
             }
