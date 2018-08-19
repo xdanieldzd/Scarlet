@@ -26,8 +26,8 @@ namespace Scarlet.IO.ImageFormats
 		public uint BaseWidth { get; private set; }
 		public uint BaseHeight { get; private set; }
 
-		public uint Unknown0x20 { get; private set; }       // count another thing? always 0x01?
-		public uint PixelFormat { get; private set; }       // maybe format? otherwise, another count of things?
+		public uint MaybePixelOrderingMode { get; private set; }    // pixel ordering? 0x01 == swizzled, 0x06 == linear?
+		public uint PixelFormat { get; private set; }
 		public uint Unknown0x28 { get; private set; }       // count or always 0x01?
 		public uint Unknown0x2C { get; private set; }       // zero?
 
@@ -94,7 +94,7 @@ namespace Scarlet.IO.ImageFormats
 			BaseWidth = reader.ReadUInt32();
 			BaseHeight = reader.ReadUInt32();
 
-			Unknown0x20 = reader.ReadUInt32();
+			MaybePixelOrderingMode = reader.ReadUInt32();
 			PixelFormat = reader.ReadUInt32();
 			Unknown0x28 = reader.ReadUInt32();
 			Unknown0x2C = reader.ReadUInt32();
@@ -157,9 +157,18 @@ namespace Scarlet.IO.ImageFormats
 				case 0x18: pixelDataFormat = PixelDataFormat.FormatRGTC1; break;
 				case 0x1A: pixelDataFormat = PixelDataFormat.FormatRGTC2; break;
 				case 0x1C: pixelDataFormat = PixelDataFormat.FormatBPTC_Float; break;
+				case 0x1E: pixelDataFormat = PixelDataFormat.FormatBPTC; break;
 				case 0x1F: pixelDataFormat = PixelDataFormat.FormatBPTC; break;
 
 				default: throw new Exception($"MHW TEX format 0x{PixelFormat:X}");
+			}
+
+			switch (MaybePixelOrderingMode)
+			{
+				case 0x01: pixelDataFormat |= PixelDataFormat.PixelOrderingTiled3DS; break;
+				case 0x06: pixelDataFormat |= PixelDataFormat.PixelOrderingLinear; break;
+
+				default: throw new Exception($"MHW TEX pixel order 0x{MaybePixelOrderingMode:X}");
 			}
 
 			mipmapData = new List<MipmapLevel>();
@@ -192,7 +201,7 @@ namespace Scarlet.IO.ImageFormats
 			{
 				Width = mipmapData[imageIndex].Width,
 				Height = mipmapData[imageIndex].Height,
-				InputPixelFormat = pixelDataFormat | PixelDataFormat.PixelOrderingTiled3DS
+				InputPixelFormat = pixelDataFormat
 			};
 			imageBinary.AddInputPixels(mipmapData[imageIndex].PixelData);
 
