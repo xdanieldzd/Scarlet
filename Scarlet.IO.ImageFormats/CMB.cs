@@ -54,6 +54,9 @@ namespace Scarlet.IO.ImageFormats
 			TextureDataOffset = reader.ReadUInt32();
 			UnknownZero = reader.ReadUInt32();
 
+			/* Ensure we actually have texture data, otherwise bail */
+			if (TextureDataOffset == 0x00) return;
+
 			/* tex */
 			uint texChunkOffset = ChunkOffsets[3];
 
