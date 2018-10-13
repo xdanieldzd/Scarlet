@@ -46,6 +46,7 @@
     <Compile Include="BTEX.cs" />
     <Compile Include="BTGA.cs" />
     <Compile Include="CBG.cs" />
+    <Compile Include="CMB.cs" />
     <Compile Include="CTXB.cs" />
     <Compile Include="CSU.cs" />
     <Compile Include="DDS.cs" />

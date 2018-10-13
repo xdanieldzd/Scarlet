@@ -11,46 +11,25 @@ using Scarlet.Platform.Nintendo;
 
 namespace Scarlet.IO.ImageFormats
 {
-	// TODO: general improvements, make less hacky
+	// NOTE: hacky, highly incomplete, basic dumper for textures from CMB models; DOES NOT handle anything model-related, only tex chunks
 
-	public class CTXBTexture
+	[MagicNumber("cmb ", 0x00)]
+	public class CMB : ImageFormat
 	{
-		public uint DataLength { get; private set; }
-		public ushort Unknown04 { get; private set; }
-		public ushort Unknown06 { get; private set; }
-		public ushort Width { get; private set; }
-		public ushort Height { get; private set; }
-		public PicaPixelFormat PixelFormat { get; private set; }
-		public PicaDataType DataType { get; private set; }
-		public uint DataOffset { get; private set; }
-		public string Name { get; private set; }
-
-		public CTXBTexture(BinaryReader reader)
-		{
-			DataLength = reader.ReadUInt32();
-			Unknown04 = reader.ReadUInt16();
-			Unknown06 = reader.ReadUInt16();
-			Width = reader.ReadUInt16();
-			Height = reader.ReadUInt16();
-			PixelFormat = (PicaPixelFormat)reader.ReadUInt16();
-			DataType = (PicaDataType)reader.ReadUInt16();
-			DataOffset = reader.ReadUInt32();
-			Name = Encoding.ASCII.GetString(reader.ReadBytes(16), 0, 16).TrimEnd('\0');
-		}
-	}
-
-	[MagicNumber("ctxb", 0x00)]
-	public class CTXB : ImageFormat
-	{
-		/* ctxb */
+		/* cmb */
 		public string MagicNumber { get; private set; }
 		public uint FileSize { get; private set; }
-		public uint NumberOfChunks { get; private set; }
-		public uint Unknown1 { get; private set; }
-		public uint TexChunkOffset { get; private set; }
+		public uint Revision { get; private set; }      // not sure if revision; ?? == OoT3D, 0x0A == MM3D, 0x0F == LM3D
+		public uint Unknown0x0C { get; private set; }
+		public string ModelName { get; private set; }
+		public uint Unknown0x20 { get; private set; }
+		public uint[] ChunkOffsets { get; private set; }
 		public uint TextureDataOffset { get; private set; }
+		public uint UnknownZero { get; private set; }
 
 		/* tex */
+		const string expectedTexChunkTag = "tex ";
+
 		public string TexChunkTag { get; private set; }
 		public uint TexChunkSize { get; private set; }
 		public uint TextureCount { get; private set; }
@@ -60,27 +39,38 @@ namespace Scarlet.IO.ImageFormats
 
 		protected override void OnOpen(EndianBinaryReader reader)
 		{
+			/* cmb */
 			MagicNumber = Encoding.ASCII.GetString(reader.ReadBytes(4), 0, 4);
 			FileSize = reader.ReadUInt32();
-			NumberOfChunks = reader.ReadUInt32();
-			Unknown1 = reader.ReadUInt32();
-			TexChunkOffset = reader.ReadUInt32();
-			TextureDataOffset = reader.ReadUInt32();
+			Revision = reader.ReadUInt32();
+			Unknown0x0C = reader.ReadUInt32();
+			ModelName = Encoding.ASCII.GetString(reader.ReadBytes(16), 0, 16);
+			Unknown0x20 = reader.ReadUInt32();
 
-			reader.BaseStream.Seek(TexChunkOffset, SeekOrigin.Begin);
+			if (Revision != 0x0F) throw new Exception($"Unhandled CMB revision 0x{Revision:X2}");
+
+			ChunkOffsets = new uint[8];
+			for (int i = 0; i < ChunkOffsets.Length; i++) ChunkOffsets[i] = reader.ReadUInt32();
+			TextureDataOffset = reader.ReadUInt32();
+			UnknownZero = reader.ReadUInt32();
+
+			/* tex */
+			uint texChunkOffset = ChunkOffsets[3];
+
+			reader.BaseStream.Seek(texChunkOffset, SeekOrigin.Begin);
 
 			TexChunkTag = Encoding.ASCII.GetString(reader.ReadBytes(4), 0, 4);
 			TexChunkSize = reader.ReadUInt32();
 			TextureCount = reader.ReadUInt32();
 
-			if (TexChunkTag != "tex ") throw new Exception("CTXB parsing error");
+			if (TexChunkTag != expectedTexChunkTag) throw new Exception($"Unexpected data in CMB; wanted '{expectedTexChunkTag}', got '{TexChunkTag}'");
 
 			Textures = new CTXBTexture[TextureCount];
 			pixelData = new byte[TextureCount][];
 
 			for (int i = 0; i < Textures.Length; i++)
 			{
-				reader.BaseStream.Seek(TexChunkOffset + 0xC + (i * 0x24), SeekOrigin.Begin);
+				reader.BaseStream.Seek(texChunkOffset + 0xC + (i * 0x24), SeekOrigin.Begin);
 				Textures[i] = new CTXBTexture(reader);
 
 				reader.BaseStream.Seek(TextureDataOffset + Textures[i].DataOffset, SeekOrigin.Begin);
