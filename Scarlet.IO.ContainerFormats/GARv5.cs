@@ -116,13 +116,12 @@ namespace Scarlet.IO.ContainerFormats
 			FileInfos = new GARv5FileInfo[NumFiles];
 			for (int i = 0; i < FileInfos.Length; i++) FileInfos[i] = new GARv5FileInfo(reader);
 
-			// TODO: verify this works properly, also re-check Ever Oasis GARs in case this breaks them
 			for (int i = 0; i < FileInfos.Length; i++)
 			{
 				GARv5FileInfo file = FileInfos[i];
 				GARv5FileType type = FileTypes.FirstOrDefault(x => (i >= x.FirstFileOfType && i < (x.FirstFileOfType + x.NumFilesOfType)));
 
-				string filename = $"{file.Filename}.{type.FileExtension}";
+				string filename = (Path.GetExtension(file.Filename) != string.Empty ? file.Filename : $"{file.Filename}.{type.FileExtension}");
 				string root = Path.GetPathRoot(file.Filename);
 
 				if (root != string.Empty)

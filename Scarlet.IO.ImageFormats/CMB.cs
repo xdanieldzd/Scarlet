@@ -19,13 +19,12 @@ namespace Scarlet.IO.ImageFormats
 		/* cmb */
 		public string MagicNumber { get; private set; }
 		public uint FileSize { get; private set; }
-		public uint Revision { get; private set; }      // not sure if revision; ?? == OoT3D, 0x0A == MM3D, 0x0F == LM3D
+		public uint Revision { get; private set; }      // not sure if revision; ?? == OoT3D, 0x0A == MM3D, 0x0C == Ever Oasis, 0x0F == LM3D
 		public uint Unknown0x0C { get; private set; }
 		public string ModelName { get; private set; }
 		public uint Unknown0x20 { get; private set; }
 		public uint[] ChunkOffsets { get; private set; }
-		public uint TextureDataOffset { get; private set; }
-		public uint UnknownZero { get; private set; }
+		public uint[] RawDataOffsets { get; private set; }
 
 		/* tex */
 		const string expectedTexChunkTag = "tex ";
@@ -44,21 +43,40 @@ namespace Scarlet.IO.ImageFormats
 			FileSize = reader.ReadUInt32();
 			Revision = reader.ReadUInt32();
 			Unknown0x0C = reader.ReadUInt32();
-			ModelName = Encoding.ASCII.GetString(reader.ReadBytes(16), 0, 16);
+			ModelName = Encoding.ASCII.GetString(reader.ReadBytes(16), 0, 16).TrimEnd('\0');
 			Unknown0x20 = reader.ReadUInt32();
 
-			if (Revision != 0x0F) throw new Exception($"Unhandled CMB revision 0x{Revision:X2}");
+			int chunkCount = -1, texChunkIdx = -1, rawDataCount = -1, textureDataIdx = -1;
+			if (Revision == 0x0F || Revision == 0x0C || Revision == 0x0A)
+			{
+				chunkCount = 7;
+				texChunkIdx = 3;
 
-			ChunkOffsets = new uint[8];
+				rawDataCount = 3;
+				textureDataIdx = 1;
+			}
+			else if (Revision == 0x06)
+			{
+				chunkCount = 6;
+				texChunkIdx = 2;
+
+				rawDataCount = 2;
+				textureDataIdx = 1;
+			}
+			else
+				throw new Exception($"Unhandled CMB revision 0x{Revision:X2}");
+
+			ChunkOffsets = new uint[chunkCount];
 			for (int i = 0; i < ChunkOffsets.Length; i++) ChunkOffsets[i] = reader.ReadUInt32();
-			TextureDataOffset = reader.ReadUInt32();
-			UnknownZero = reader.ReadUInt32();
+			RawDataOffsets = new uint[rawDataCount];
+			for (int i = 0; i < RawDataOffsets.Length; i++) RawDataOffsets[i] = reader.ReadUInt32();
 
 			/* Ensure we actually have texture data, otherwise bail */
-			if (TextureDataOffset == 0x00) return;
+			if (RawDataOffsets[textureDataIdx] == 0x00) return;
 
 			/* tex */
-			uint texChunkOffset = ChunkOffsets[3];
+			uint texChunkOffset = ChunkOffsets[texChunkIdx];
+			uint texDataOffset = RawDataOffsets[textureDataIdx];
 
 			reader.BaseStream.Seek(texChunkOffset, SeekOrigin.Begin);
 
@@ -76,7 +94,7 @@ namespace Scarlet.IO.ImageFormats
 				reader.BaseStream.Seek(texChunkOffset + 0xC + (i * 0x24), SeekOrigin.Begin);
 				Textures[i] = new CTXBTexture(reader);
 
-				reader.BaseStream.Seek(TextureDataOffset + Textures[i].DataOffset, SeekOrigin.Begin);
+				reader.BaseStream.Seek(texDataOffset + Textures[i].DataOffset, SeekOrigin.Begin);
 				pixelData[i] = reader.ReadBytes((int)Textures[i].DataLength);
 			}
 		}
