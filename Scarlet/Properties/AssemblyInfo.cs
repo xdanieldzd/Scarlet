@@ -15,8 +15,8 @@ using System.Runtime.InteropServices;
 
 [assembly: Guid("3f27160a-8f2b-48a8-8dd2-77126e7547d2")]
 
-[assembly: AssemblyVersion("0.9.0.0")]
-[assembly: AssemblyFileVersion("0.9.0.0")]
+[assembly: AssemblyVersion("0.9.1.0")]
+[assembly: AssemblyFileVersion("0.9.1.0")]
 [assembly: AssemblyInformationalVersion("{branch}-{chash:7}{!:-dirty}")]
 
 [assembly: InternalsVisibleTo("Scarlet.IO.ImageFormats")]
