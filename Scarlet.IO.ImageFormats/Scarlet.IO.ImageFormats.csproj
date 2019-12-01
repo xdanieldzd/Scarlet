@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="BTEX.cs" />
     <Compile Include="BTGA.cs" />
+    <Compile Include="BUP4.cs" />
     <Compile Include="CBG.cs" />
     <Compile Include="CMB.cs" />
     <Compile Include="CTXB.cs" />

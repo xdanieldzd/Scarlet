@@ -20,9 +20,10 @@ namespace Scarlet.IO.ImageFormats
 		public ushort Unknown0x0E { get; private set; }     // ""
 		public ushort Width { get; private set; }
 		public ushort Height { get; private set; }
+
 		public uint Unknown0x14 { get; private set; }
 		public uint NumRectangles { get; private set; }
-		public uint Unknown0x1C { get; private set; }
+		public uint MaybeChecksum { get; private set; }     // CRC32? over what range?
 
 		public PIC4RectangleInfo[] RectangleInfos { get; private set; }
 
@@ -35,9 +36,10 @@ namespace Scarlet.IO.ImageFormats
 			Unknown0x0E = reader.ReadUInt16();
 			Width = reader.ReadUInt16();
 			Height = reader.ReadUInt16();
+
 			Unknown0x14 = reader.ReadUInt32();
 			NumRectangles = reader.ReadUInt32();
-			Unknown0x1C = reader.ReadUInt32();
+			MaybeChecksum = reader.ReadUInt32();
 
 			RectangleInfos = new PIC4RectangleInfo[NumRectangles];
 			for (int i = 0; i < RectangleInfos.Length; i++) RectangleInfos[i] = new PIC4RectangleInfo(reader);
@@ -79,19 +81,21 @@ namespace Scarlet.IO.ImageFormats
 
 						using (Bitmap srcBitmap = imageBinary.GetBitmap())
 						{
-							g.DrawImageUnscaled(srcBitmap, rectangleInfo.X, rectangleInfo.Y);
+							g.DrawImageUnscaled(srcBitmap,
+								rectangleInfo.X + rectangleInfo.ImageInfo.X,
+								rectangleInfo.Y + rectangleInfo.ImageInfo.Y);
 						}
 
 						if (false)
 						{
 							foreach (PIC4UnknownInnerRectangles data in rectangleInfo.ImageInfo.UnknownInnerRectangles)
 								g.DrawRectangle(Pens.LawnGreen,
-									rectangleInfo.X + data.X1, rectangleInfo.Y + data.Y1,
+									rectangleInfo.X + rectangleInfo.ImageInfo.X + data.X1, rectangleInfo.Y + rectangleInfo.ImageInfo.Y + data.Y1,
 									data.X2 - data.X1, data.Y2 - data.Y1);
 
 							foreach (PIC4UnknownOuterRectangle data in rectangleInfo.ImageInfo.UnknownOuterRectangles)
 								g.DrawRectangle(Pens.OrangeRed,
-									rectangleInfo.X + data.X1, rectangleInfo.Y + data.Y1,
+									rectangleInfo.X + rectangleInfo.ImageInfo.X + data.X1, rectangleInfo.Y + rectangleInfo.ImageInfo.Y + data.Y1,
 									data.X2 - data.X1 + 1, data.Y2 - data.Y1 + 1);
 						}
 					}
@@ -129,8 +133,8 @@ namespace Scarlet.IO.ImageFormats
 		public ushort NumUnknownInnerRectangles { get; private set; }
 		public ushort NumUnknownOuterRectangles { get; private set; }
 		public ushort NumUnknownData3 { get; private set; }
-		public ushort Unknown0x08 { get; private set; }
-		public ushort Unknown0x0A { get; private set; }
+		public ushort X { get; private set; }
+		public ushort Y { get; private set; }
 		public ushort Width { get; private set; }
 		public ushort Height { get; private set; }
 		public uint CompressedDataSize { get; private set; }
@@ -148,8 +152,8 @@ namespace Scarlet.IO.ImageFormats
 			NumUnknownInnerRectangles = reader.ReadUInt16();
 			NumUnknownOuterRectangles = reader.ReadUInt16();
 			NumUnknownData3 = reader.ReadUInt16();
-			Unknown0x08 = reader.ReadUInt16();
-			Unknown0x0A = reader.ReadUInt16();
+			X = reader.ReadUInt16();
+			Y = reader.ReadUInt16();
 			Width = reader.ReadUInt16();
 			Height = reader.ReadUInt16();
 			CompressedDataSize = reader.ReadUInt32();
