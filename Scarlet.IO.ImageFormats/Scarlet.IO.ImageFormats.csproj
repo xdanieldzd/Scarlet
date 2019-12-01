@@ -59,6 +59,7 @@
     <Compile Include="KSLT.cs" />
     <Compile Include="KTX.cs" />
     <Compile Include="NMT.cs" />
+    <Compile Include="PIC4.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PSSG.cs" />
     <Compile Include="RTEX.cs" />
@@ -72,6 +73,7 @@
     <Compile Include="TIPS.cs" />
     <Compile Include="TMX.cs" />
     <Compile Include="TX2.cs" />
+    <Compile Include="TXA4.cs" />
     <Compile Include="TXF.cs" />
     <Compile Include="TXG.cs" />
     <Compile Include="TXP.cs" />

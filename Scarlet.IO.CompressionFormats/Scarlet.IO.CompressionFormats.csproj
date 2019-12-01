@@ -49,6 +49,7 @@
     <Compile Include="GrezzoLZS.cs" />
     <Compile Include="GZip.cs" />
     <Compile Include="NISLZS.cs" />
+    <Compile Include="OLZP.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpikeDRVita.cs" />
     <Compile Include="YKCMPv1.cs" />
