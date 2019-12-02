@@ -166,7 +166,7 @@ namespace Scarlet.IO.ImageFormats
 		public ushort Height { get; private set; }
 		public uint CompressedDataSize { get; private set; }
 
-		public PIC4UnknownInnerRectangle[] UnknownInnerRectangles { get; private set; }        // TODO: Purpose? Covers "inner" parts of images, see ex. FILES.psarc\ADV\picture\EVCG17.pic
+		public PIC4UnknownInnerRectangle[] UnknownInnerRectangles { get; private set; }         // TODO: Purpose? Covers "inner" parts of images, see ex. FILES.psarc\ADV\picture\EVCG17.pic
 		public PIC4UnknownOuterRectangle[] UnknownOuterRectangles { get; private set; }         // TODO: Same, but covers "outer" parts of images
 		public PIC4UnknownData3[] UnknownData3s { get; private set; }
 

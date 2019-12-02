@@ -59,6 +59,7 @@
     <Compile Include="GXT.cs" />
     <Compile Include="KSLT.cs" />
     <Compile Include="KTX.cs" />
+    <Compile Include="MSK3.cs" />
     <Compile Include="NMT.cs" />
     <Compile Include="PIC4.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
