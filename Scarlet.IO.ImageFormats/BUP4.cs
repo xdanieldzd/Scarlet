@@ -1,6 +1,4 @@
-﻿//#define DUMPFACEPARTS
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -38,9 +36,7 @@ namespace Scarlet.IO.ImageFormats
 
 		public BUP4FacePartImages[] FacePartImages { get; private set; }
 
-#if DUMPFACEPARTS
-		public List<PIC4ImageInfo> FacePartsTemp { get; private set; }
-#endif
+		public List<Tuple<PIC4ImageInfo, PIC4ImageInfo>> ImagePermutations { get; private set; }
 
 		protected override void OnOpen(EndianBinaryReader reader)
 		{
@@ -68,20 +64,25 @@ namespace Scarlet.IO.ImageFormats
 			FacePartImages = new BUP4FacePartImages[NumFacePartImages];
 			for (int i = 0; i < FacePartImages.Length; i++) FacePartImages[i] = new BUP4FacePartImages(reader);
 
-#if DUMPFACEPARTS
-			FacePartsTemp = new List<PIC4ImageInfo>();
-			foreach (BUP4FacePartImages data in FacePartImages)
-				FacePartsTemp.AddRange(data.ImageInfos);
-#endif
+			ImagePermutations = new List<Tuple<PIC4ImageInfo, PIC4ImageInfo>>();
+			for (int i = 0; i < FacePartImages.Length; i++)
+			{
+				PIC4ImageInfo faceImage = FacePartImages[i].ImageInfos[1];
+				for (int j = 5; j < 8; j++)
+				{
+					PIC4ImageInfo mouthImage = FacePartImages[i].ImageInfos[j];
+					if (faceImage != null || mouthImage != null)
+						ImagePermutations.Add(new Tuple<PIC4ImageInfo, PIC4ImageInfo>(faceImage, mouthImage));
+				}
+			}
+
+			if (ImagePermutations.Count == 0)
+				ImagePermutations.Add(new Tuple<PIC4ImageInfo, PIC4ImageInfo>(null, null));     // dummy if no face or mouth
 		}
 
 		public override int GetImageCount()
 		{
-#if !DUMPFACEPARTS
-			return 1;
-#else
-			return FacePartsTemp.Count;
-#endif
+			return ImagePermutations.Count;
 		}
 
 		public override int GetPaletteCount()
@@ -91,39 +92,59 @@ namespace Scarlet.IO.ImageFormats
 
 		protected override Bitmap OnGetBitmap(int imageIndex, int paletteIndex)
 		{
-#if !DUMPFACEPARTS
 			using (Bitmap destBitmap = new Bitmap(Width, Height))
 			{
 				using (Graphics g = Graphics.FromImage(destBitmap))
 				{
 					foreach (PIC4ImageInfo imageInfo in BaseImages.Select(x => x.ImageInfo))
 					{
-						ImageBinary imageBinary = new ImageBinary();
-
-						imageBinary.PhysicalWidth = ((imageInfo.Width + 3) / 4) * 4;
-						imageBinary.PhysicalHeight = imageInfo.Height;
-						imageBinary.Width = imageInfo.Width;
-						imageBinary.Height = imageInfo.Height;
-
-						imageBinary.InputPaletteFormat = PixelDataFormat.FormatArgb8888;
-						imageBinary.InputPixelFormat = PixelDataFormat.FormatIndexed8;
-						imageBinary.InputEndianness = Endian.LittleEndian;
-
-						imageBinary.AddInputPalette(imageInfo.PaletteData);
-						imageBinary.AddInputPixels(imageInfo.PixelData);
-
-						using (Bitmap srcBitmap = imageBinary.GetBitmap())
+						using (Bitmap srcBitmap = GetBustupBitmap(imageInfo))
 						{
 							g.DrawImageUnscaled(srcBitmap, imageInfo.X, imageInfo.Y);
+						}
+
+						if (false)
+						{
+							foreach (PIC4UnknownInnerRectangles data in imageInfo.UnknownInnerRectangles)
+								g.DrawRectangle(Pens.LawnGreen,
+									imageInfo.X + data.X1, imageInfo.Y + data.Y1,
+									data.X2 - data.X1, data.Y2 - data.Y1);
+
+							foreach (PIC4UnknownOuterRectangle data in imageInfo.UnknownOuterRectangles)
+								g.DrawRectangle(Pens.OrangeRed,
+									imageInfo.X + data.X1, imageInfo.Y + data.Y1,
+									data.X2 - data.X1, data.Y2 - data.Y1);
+						}
+					}
+
+					if (ImagePermutations.Count > 0)
+					{
+						PIC4ImageInfo faceImageInfo = ImagePermutations[imageIndex].Item1;
+						if (faceImageInfo != null)
+						{
+							using (Bitmap faceBitmap = GetBustupBitmap(faceImageInfo))
+							{
+								g.DrawImageUnscaled(faceBitmap, faceImageInfo.X, faceImageInfo.Y);
+							}
+						}
+
+						PIC4ImageInfo mouthImageInfo = ImagePermutations[imageIndex].Item2;
+						if (mouthImageInfo != null)
+						{
+							using (Bitmap mouthBitmap = GetBustupBitmap(mouthImageInfo))
+							{
+								g.DrawImageUnscaled(mouthBitmap, mouthImageInfo.X, mouthImageInfo.Y);
+							}
 						}
 					}
 				}
 
 				return (Bitmap)destBitmap.Clone();
 			}
-#else
-			PIC4ImageInfo imageInfo = FacePartsTemp[imageIndex];
+		}
 
+		private Bitmap GetBustupBitmap(PIC4ImageInfo imageInfo)
+		{
 			if (imageInfo != null)
 			{
 				ImageBinary imageBinary = new ImageBinary();
@@ -132,19 +153,49 @@ namespace Scarlet.IO.ImageFormats
 				imageBinary.PhysicalHeight = imageInfo.Height;
 				imageBinary.Width = imageInfo.Width;
 				imageBinary.Height = imageInfo.Height;
-
-				imageBinary.InputPaletteFormat = PixelDataFormat.FormatArgb8888;
-				imageBinary.InputPixelFormat = PixelDataFormat.FormatIndexed8;
 				imageBinary.InputEndianness = Endian.LittleEndian;
 
-				imageBinary.AddInputPalette(imageInfo.PaletteData);
-				imageBinary.AddInputPixels(imageInfo.PixelData);
+				switch (imageInfo.ImageFormat)
+				{
+					case PIC4ImageFormat.Indexed:
+						imageBinary.InputPixelFormat = PixelDataFormat.FormatIndexed8;
+						imageBinary.InputPaletteFormat = PixelDataFormat.FormatArgb8888;
+
+						byte[] paletteData = new byte[imageInfo.PaletteData.Length];
+						Buffer.BlockCopy(imageInfo.PaletteData, 0, paletteData, 0, paletteData.Length);
+						for (int i = 0; i < paletteData.Length; i += 4)
+						{
+							if (paletteData[i + 0] == 0 && paletteData[i + 1] == 0 && paletteData[i + 2] == 0)
+								paletteData[i + 3] = 0;
+						}
+
+						imageBinary.AddInputPixels(imageInfo.PixelData);
+						imageBinary.AddInputPalette(paletteData);
+						break;
+
+					case PIC4ImageFormat.IndexedWithAlphaMask:
+						byte[] processedPixelData = new byte[imageBinary.PhysicalWidth * imageBinary.PhysicalHeight * 4];
+						for (int p = 0, s = 0; p < processedPixelData.Length; p += 4, s++)
+						{
+							int colorOffset = (imageInfo.PixelData[s] * 4);
+							processedPixelData[p + 0] = imageInfo.PaletteData[colorOffset + 0];
+							processedPixelData[p + 1] = imageInfo.PaletteData[colorOffset + 1];
+							processedPixelData[p + 2] = imageInfo.PaletteData[colorOffset + 2];
+							processedPixelData[p + 3] = imageInfo.AlphaData[s];
+
+							if (processedPixelData[p + 0] == 0x00 && processedPixelData[p + 1] == 0x00 && processedPixelData[p + 2] == 0x00)
+								processedPixelData[p + 3] = 0x00;
+						}
+
+						imageBinary.InputPixelFormat = PixelDataFormat.FormatArgb8888;
+						imageBinary.AddInputPixels(processedPixelData);
+						break;
+				}
 
 				return imageBinary.GetBitmap();
 			}
 			else
 				return new Bitmap(32, 32);
-#endif
 		}
 	}
 
@@ -177,7 +228,7 @@ namespace Scarlet.IO.ImageFormats
 
 		public BUP4FacePartImages(EndianBinaryReader reader)
 		{
-			Name = Encoding.ASCII.GetString(reader.ReadBytes(0x10));
+			Name = Encoding.ASCII.GetString(reader.ReadBytes(0x10)).TrimEnd('\0');
 			ImageInfoOffsets = new uint[8];
 			for (int i = 0; i < ImageInfoOffsets.Length; i++) ImageInfoOffsets[i] = reader.ReadUInt32();
 

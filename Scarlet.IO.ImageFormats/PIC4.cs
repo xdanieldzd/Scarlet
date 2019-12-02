@@ -10,6 +10,15 @@ using Scarlet.IO.Compression;
 
 namespace Scarlet.IO.ImageFormats
 {
+	// TODO: a better solution to the alpha mask nonsense?
+
+	public enum PIC4ImageFormat
+	{
+		// TODO: any other possible values?
+		IndexedWithAlphaMask = 0x0002,
+		Indexed = 0x0003
+	}
+
 	[MagicNumber("PIC4", 0x00)]
 	public class PIC4 : ImageFormat
 	{
@@ -71,13 +80,31 @@ namespace Scarlet.IO.ImageFormats
 						imageBinary.PhysicalHeight = rectangleInfo.ImageInfo.Height;
 						imageBinary.Width = rectangleInfo.ImageInfo.Width;
 						imageBinary.Height = rectangleInfo.ImageInfo.Height;
-
-						imageBinary.InputPaletteFormat = PixelDataFormat.FormatArgb8888;
-						imageBinary.InputPixelFormat = PixelDataFormat.FormatIndexed8;
 						imageBinary.InputEndianness = Endian.LittleEndian;
 
-						imageBinary.AddInputPalette(rectangleInfo.ImageInfo.PaletteData);
-						imageBinary.AddInputPixels(rectangleInfo.ImageInfo.PixelData);
+						switch (rectangleInfo.ImageInfo.ImageFormat)
+						{
+							case PIC4ImageFormat.Indexed:
+								imageBinary.InputPixelFormat = PixelDataFormat.FormatIndexed8;
+								imageBinary.InputPaletteFormat = PixelDataFormat.FormatArgb8888;
+								imageBinary.AddInputPixels(rectangleInfo.ImageInfo.PixelData);
+								imageBinary.AddInputPalette(rectangleInfo.ImageInfo.PaletteData);
+								break;
+
+							case PIC4ImageFormat.IndexedWithAlphaMask:
+								byte[] processedPixelData = new byte[imageBinary.PhysicalWidth * imageBinary.PhysicalHeight * 4];
+								for (int p = 0, s = 0; p < processedPixelData.Length; p += 4, s++)
+								{
+									int colorOffset = (rectangleInfo.ImageInfo.PixelData[s] * 4);
+									processedPixelData[p + 0] = rectangleInfo.ImageInfo.PaletteData[colorOffset + 0];
+									processedPixelData[p + 1] = rectangleInfo.ImageInfo.PaletteData[colorOffset + 1];
+									processedPixelData[p + 2] = rectangleInfo.ImageInfo.PaletteData[colorOffset + 2];
+									processedPixelData[p + 3] = rectangleInfo.ImageInfo.AlphaData[s];
+								}
+								imageBinary.InputPixelFormat = PixelDataFormat.FormatArgb8888;
+								imageBinary.AddInputPixels(processedPixelData);
+								break;
+						}
 
 						using (Bitmap srcBitmap = imageBinary.GetBitmap())
 						{
@@ -96,7 +123,7 @@ namespace Scarlet.IO.ImageFormats
 							foreach (PIC4UnknownOuterRectangle data in rectangleInfo.ImageInfo.UnknownOuterRectangles)
 								g.DrawRectangle(Pens.OrangeRed,
 									rectangleInfo.X + rectangleInfo.ImageInfo.X + data.X1, rectangleInfo.Y + rectangleInfo.ImageInfo.Y + data.Y1,
-									data.X2 - data.X1 + 1, data.Y2 - data.Y1 + 1);
+									data.X2 - data.X1, data.Y2 - data.Y1);
 						}
 					}
 				}
@@ -129,7 +156,7 @@ namespace Scarlet.IO.ImageFormats
 
 	public class PIC4ImageInfo
 	{
-		public ushort Unknown0x00 { get; private set; }                                         // 0x03 on regular images, 0x02 on images w/ alpha issues & inner/outer rects (see below)?
+		public PIC4ImageFormat ImageFormat { get; private set; }
 		public ushort NumUnknownInnerRectangles { get; private set; }
 		public ushort NumUnknownOuterRectangles { get; private set; }
 		public ushort NumUnknownData3 { get; private set; }
@@ -145,10 +172,11 @@ namespace Scarlet.IO.ImageFormats
 
 		public byte[] PaletteData { get; private set; }
 		public byte[] PixelData { get; private set; }
+		public byte[] AlphaData { get; private set; }
 
 		public PIC4ImageInfo(EndianBinaryReader reader)
 		{
-			Unknown0x00 = reader.ReadUInt16();
+			ImageFormat = (PIC4ImageFormat)reader.ReadUInt16();
 			NumUnknownInnerRectangles = reader.ReadUInt16();
 			NumUnknownOuterRectangles = reader.ReadUInt16();
 			NumUnknownData3 = reader.ReadUInt16();
@@ -157,6 +185,8 @@ namespace Scarlet.IO.ImageFormats
 			Width = reader.ReadUInt16();
 			Height = reader.ReadUInt16();
 			CompressedDataSize = reader.ReadUInt32();
+
+			if (!Enum.IsDefined(typeof(PIC4ImageFormat), ImageFormat)) throw new Exception("Unknown PIC4 image format");
 
 			UnknownInnerRectangles = new PIC4UnknownInnerRectangles[NumUnknownInnerRectangles];
 			for (int i = 0; i < UnknownInnerRectangles.Length; i++) UnknownInnerRectangles[i] = new PIC4UnknownInnerRectangles(reader);
@@ -168,7 +198,11 @@ namespace Scarlet.IO.ImageFormats
 			for (int i = 0; i < UnknownData3s.Length; i++) UnknownData3s[i] = new PIC4UnknownData3(reader);
 
 			int roundedWidth = ((Width + 3) / 4) * 4;
-			int decompressedSize = 0x400 + ((roundedWidth * Height));
+
+			int paletteSize = 0x400;
+			int imageSize = (roundedWidth * Height);
+			int alphaSize = (ImageFormat == PIC4ImageFormat.IndexedWithAlphaMask ? imageSize : 0);
+			int decompressedSize = (paletteSize + imageSize + alphaSize);
 
 			byte[] imageData;
 			if (CompressedDataSize == 0x00)
@@ -176,39 +210,29 @@ namespace Scarlet.IO.ImageFormats
 			else
 				imageData = EGLZ77.Decompress(reader.ReadBytes((int)CompressedDataSize), decompressedSize);
 
-			PaletteData = new byte[0x400];
-			Buffer.BlockCopy(imageData, 0, PaletteData, 0, PaletteData.Length);
-			PixelData = new byte[imageData.Length - PaletteData.Length];
-			Buffer.BlockCopy(imageData, PaletteData.Length, PixelData, 0, PixelData.Length);
+			int copyPosition = 0;
+			PaletteData = new byte[paletteSize];
+			Buffer.BlockCopy(imageData, copyPosition, PaletteData, 0, PaletteData.Length);
+
+			copyPosition += paletteSize;
+			PixelData = new byte[imageSize];
+			Buffer.BlockCopy(imageData, copyPosition, PixelData, 0, PixelData.Length);
+
+			copyPosition += imageSize;
+			AlphaData = new byte[alphaSize];
+			Buffer.BlockCopy(imageData, copyPosition, AlphaData, 0, AlphaData.Length);
 
 			if (false)
 			{
 				if (reader.BaseStream is FileStream fs)
 				{
-					if (fs.Name.EndsWith("ITEM12a.pic") && CompressedDataSize == 0x465C)
+					if (fs.Name.EndsWith("00KAZ_C00.bup") && CompressedDataSize == 0x2E2C)
 					{
-						//File.WriteAllBytes(@"D:\Temp\Konosuba Vita\____test____.dec", imageData);
-					}
-
-					if (fs.Name.EndsWith("EVCG17.pic"))
-					{
-						for (int i = 0; i < 256 * 4; i += 4)
-						{
-							var a = PaletteData[i + 3];
-							var c = i / 4;
-							if (a != 255)
-							{
-								if (PixelData.Any(x => x == (byte)c))
-								{
-									bool tmp = false;
-								}
-							}
-						}
+						File.WriteAllBytes(@"D:\Temp\Konosuba Vita\____test____.dec", imageData);
 					}
 				}
 			}
 		}
-
 	}
 
 	public class PIC4UnknownInnerRectangles
