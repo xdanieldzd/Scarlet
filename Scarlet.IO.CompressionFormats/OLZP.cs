@@ -35,7 +35,7 @@ namespace Scarlet.IO.CompressionFormats
 
 		public override string GetNameOrExtension()
 		{
-			return string.Empty;
+			return "bin";
 		}
 	}
 }

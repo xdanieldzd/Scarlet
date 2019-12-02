@@ -79,6 +79,7 @@
     <Compile Include="TXF.cs" />
     <Compile Include="TXG.cs" />
     <Compile Include="TXP.cs" />
+    <Compile Include="TXPL.cs" />
     <Compile Include="VTXP.cs" />
     <Compile Include="XGTL.cs" />
   </ItemGroup>
