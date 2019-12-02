@@ -115,7 +115,7 @@ namespace Scarlet.IO.ImageFormats
 
 						if (false)
 						{
-							foreach (PIC4UnknownInnerRectangles data in rectangleInfo.ImageInfo.UnknownInnerRectangles)
+							foreach (PIC4UnknownInnerRectangle data in rectangleInfo.ImageInfo.UnknownInnerRectangles)
 								g.DrawRectangle(Pens.LawnGreen,
 									rectangleInfo.X + rectangleInfo.ImageInfo.X + data.X1, rectangleInfo.Y + rectangleInfo.ImageInfo.Y + data.Y1,
 									data.X2 - data.X1, data.Y2 - data.Y1);
@@ -166,7 +166,7 @@ namespace Scarlet.IO.ImageFormats
 		public ushort Height { get; private set; }
 		public uint CompressedDataSize { get; private set; }
 
-		public PIC4UnknownInnerRectangles[] UnknownInnerRectangles { get; private set; }        // TODO: Purpose? Covers "inner" parts of images, see ex. FILES.psarc\ADV\picture\EVCG17.pic
+		public PIC4UnknownInnerRectangle[] UnknownInnerRectangles { get; private set; }        // TODO: Purpose? Covers "inner" parts of images, see ex. FILES.psarc\ADV\picture\EVCG17.pic
 		public PIC4UnknownOuterRectangle[] UnknownOuterRectangles { get; private set; }         // TODO: Same, but covers "outer" parts of images
 		public PIC4UnknownData3[] UnknownData3s { get; private set; }
 
@@ -188,8 +188,8 @@ namespace Scarlet.IO.ImageFormats
 
 			if (!Enum.IsDefined(typeof(PIC4ImageFormat), ImageFormat)) throw new Exception("Unknown PIC4 image format");
 
-			UnknownInnerRectangles = new PIC4UnknownInnerRectangles[NumUnknownInnerRectangles];
-			for (int i = 0; i < UnknownInnerRectangles.Length; i++) UnknownInnerRectangles[i] = new PIC4UnknownInnerRectangles(reader);
+			UnknownInnerRectangles = new PIC4UnknownInnerRectangle[NumUnknownInnerRectangles];
+			for (int i = 0; i < UnknownInnerRectangles.Length; i++) UnknownInnerRectangles[i] = new PIC4UnknownInnerRectangle(reader);
 
 			UnknownOuterRectangles = new PIC4UnknownOuterRectangle[NumUnknownOuterRectangles];
 			for (int i = 0; i < UnknownOuterRectangles.Length; i++) UnknownOuterRectangles[i] = new PIC4UnknownOuterRectangle(reader);
@@ -235,14 +235,14 @@ namespace Scarlet.IO.ImageFormats
 		}
 	}
 
-	public class PIC4UnknownInnerRectangles
+	public class PIC4UnknownInnerRectangle
 	{
 		public ushort X1 { get; private set; }
 		public ushort Y1 { get; private set; }
 		public ushort X2 { get; private set; }
 		public ushort Y2 { get; private set; }
 
-		public PIC4UnknownInnerRectangles(EndianBinaryReader reader)
+		public PIC4UnknownInnerRectangle(EndianBinaryReader reader)
 		{
 			X1 = reader.ReadUInt16();
 			Y1 = reader.ReadUInt16();

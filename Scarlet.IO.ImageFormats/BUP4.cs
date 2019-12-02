@@ -105,7 +105,7 @@ namespace Scarlet.IO.ImageFormats
 
 						if (false)
 						{
-							foreach (PIC4UnknownInnerRectangles data in imageInfo.UnknownInnerRectangles)
+							foreach (PIC4UnknownInnerRectangle data in imageInfo.UnknownInnerRectangles)
 								g.DrawRectangle(Pens.LawnGreen,
 									imageInfo.X + data.X1, imageInfo.Y + data.Y1,
 									data.X2 - data.X1, data.Y2 - data.Y1);
