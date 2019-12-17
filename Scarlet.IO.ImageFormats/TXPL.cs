@@ -20,7 +20,8 @@ namespace Scarlet.IO.ImageFormats
 
 		public TXPLSubHeader SubHeader { get; private set; }
 
-		List<Bitmap> baseImages, elementImages;
+		public List<Bitmap> BaseImages { get; private set; }
+		public List<Bitmap> ElementImages { get; private set; }
 
 		protected override void OnOpen(EndianBinaryReader reader)
 		{
@@ -37,7 +38,7 @@ namespace Scarlet.IO.ImageFormats
 			for (int i = 0; i < ImageInfos.Length; i++) ImageInfos[i] = new TXPLImageInfo(reader);
 			FileSize = reader.ReadUInt32();
 
-			baseImages = new List<Bitmap>();
+			BaseImages = new List<Bitmap>();
 
 			GXT gxtInstance = new GXT();
 			for (int i = 0; i < ImageInfos.Length; i++)
@@ -51,11 +52,11 @@ namespace Scarlet.IO.ImageFormats
 
 					gxtInstance.Open(gxtStream);
 					if (gxtInstance.TextureInfos.Length != 1) throw new Exception($"Unimplemented GXT image in TXPL; GXT has more than 1 TextureInfos ({gxtInstance.TextureInfos.Length})");
-					baseImages.Add(gxtInstance.GetBitmap());
+					BaseImages.Add(gxtInstance.GetBitmap());
 				}
 			}
 
-			elementImages = new List<Bitmap>();
+			ElementImages = new List<Bitmap>();
 			for (int i = 0; i < SubHeader.Rectangles.Length; i++)
 			{
 				TXPLRectangle rectangle = SubHeader.Rectangles[i];
@@ -67,22 +68,22 @@ namespace Scarlet.IO.ImageFormats
 						using (Graphics g = Graphics.FromImage(bitmap))
 						{
 							g.DrawImage(
-								baseImages[rectangle.ImageIndex],
+								BaseImages[rectangle.ImageIndex],
 								new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-								rectangle.X, rectangle.Y, bitmap.Width, bitmap.Height,
+								rectangle.SourceX, rectangle.SourceY, bitmap.Width, bitmap.Height,
 								GraphicsUnit.Pixel);
 						}
-						elementImages.Add((Bitmap)bitmap.Clone());
+						ElementImages.Add((Bitmap)bitmap.Clone());
 					}
 				}
 				else
-					elementImages.Add(new Bitmap(32, 32));
+					ElementImages.Add(new Bitmap(32, 32));
 			}
 		}
 
 		public override int GetImageCount()
 		{
-			return (baseImages.Count + elementImages.Count);
+			return (BaseImages.Count + ElementImages.Count);
 		}
 
 		public override int GetPaletteCount()
@@ -92,14 +93,14 @@ namespace Scarlet.IO.ImageFormats
 
 		protected override Bitmap OnGetBitmap(int imageIndex, int paletteIndex)
 		{
-			return (imageIndex < baseImages.Count ? baseImages[imageIndex] : elementImages[imageIndex - baseImages.Count]);
+			return (imageIndex < BaseImages.Count ? BaseImages[imageIndex] : ElementImages[imageIndex - BaseImages.Count]);
 		}
 	}
 
 	public class TXPLSubHeader
 	{
-		public uint Unknown0x00 { get; private set; }
-		public uint Unknown0x04 { get; private set; }
+		public uint ImageWidth { get; private set; }
+		public uint ImageHeight { get; private set; }
 		public uint NumImageInfos { get; private set; }
 		public uint NumRectangles { get; private set; }
 
@@ -107,8 +108,8 @@ namespace Scarlet.IO.ImageFormats
 
 		public TXPLSubHeader(EndianBinaryReader reader)
 		{
-			Unknown0x00 = reader.ReadUInt32();
-			Unknown0x04 = reader.ReadUInt32();
+			ImageWidth = reader.ReadUInt32();
+			ImageHeight = reader.ReadUInt32();
 			NumImageInfos = reader.ReadUInt32();
 			NumRectangles = reader.ReadUInt32();
 
@@ -135,8 +136,8 @@ namespace Scarlet.IO.ImageFormats
 	{
 		public ushort Unknown0x00 { get; private set; }
 		public ushort ImageIndex { get; private set; }
-		public ushort X { get; private set; }
-		public ushort Y { get; private set; }
+		public ushort SourceX { get; private set; }
+		public ushort SourceY { get; private set; }
 		public ushort Width { get; private set; }
 		public ushort Height { get; private set; }
 
@@ -144,8 +145,8 @@ namespace Scarlet.IO.ImageFormats
 		{
 			Unknown0x00 = reader.ReadUInt16();
 			ImageIndex = reader.ReadUInt16();
-			X = reader.ReadUInt16();
-			Y = reader.ReadUInt16();
+			SourceX = reader.ReadUInt16();
+			SourceY = reader.ReadUInt16();
 			Width = reader.ReadUInt16();
 			Height = reader.ReadUInt16();
 		}
